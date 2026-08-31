@@ -8,6 +8,15 @@ notlarını odaktaki uygulamayı hiç değiştirmeden kontrol ediyorsun.
 macOS 26'nın `.glassEffect` / `GlassEffectContainer` API'leriyle yazıldı;
 cam efekti elle blur/opacity taklidi değil, gerçek zamanlı refraksiyon.
 
+## İndir
+
+[**Releases**](../../releases) sayfasında her `main` push'unda otomatik
+üretilen en son derleme duruyor — `.zip`'i indirip aç.
+
+> Bu derlemeler imzasız/notarize edilmemiş: ilk açılışta Gatekeeper uyarı
+> verir. Uygulamaya Finder'da sağ tık → **Aç** ile geçebilir, ya da terminalde
+> `xattr -cr GlassDo-macOS.app` çalıştırabilirsin.
+
 ## Neler var
 
 **Görev yönetimi**

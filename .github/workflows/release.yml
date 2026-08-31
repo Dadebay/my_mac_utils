@@ -1,0 +1,69 @@
+name: Release
+
+# `main`'e her push'ta uygulamayı derler ve GitHub Releases'e yeni bir
+# indirilebilir sürüm olarak ekler. `workflow_dispatch` elle de tetikleyebilmek
+# için var.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: XcodeGen kur
+        run: brew install xcodegen
+
+      - name: Xcode projesini üret
+        run: xcodegen generate
+
+      - name: Derle (imzasız)
+        # CI runner'ında imzalama sertifikası yok — sertifika/notarization
+        # kurulmadan tek yapılabilecek imzasız ("ad-hoc") derleme. Bu yüzden
+        # App Group'a bağlı widget senkronizasyonu bu build'de çalışmaz;
+        # tam imzalı/notarize dağıtım için ayrı bir Developer ID kurulumu
+        # gerekir.
+        run: |
+          xcodebuild \
+            -project GlassDo.xcodeproj \
+            -scheme GlassDo-macOS \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Uygulamayı zip'le
+        run: |
+          cd build/Build/Products/Release
+          ditto -c -k --sequesterRsrc --keepParent \
+            GlassDo-macOS.app "$GITHUB_WORKSPACE/GlassDo-macOS.zip"
+
+      - name: Release notu yaz
+        run: |
+          cat > "$GITHUB_WORKSPACE/notes.md" <<EOF
+          Otomatik derleme — commit \`${GITHUB_SHA::7}\`.
+
+          Bu build imzasız ve notarize edilmemiş: ilk açılışta Gatekeeper
+          uyarı verir. Finder'da uygulamaya sağ tık → Aç ile geçebilir, ya da
+          terminalde şunu çalıştırabilirsin:
+
+          \`\`\`
+          xattr -cr GlassDo-macOS.app
+          \`\`\`
+          EOF
+
+      - name: Release yayınla
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          gh release create "$TAG" \
+            "$GITHUB_WORKSPACE/GlassDo-macOS.zip" \
+            --title "Build ${{ github.run_number }}" \
+            --notes-file "$GITHUB_WORKSPACE/notes.md"
