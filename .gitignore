@@ -1,0 +1,31 @@
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Build output
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Secrets / local config
+Config/ExportOptions-*.plist
+*.p8
+*.mobileprovision
+
+# Claude Code — kişisel/yerel oturum ayarları
+.claude/settings.local.json

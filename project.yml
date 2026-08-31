@@ -1,0 +1,103 @@
+name: GlassDo
+options:
+  bundleIdPrefix: com.dadebay
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    DEVELOPMENT_TEAM: "V793RH49BX"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+
+targets:
+  GlassDoKit:
+    type: framework
+    platform: macOS
+    sources: [Sources/GlassDoKit]
+    info:
+      path: Sources/GlassDoKit/Info.plist
+      properties: {}
+
+  GlassDo-macOS:
+    type: application
+    platform: macOS
+    # Sources/Shared hem uygulamaya hem widget uzantısına giriyor: ölçüm
+    # kodu iki süreçte de aynı olmalı, kopyalanırsa zamanla ayrışır.
+    sources:
+      - path: Sources/macOS
+      - path: Sources/Shared
+      # Widget kartlarının kendisi ayarlardaki önizleme galerisinde de
+      # çiziliyor: galeri için ayrı bir kopya yazılsaydı gerçek widget
+      # değiştikçe önizleme yalan söylemeye başlardı. Yalnızca uzantının
+      # giriş noktası dışarıda kalıyor — uygulamada ikinci bir @main olamaz.
+      - path: Sources/Widgets
+        excludes:
+          - GlassDoWidgetBundle.swift
+    dependencies:
+      - target: GlassDoKit
+      - target: GlassDoWidgets
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Config/GlassDo.entitlements
+    info:
+      path: Sources/macOS/Info.plist
+      properties:
+        LSUIElement: false
+        NSHumanReadableCopyright: ""
+
+  GlassDoWidgets:
+    type: app-extension
+    platform: macOS
+    sources: [Sources/Widgets, Sources/Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dadebay.GlassDo-macOS.Widgets
+        CODE_SIGN_ENTITLEMENTS: Config/GlassDoWidgets.entitlements
+        SKIP_INSTALL: YES
+    info:
+      path: Sources/Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: GlassDo
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
+  GlassDoKitTests:
+    type: bundle.unit-test
+    platform: macOS
+    # Sources/Shared bir framework değil, uygulama ve widget hedeflerine
+    # doğrudan derlenen ortak ölçüm katmanı; test edilebilmesi için test
+    # hedefine de aynı şekilde giriyor. Kendi başına yeter — yalnızca
+    # Foundation, Darwin ve IOKit'e bağlı.
+    sources:
+      - path: Tests/GlassDoKitTests
+      - path: Sources/Shared
+      # Yönetilen dosya alanı servisi de framework değil; test edilebilmesi
+      # için aynı şekilde test hedefine giriyor.
+      - path: Sources/macOS/Storage
+      # Kullanım istatistiği deposu da aynı sebeple: framework değil,
+      # kökü dışarıdan alabilen bir `actor` — testler gerçek Application
+      # Support yerine geçici bir dizin veriyor.
+      - path: Sources/macOS/Usage
+      # Ağ kullanımı toplayıcısı saf aritmetik: saat, takvim ve arayüz
+      # örnekleri enjekte ediliyor, `getifaddrs` çağırmıyor. Tekrar sayım
+      # ve sayaç sıfırlama regresyonları ancak burada test edilebiliyor.
+      - path: Sources/macOS/NetworkUsage
+    dependencies:
+      - target: GlassDoKit
+    info:
+      path: Tests/GlassDoKitTests/Info.plist
+      properties: {}
+
+schemes:
+  GlassDo-macOS:
+    build:
+      targets:
+        GlassDo-macOS: all
+        GlassDoKitTests: [test]
+    test:
+      targets:
+        - GlassDoKitTests
