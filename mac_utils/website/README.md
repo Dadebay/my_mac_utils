@@ -62,27 +62,39 @@ Eski sitede olmayan, şimdi olan: sayfa başına başlık/açıklama, `canonical
 
 ## Kum taneciği efekti
 
-Nav bar'a yaklaşan yazı, harf harf kum tanelerine ayrılıyor
-(`src/scripts/sand.ts`).
+Nav bar'a yaklaşan **her şey** kum tanelerine ayrılıyor; geri kaydırınca
+taneler yerine toplanıp birleşiyor (`src/scripts/sand.ts`).
 
-Maskeyle "silmek" yerine harfin kendi biçimi kullanılıyor: harf çizgiye
-değdiğinde glifi küçük bir tuvale çizilip pikselleri okunuyor, dolu her
-noktadan bir tane doğuyor. Yani dağılan şey gerçekten harfin şekli — "A"
-ile "o" farklı dağılıyor. Taneler tek bir `position: fixed` tuvale
-çiziliyor, yukarı ve yanlara savrulup sönüyor; sayfa kaydıkça onlar da
-kayıyor, havada asılı kalmıyorlar.
+Maskeyle "silmek" yerine öğenin kendi görüntüsü kullanılıyor: bir şey
+dağılma çizgisine değdiğinde küçük bir tuvale çizilip pikselleri okunuyor
+ve dolu her noktadan bir tane doğuyor. Dört tür çiziliyor:
 
-Bütçe: harfler ancak çizgiyi kestikleri karede ölçülüyor. Tamamen altta
-kalan blok atlanıyor, tamamen üstte kalan bir kere gizlenip düşüyor.
-Sayfa durduğunda ve havada tane kalmadığında döngü kendini kapatıyor,
-kaydırma onu geri açıyor. Harf sarmalayıcıları `display: inline` ve
-yalnızca çizgiye yaklaşan blokta oluşturuluyor; yerleşim değişmiyor,
-HTML çıktısı temiz kalıyor (arama motoru bölünmüş harf görmüyor).
+| Tür | Nasıl |
+| --- | --- |
+| Harf | Glif, sayfadaki yazı tipi ve rengiyle |
+| Görsel | `<img>`, olduğu gibi |
+| İkon | Satır içi `<svg>`, data URI'ye çevrilip rasterleştirilerek |
+| Kutu | Arka planı ya da kenarlığı olan her öğe; köşe yarıçapı, dolgu ve kenarlık rengiyle |
 
-Ayarlar dosyanın başında: `SHATTER_LINE` (dağılma çizgisi), `LIFE` (tane
-ömrü), `MAX_PARTICLES` (tavan). Metin olmayan yüzeyler — kart, görsel,
-çizgi — nav'ın altında `global.css` içindeki kısa bir geçişle sönüyor.
-`prefers-reduced-motion` açıksa ikisi de kapalı.
+Harfler küçük olduğu için bir bütün hâlinde patlıyor. Kutular yüksek
+olabildiğinden şerit şerit: her karede çizgiyi yeni geçen bant taneye
+dönüşüyor, kalan kısım o hizadan kesiliyor. Kesiğin son kırk pikseli
+gürültüyle kırılıyor (`[data-sand-cut]`, `global.css`) — bu olmadan büyük
+kartlarda düz bir çizgi fark ediliyordu.
+
+Geri kaydırmada aynı taneler ters yönde doğuyor: dağınık bir noktadan
+başlayıp öğenin üzerindeki kendi yerlerine oturuyorlar, oturma bitince
+öğe geri görünüyor.
+
+Bütçe: öğeler ancak çizgiyi kestikleri karede ölçülüyor; sayfa durduğunda
+ve havada tane kalmadığında döngü kendini kapatıyor, kaydırma geri açıyor.
+Harf sarmalayıcıları `display: inline` ve yalnızca çalışma anında
+ekleniyor — yerleşim değişmiyor, HTML çıktısı temiz kalıyor (arama motoru
+bölünmüş harf görmüyor).
+
+Ayarlar dosyanın başında: `SHATTER_LINE` (dağılma çizgisi), `LIFE` /
+`LIFE_IN` (dağılma ve toplanma süreleri), `MAX_PARTICLES`, `MAX_STRIP`.
+`prefers-reduced-motion` açıksa sistem hiç kurulmuyor.
 
 ## Eksik ekran görüntüleri
 
