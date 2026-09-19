@@ -264,12 +264,24 @@ function wrapChars(block: HTMLElement): CharSpan[] {
   }
 
   for (const text of texts) {
-    const fragment = document.createDocumentFragment();
+    /*
+     * Harfler tek bir sarmalayıcının içine konuyor.
+     *
+     * Bu sarmalayıcı olmadan, ana öğe flex ya da grid ise her harf ayrı
+     * bir flex öğesi oluyordu: aradaki `gap` bütün harflere uygulanıyor,
+     * boşluk düğümleri de yutulduğu için kelimeler birbirine yapışıyordu
+     * ("D o w n l o a d f o r M a c"). Tek sarmalayıcı, metin düğümünün
+     * eskiden olduğu gibi tek bir öğe olarak kalmasını sağlıyor; içi
+     * normal satır içi metin olarak akıyor.
+     */
+    const wrapper = document.createElement("span");
+    wrapper.className = "sand-text";
+
     let buffer = "";
 
     const flush = () => {
       if (!buffer) return;
-      fragment.appendChild(document.createTextNode(buffer));
+      wrapper.appendChild(document.createTextNode(buffer));
       buffer = "";
     };
 
@@ -282,12 +294,12 @@ function wrapChars(block: HTMLElement): CharSpan[] {
       const span = document.createElement("span");
       span.className = "sand-char";
       span.textContent = ch;
-      fragment.appendChild(span);
+      wrapper.appendChild(span);
       chars.push({ el: span, gone: false, returnAt: 0 });
     }
 
     flush();
-    text.replaceWith(fragment);
+    text.replaceWith(wrapper);
   }
 
   return chars;

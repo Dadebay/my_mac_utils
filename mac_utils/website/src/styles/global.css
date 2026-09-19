@@ -131,7 +131,8 @@ html {
 }
 
 /* Harf sarmalayıcıları yerleşimi değiştirmemeli. */
-.sand-char {
+.sand-char,
+.sand-text {
   display: inline;
 }
 

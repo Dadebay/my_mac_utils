@@ -19,48 +19,66 @@ const { download } = Astro.props;
 ---
 
 <section id={anchors.download} class="px-4 py-24">
-  <Reveal class="mx-auto max-w-2xl text-center">
-    <div class="glass-panel glass-panel-lg rounded-3xl p-10">
-      <h2 class="text-3xl font-semibold tracking-tight">{download.title}</h2>
-      <p class="mt-3 text-foreground-muted">{download.description}</p>
+  <Reveal class="mx-auto max-w-2xl">
+    <div class="glass-panel glass-panel-lg relative overflow-hidden rounded-3xl px-8 py-12 text-center sm:px-12">
+      {/* Kartın kendi ışığı: sayfanın tek eylem çağrısı, biraz öne çıksın. */}
+      <div class="glow-violet pointer-events-none absolute -top-24 left-1/2 h-64 w-[420px] -translate-x-1/2 rounded-full blur-3xl"></div>
 
-      {/*
-        Eski sürümde bu buton en son sürümün adresini tarayıcıda
-        JavaScript ile çekiyordu; bulamazsa hata metni gösteriyordu.
-        GitHub'ın `releases/latest` adresi zaten aynı yere yönlendiriyor,
-        yani aynı iş ağ isteği olmadan ve her durumda çalışıyor.
-      */}
-      <a
-        href={latestReleaseUrl}
-        class="mt-8 inline-flex items-center gap-2 rounded-full bg-foreground px-7 py-3.5 text-sm font-medium text-background transition-opacity duration-200 hover:opacity-90 active:scale-95"
-      >
-        <Icon name="download" class="h-4 w-4" />
-        {download.title}
-      </a>
+      <div class="relative">
+        <h2 class="text-3xl font-semibold tracking-tight">{download.title}</h2>
+        <p class="mx-auto mt-3 max-w-lg text-balance text-foreground-muted">{download.description}</p>
 
-      <div class="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-foreground-subtle">
-        <span class="flex items-center gap-1">
-          <Icon name="cpu" class="h-3.5 w-3.5" />
-          {download.architectureLabel}
-        </span>
-        <span>{download.requirementsLabel}</span>
-      </div>
+        {/*
+          Ana buton ve sürüm notları yan yana: biri dolu, diğeri sade bir
+          bağlantı. Eskiden sürüm notları butonun altında tek başına
+          altı çizili bir satırdı ve ikinci bir eylem gibi durmuyordu.
+        */}
+        <div class="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
+          <a
+            href={latestReleaseUrl}
+            class="group inline-flex items-center gap-2.5 rounded-full bg-foreground px-7 py-3.5 text-sm font-medium text-background transition-opacity duration-200 hover:opacity-90 active:scale-95"
+          >
+            <Icon name="download" class="h-4 w-4 transition-transform duration-300 group-hover:translate-y-0.5" />
+            {download.title}
+          </a>
 
-      <a
-        href={releasesUrl}
-        target="_blank"
-        rel="noreferrer"
-        class="mt-4 block text-xs text-foreground-subtle underline underline-offset-4 hover:text-foreground-muted"
-      >
-        {download.releaseNotesLabel}
-      </a>
+          <a
+            href={releasesUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="text-sm text-foreground-subtle transition-colors duration-200 hover:text-foreground-muted"
+          >
+            {download.releaseNotesLabel} &rarr;
+          </a>
+        </div>
 
-      <div class="mt-6 border-t border-glass-border pt-6">
-        <p class="flex items-center justify-center gap-2 text-xs text-foreground-subtle">
-          <Icon name="triangle-alert" class="h-4 w-4" />
-          {download.unsignedNotice}
-        </p>
-        <p class="mt-2 text-xs text-foreground-subtle">{download.privacyMicrocopy}</p>
+        {/* Gereksinimler rozet olarak: göz tek satır metin yerine iki
+            küçük etikete takılıyor. */}
+        <div class="mt-7 flex flex-wrap items-center justify-center gap-2">
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-glass-border px-3 py-1.5 text-xs text-foreground-subtle">
+            <Icon name="cpu" class="h-3.5 w-3.5" strokeWidth={1.75} />
+            {download.architectureLabel}
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full border border-glass-border px-3 py-1.5 text-xs text-foreground-subtle">
+            {download.requirementsLabel}
+          </span>
+        </div>
+
+        {/*
+          Uyarı ve gizlilik notu artık ortalanmış gri bir duvar değil:
+          ikonu solda, metni sola yaslı iki satır. Uzun cümle böyle
+          okunuyor, kısa olan da altında kalıyor.
+        */}
+        <div class="mt-9 space-y-3 border-t border-glass-border pt-7 text-left">
+          <p class="flex items-start gap-3 text-xs leading-relaxed text-foreground-subtle">
+            <Icon name="triangle-alert" class="mt-px h-4 w-4 shrink-0 text-accent-blue" strokeWidth={1.75} />
+            <span>{download.unsignedNotice}</span>
+          </p>
+          <p class="flex items-start gap-3 text-xs leading-relaxed text-foreground-subtle">
+            <Icon name="check" class="mt-px h-4 w-4 shrink-0 text-accent-teal" strokeWidth={1.75} />
+            <span>{download.privacyMicrocopy}</span>
+          </p>
+        </div>
       </div>
     </div>
   </Reveal>
