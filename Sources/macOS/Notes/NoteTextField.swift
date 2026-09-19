@@ -7,6 +7,21 @@ import AppKit
 /// tetiklenmiyordu. Bu, `NSTextField`'ın delegesindeki
 /// `doCommandBy:` üzerinden Backspace ve Enter'ı doğrudan AppKit
 /// seviyesinde yakalayan ince bir köprü.
+/// ⌘ ya da ⇧ basılıyken tıklamayı kendine almayan metin alanı.
+///
+/// Satır seçimi bunun üzerine kurulu: alan satırın neredeyse tamamını
+/// kapladığı için düz tıklama ona gidiyor (yazmaya devam), değiştirici
+/// tuşlu tıklama ise arkadaki satıra geçiyor ve seçim oluyor. `hitTest`
+/// dışında bir yol yok — `NSTextField` tıklamayı SwiftUI'a hiç
+/// ulaştırmadan kendi düzenleyicisinde tüketiyor.
+private final class SelectionPassthroughTextField: NSTextField {
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let flags = NSApp.currentEvent?.modifierFlags ?? []
+        if flags.contains(.command) || flags.contains(.shift) { return nil }
+        return super.hitTest(point)
+    }
+}
+
 struct NoteTextField: NSViewRepresentable {
     @Binding var text: String
     var font: NSFont
@@ -19,7 +34,7 @@ struct NoteTextField: NSViewRepresentable {
     let onDeleteEmpty: () -> Void
 
     func makeNSView(context: Context) -> NSTextField {
-        let field = NSTextField()
+        let field = SelectionPassthroughTextField()
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none

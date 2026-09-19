@@ -63,12 +63,12 @@ struct PanelMemoryView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(L10n.systemMonitorTitle)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.app(size: 15, weight: .semibold))
 
                 Spacer(minLength: 8)
 
                 Text(percentText)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
@@ -78,13 +78,13 @@ struct PanelMemoryView: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(Self.text(controller.memory.used))
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.app(size: 24, weight: .semibold))
                     .monospacedDigit()
                     .tracking(-0.4)
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text("/ \(Self.text(controller.memory.total))")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.app(size: 11, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
@@ -148,13 +148,13 @@ struct PanelMemoryView: View {
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text(segment.label)
-                            .font(.system(size: 9.5, weight: .medium))
+                            .font(.app(size: 9.5, weight: .medium))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
 
                         Text(Self.text(segment.bytes))
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.app(size: 11.5, weight: .semibold))
                             .monospacedDigit()
                             .contentTransition(reduceMotion ? .identity : .numericText())
                     }
@@ -169,7 +169,7 @@ struct PanelMemoryView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(L10n.runningAppsLabel)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.app(size: 10, weight: .semibold))
                     .kerning(0.45)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -177,7 +177,7 @@ struct PanelMemoryView: View {
                 Spacer()
 
                 Text("\(controller.apps.count)")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.app(size: 10, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
@@ -228,7 +228,7 @@ struct PanelMemoryView: View {
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.systemMonitorEmpty)
-                .font(.system(size: 12))
+                .font(.app(size: 12))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -289,7 +289,7 @@ private struct PanelAppUsageRow: View {
             appIcon
 
             Text(app.name)
-                .font(.system(size: 12, weight: .medium))
+                .font(.app(size: 12, weight: .medium))
                 .lineLimit(1)
 
             Spacer(minLength: 6)
@@ -299,7 +299,7 @@ private struct PanelAppUsageRow: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else {
                 Text(valueText)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -347,7 +347,7 @@ private struct PanelAppUsageRow: View {
     private var confirmButton: some View {
         Button(action: onConfirmQuit) {
             Text(L10n.quit)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.app(size: 10, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)

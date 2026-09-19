@@ -101,6 +101,19 @@ actor UsageStore {
 
     // MARK: - Okuma
 
+    /// Tüm zamanların özellik başına ham sayaçları — `snapshot(for:)`'un
+    /// aksine widget filtresi uygulamaz. `DeviceAnalyticsService`'in admin
+    /// panel için Firestore'a yansıttığı tek doğruluk kaynağı bu.
+    func allTimeFeatureCounts() -> [String: Int] {
+        payload.allTimeCounts
+    }
+
+    /// Bugünün özellik başına ham sayaçları.
+    func todayFeatureCounts(now: Date = Date()) -> [String: Int] {
+        let key = Self.dayFormatter.string(from: Calendar.autoupdatingCurrent.startOfDay(for: now))
+        return payload.days[key]?.counts ?? [:]
+    }
+
     func snapshot(for period: UsagePeriod, now: Date = Date()) -> UsageSnapshot {
         let calendar = Calendar.autoupdatingCurrent
         let today = calendar.startOfDay(for: now)

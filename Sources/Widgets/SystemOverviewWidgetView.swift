@@ -74,7 +74,7 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.battery.healthFraction))
                         .overviewValue(size: 27)
                     Text("\(snapshot.battery.currentCapacity) / \(snapshot.battery.designCapacity) mAh")
-                        .font(.system(size: 9.5, weight: .medium))
+                        .font(.app(size: 9.5, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -107,12 +107,12 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.disk.usedFraction, decimals: 1))
                         .overviewValue(size: 25)
                     Text(WidgetFormat.bytes(snapshot.disk.used))
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.app(size: 10.5, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
                     Text(WidgetFormat.bytes(snapshot.disk.total))
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.app(size: 10.5, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
@@ -127,7 +127,7 @@ struct SystemOverviewWidgetView: View {
             Spacer(minLength: 1)
 
             Text(snapshot.disk.volumeName.isEmpty ? "Macintosh HD" : snapshot.disk.volumeName)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.app(size: 10, weight: .semibold))
                 .lineLimit(1)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
@@ -150,7 +150,7 @@ struct SystemOverviewWidgetView: View {
                         "Core \(busiest.number) • \(percent)%",
                         "Ядро \(busiest.number) • \(percent)%"
                     ))
-                    .font(.system(size: 9.5, weight: .medium))
+                    .font(.app(size: 9.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 }
@@ -183,7 +183,7 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.memory.usedFraction, decimals: 1))
                         .overviewValue(size: 25)
                     Text("\(WidgetFormat.memoryBytes(snapshot.memory.used)) / \(WidgetFormat.memoryBytes(snapshot.memory.total))")
-                        .font(.system(size: 9.5, weight: .medium))
+                        .font(.app(size: 9.5, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -234,7 +234,7 @@ struct SystemOverviewWidgetView: View {
                 Text(entry.snapshot.isStale
                      ? s("Güncelleme bekleniyor", "Waiting for update", "Ожидание обновления")
                      : s("Canlı ölçümler", "Live measurements", "Актуальные данные"))
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.app(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -268,7 +268,7 @@ struct SystemOverviewWidgetView: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label).overviewCaption()
             Text(value)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.app(size: 11.5, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -280,7 +280,7 @@ struct SystemOverviewWidgetView: View {
             Image(systemName: symbol)
             Text(value).lineLimit(1)
         }
-        .font(.system(size: 9.5, weight: .semibold))
+        .font(.app(size: 9.5, weight: .semibold))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
@@ -291,7 +291,7 @@ struct SystemOverviewWidgetView: View {
         HStack(spacing: 3) {
             Circle().fill(color).frame(width: 5, height: 5)
             Text(WidgetFormat.memoryBytes(bytes))
-                .font(.system(size: 8.5, weight: .medium))
+                .font(.app(size: 8.5, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
@@ -330,12 +330,12 @@ struct SystemOverviewWidgetView: View {
 
 private extension Text {
     func overviewCaption() -> some View {
-        font(.system(size: 9.5, weight: .medium))
+        font(.app(size: 9.5, weight: .medium))
             .foregroundStyle(.secondary)
     }
 
     func overviewValue(size: CGFloat) -> some View {
-        font(.system(size: size, weight: .semibold))
+        font(.app(size: size, weight: .semibold))
             .tracking(-0.6)
             .monospacedDigit()
             .lineLimit(1)

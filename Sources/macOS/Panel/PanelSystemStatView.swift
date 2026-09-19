@@ -154,7 +154,7 @@ struct PanelProcessorView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(L10n.processorCoreActivityLabel)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
@@ -162,7 +162,7 @@ struct PanelProcessorView: View {
 
                 if let busiest = PerCoreLoadChart.busiest(in: cpu.perCoreUsage) {
                     Text(L10n.processorBusiestCore(busiest.number, busiest.usage))
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.app(size: 10, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                         .contentTransition(reduceMotion ? .identity : .numericText())
@@ -184,13 +184,13 @@ struct PanelProcessorView: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(SystemFormat.percent(cpu.usage))
-                    .font(.system(size: 40, weight: .semibold))
+                    .font(.app(size: 40, weight: .semibold))
                     .tracking(-1.4)
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text(L10n.processorCoreSummary(cpu.coreCount))
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.app(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
             }
 
@@ -232,13 +232,13 @@ struct PanelProcessorView: View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(SystemFormat.percent(memory.usedFraction))
-                    .font(.system(size: 34, weight: .semibold))
+                    .font(.app(size: 34, weight: .semibold))
                     .tracking(-1)
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text("\(SystemFormat.memoryBytes(memory.used)) / \(SystemFormat.memoryBytes(memory.total))")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.app(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -272,13 +272,13 @@ struct PanelProcessorView: View {
             HStack(spacing: 4) {
                 Circle().fill(color).frame(width: 5, height: 5)
                 Text(label)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.app(size: 9, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             Text(SystemFormat.memoryBytes(bytes))
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.app(size: 10.5, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -291,11 +291,11 @@ struct PanelProcessorView: View {
         HStack(spacing: 7) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(label)
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.app(size: 10.5, weight: .medium))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 2)
             Text(value)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.app(size: 12.5, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
         }
@@ -342,15 +342,21 @@ struct PanelBatteryView: View {
     let battery: BatteryStats
     let reduceMotion: Bool
     let animation: Animation?
+    /// Ana pencerede `true`: kimlik zaten üst şeritteki sayfa rozetinde
+    /// gösteriliyor, burada tekrarlanırsa "Battery" iki kez yazılmış olurdu.
+    /// Kenar panelinde o rozet yok, kimlik yalnızca burada.
+    var isWide = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            panelHeader(
-                symbol: "battery.100percent",
-                title: L10n.batteryLabel,
-                subtitle: battery.isCharging ? L10n.batteryChargingLabel : adapterStatus,
-                tint: battery.isCharging ? SystemPalette.positive : SystemPalette.accent
-            )
+            if !isWide {
+                panelHeader(
+                    symbol: "battery.100percent",
+                    title: L10n.batteryLabel,
+                    subtitle: battery.isCharging ? L10n.batteryChargingLabel : adapterStatus,
+                    tint: battery.isCharging ? SystemPalette.positive : SystemPalette.accent
+                )
+            }
 
             if battery.isPresent {
                 chargeSurface
@@ -372,13 +378,13 @@ struct PanelBatteryView: View {
             HStack(alignment: .center, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(battery.chargePercent)%")
-                        .font(.system(size: 42, weight: .semibold))
+                        .font(.app(size: 42, weight: .semibold))
                         .tracking(-1.5)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("\(battery.charge) / \(battery.currentCapacity) mAh")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.app(size: 11.5, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
@@ -421,12 +427,12 @@ struct PanelBatteryView: View {
     private func metric(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(.system(size: 9.5, weight: .medium))
+                .font(.app(size: 9.5, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.app(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -442,13 +448,13 @@ struct PanelBatteryView: View {
                 .foregroundStyle(battery.isAdapterConnected ? SystemPalette.positive : .secondary)
 
             Text(L10n.batteryAdapterLabel)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.app(size: 11.5, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 6)
 
             Text(adapterStatus)
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.app(size: 11.5, weight: .semibold))
                 .lineLimit(1)
         }
     }
@@ -465,13 +471,13 @@ struct PanelBatteryView: View {
             HStack(alignment: .center, spacing: 14) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(SystemFormat.percent(battery.healthFraction, decimals: 0))
-                        .font(.system(size: 34, weight: .semibold))
+                        .font(.app(size: 34, weight: .semibold))
                         .tracking(-1)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("\(battery.currentCapacity) / \(battery.designCapacity) mAh")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.app(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
 
@@ -541,27 +547,42 @@ struct PanelDiskView: View {
     /// bağlam kayboluyor — kullanıcı neyi sildiğini göremeden karar verirdi.
     /// Orada liste yalnızca okunuyor; Finder'da göstermek duruyor.
     var allowsDeletion = true
+    /// Ana pencerede yer bol: kapasite karoları tek satırda yan yana
+    /// kalabiliyor ve "en çok yer kaplayanlar" listesi daha uzun. Dar
+    /// panelde aynı yerleşim sıkışıyordu.
+    var isWide = false
 
     @State private var analyzer = DiskSpaceAnalyzer.shared
     @State private var pendingDeletion: StorageCandidate?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            panelHeader(
-                symbol: "internaldrive",
-                title: L10n.diskLabel,
-                subtitle: disk.volumeName.isEmpty ? nil : disk.volumeName,
-                tint: usageTint
-            )
-
-            usageSurface
-
-            HStack(spacing: 8) {
-                capacityTile(label: L10n.diskUsedLabel, value: SystemFormat.bytes(disk.used), tint: usageTint)
-                capacityTile(label: L10n.diskFreeLabel, value: SystemFormat.bytes(disk.free), tint: .secondary)
+        Group {
+            if isWide {
+                // Ana pencerede kimlik zaten üst şeritteki sayfa rozetinde
+                // (`PageToolbarBadge`) gösteriliyor — burada tekrarlanırsa
+                // "Disk / Macintosh HD" iki kez yazılmış olurdu.
+                //
+                // Tek sütun, sabit ~360 pt genişlikte kartlarla pencerenin
+                // geri kalanını boş bırakıyordu (bkz. eski davranış).
+                // Genişlik yeterliyse özet sola, "En çok yer kaplayanlar"
+                // listesi kalan alana — dar pencerede tek sütuna düşüyor.
+                ViewThatFits(in: .horizontal) {
+                    wideTwoColumnLayout
+                        .frame(minWidth: 760)
+                    wideSingleColumnLayout
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    panelHeader(
+                        symbol: "internaldrive",
+                        title: L10n.diskLabel,
+                        subtitle: disk.volumeName.isEmpty ? nil : disk.volumeName,
+                        tint: usageTint
+                    )
+                    summaryColumn
+                    storageInspector
+                }
             }
-
-            storageInspector
         }
         .animation(animation, value: disk)
         .task { analyzer.scanIfNeeded() }
@@ -585,18 +606,45 @@ struct PanelDiskView: View {
         }
     }
 
+    private var wideSingleColumnLayout: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            summaryColumn
+            storageInspector
+        }
+    }
+
+    private var wideTwoColumnLayout: some View {
+        HStack(alignment: .top, spacing: 20) {
+            summaryColumn
+                .frame(width: 360)
+            storageInspector
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var summaryColumn: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            usageSurface
+
+            HStack(spacing: isWide ? 14 : 8) {
+                capacityTile(label: L10n.diskUsedLabel, value: SystemFormat.bytes(disk.used), tint: usageTint)
+                capacityTile(label: L10n.diskFreeLabel, value: SystemFormat.bytes(disk.free), tint: .secondary)
+            }
+        }
+    }
+
     private var usageSurface: some View {
         VStack(spacing: 12) {
             HStack(alignment: .center, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(SystemFormat.percent(disk.usedFraction))
-                        .font(.system(size: 42, weight: .semibold))
+                        .font(.app(size: 42, weight: .semibold))
                         .tracking(-1.5)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("Disk used")
-                        .font(.system(size: 11.5, weight: .medium))
+                        .font(.app(size: 11.5, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
@@ -636,13 +684,13 @@ struct PanelDiskView: View {
             HStack(spacing: 5) {
                 Circle().fill(tint).frame(width: 6, height: 6)
                 Text(label)
-                    .font(.system(size: 9.5, weight: .medium))
+                    .font(.app(size: 9.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             Text(value)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.app(size: 14, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -657,7 +705,7 @@ struct PanelDiskView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(L10n.storageLargestItems)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
 
                 Spacer(minLength: 0)
 
@@ -678,18 +726,18 @@ struct PanelDiskView: View {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text(L10n.storageScanning)
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.app(size: 10.5, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 64)
             } else if analyzer.items.isEmpty {
                 Text(analyzer.errorMessage ?? L10n.storageNoItems)
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.app(size: 10.5, weight: .medium))
                     .foregroundStyle(analyzer.errorMessage == nil ? Color.secondary : SystemPalette.danger)
                     .frame(maxWidth: .infinity, minHeight: 54)
             } else {
                 VStack(spacing: 4) {
-                    ForEach(analyzer.items.prefix(5)) { item in
+                    ForEach(analyzer.items.prefix(10)) { item in
                         storageRow(item)
                     }
                 }
@@ -697,7 +745,7 @@ struct PanelDiskView: View {
 
             if let error = analyzer.errorMessage, !analyzer.items.isEmpty {
                 Text(error)
-                    .font(.system(size: 9.5, weight: .medium))
+                    .font(.app(size: 9.5, weight: .medium))
                     .foregroundStyle(SystemPalette.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -713,11 +761,11 @@ struct PanelDiskView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.app(size: 11, weight: .medium))
                     .lineLimit(1)
 
                 Text(item.parentName)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.app(size: 9, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
@@ -725,7 +773,7 @@ struct PanelDiskView: View {
             Spacer(minLength: 4)
 
             Text(SystemFormat.bytes(item.allocatedSize))
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.app(size: 10.5, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -801,10 +849,10 @@ private func panelHeader(
 
         VStack(alignment: .leading, spacing: 1) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.app(size: 15, weight: .semibold))
             if let subtitle {
                 Text(subtitle)
-                    .font(.system(size: 10.5, weight: .medium))
+                    .font(.app(size: 10.5, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -824,7 +872,7 @@ private func compactPill(_ label: String, _ value: String, tint: Color? = nil) -
             .foregroundStyle(tint ?? Color.primary)
             .monospacedDigit()
     }
-    .font(.system(size: 10.5, weight: .semibold))
+    .font(.app(size: 10.5, weight: .semibold))
     .padding(.horizontal, 8)
     .padding(.vertical, 5)
     .background {
@@ -847,7 +895,7 @@ private func unavailablePanel(_ text: String, symbol: String) -> some View {
             .font(.system(size: 24, weight: .medium))
             .foregroundStyle(.secondary)
         Text(text)
-            .font(.system(size: 12, weight: .medium))
+            .font(.app(size: 12, weight: .medium))
             .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, minHeight: 120)
@@ -898,38 +946,82 @@ struct PanelNetworkView: View {
     let network: NetworkStats
     let reduceMotion: Bool
     let animation: Animation?
+    /// Ana penceredeki ağ sayfası panelden çok daha geniş: grafikler
+    /// yükselip daha uzun bir geçmiş penceresi gösteriyor. Dar panelde
+    /// aynı örnek sayısı çizgileri birbirine yapıştırıyordu.
+    var isWide = false
 
     var body: some View {
+        Group {
+            if isWide {
+                // "Şu an" ile "bugün" iki ayrı soruyu yanıtlıyor: biri hız,
+                // öteki tüketim. Geniş pencerede yan yana duruyorlar; alt
+                // alta dizildiklerinde sayfanın yarısı boş kalıyordu.
+                // Sığmadığında kendiliğinden tek sütuna iniyorlar.
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .top, spacing: 18) {
+                        liveBlock.frame(maxWidth: .infinity, alignment: .leading)
+                        todayBlock.frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .frame(minWidth: 640)
+
+                    singleColumn
+                }
+            } else {
+                singleColumn
+            }
+        }
+        .animation(animation, value: network)
+    }
+
+    private var singleColumn: some View {
         VStack(alignment: .leading, spacing: 12) {
-            header
+            liveBlock
+            Divider().opacity(0.25)
+            todayBlock
+        }
+    }
+
+    /// "Şu an": arayüz kimliği, iki yönün kartları ve son saniyelerin seyri.
+    private var liveBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Ana pencerede kimlik zaten üst şeritteki sayfa rozetinde
+            // gösteriliyor (bkz. `PageToolbarBadge`) — burada tekrarlanırsa
+            // "Network Activity" iki kez yazılmış olurdu. Kenar panelinde
+            // o rozet yok, kimlik yalnızca burada.
+            if !isWide {
+                header
+            }
             liveRates
 
             StatDualBarChart(
                 up: network.uploadHistory,
                 down: network.downloadHistory,
-                upColor: SystemPalette.accent,
-                downColor: SystemPalette.secondary,
-                height: 52,
-                capacity: 34
+                upColor: Self.uploadColor,
+                downColor: Self.downloadColor,
+                height: isWide ? 76 : 52,
+                capacity: isWide ? 60 : 34
             )
+        }
+    }
 
-            Divider().opacity(0.25)
-
+    /// "Bugün": günlük toplamlar ve otuz günün seyri.
+    private var todayBlock: some View {
+        VStack(alignment: .leading, spacing: 12) {
             usageSummary
             historyColumns
             StatBarChart(
                 samples: network.dailyTotals.map(Double.init),
                 normalizesToPeak: true,
-                height: 52,
+                height: isWide ? 76 : 52,
                 capacity: 30
             )
 
             Text(L10n.networkHistoryHint)
-                .font(.system(size: 9.5))
+                .font(.app(size: 9.5))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .animation(animation, value: network)
     }
 
     private var header: some View {
@@ -945,7 +1037,7 @@ struct PanelNetworkView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(L10n.networkActivityLabel)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.app(size: 15, weight: .semibold))
 
                 HStack(spacing: 5) {
                     Text(network.interfaceName.isEmpty ? "—" : network.interfaceName)
@@ -955,7 +1047,7 @@ struct PanelNetworkView: View {
                         Text(network.localAddress)
                     }
                 }
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.app(size: 10.5, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             }
@@ -974,51 +1066,86 @@ struct PanelNetworkView: View {
         }
     }
 
+    /// Yön renkleri tek yerde: kutucuklar, kıvrımlar ve canlı grafik aynı
+    /// kaynağı okuyor. İki mavi ton ayırt edilemiyordu; yeşil–kırmızı ise
+    /// en yaygın renk körlüğünde aynı renge düşüyor ve kırmızı grafikte
+    /// "hata" diye okunuyor — yükleme bir hata değil, sadece öbür yön.
+    static let downloadColor = SystemPalette.secondary
+    static let uploadColor = SystemPalette.warning
+
+    /// İki yön iki kart: üstte biriken toplam, sağda anlık hız, altında o
+    /// yönün kendi kıvrımı. Tek satırlık bir hız sayısı "şu an ne oluyor"
+    /// sorusunu yanıtlıyordu ama "az önce ne oldu" sorusunu değil.
     private var liveRates: some View {
         HStack(spacing: 8) {
             rateTile(
                 label: L10n.networkDownloadLabel,
-                value: SystemFormat.rate(network.downloadRate),
+                total: network.totalReceived,
+                rate: network.downloadRate,
+                history: network.downloadHistory,
                 symbolName: "arrow.down",
-                color: SystemPalette.secondary
+                color: Self.downloadColor
             )
             rateTile(
                 label: L10n.networkUploadLabel,
-                value: SystemFormat.rate(network.uploadRate),
+                total: network.totalSent,
+                rate: network.uploadRate,
+                history: network.uploadHistory,
                 symbolName: "arrow.up",
-                color: SystemPalette.accent
+                color: Self.uploadColor
             )
         }
     }
 
     private func rateTile(
         label: String,
-        value: String,
+        total: UInt64,
+        rate: Double,
+        history: [Double],
         symbolName: String,
         color: Color
     ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 5) {
                 Image(systemName: symbolName)
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(color)
 
                 Text(label)
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(.app(size: 11, weight: .semibold))
+
+                Spacer(minLength: 4)
             }
 
-            Text(value)
-                .font(.system(size: 17, weight: .semibold))
-                .monospacedDigit()
-                .tracking(-0.2)
-                .contentTransition(reduceMotion ? .identity : .numericText())
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(SystemFormat.bytes(total))
+                    .font(.app(size: 15, weight: .semibold))
+                    .monospacedDigit()
+                    .tracking(-0.2)
+                    .contentTransition(reduceMotion ? .identity : .numericText())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Spacer(minLength: 4)
+
+                Text(SystemFormat.rate(rate))
+                    .font(.app(size: 10.5, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .contentTransition(reduceMotion ? .identity : .numericText())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+
+            // Kıvrım kartın dibine oturuyor: kutunun içinde yüzen bir
+            // grafik değil, kartın kendi tabanı gibi okunuyor.
+            StatSparkline(samples: history, color: color, capacity: 40)
+                .frame(height: isWide ? 42 : 30)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(Color.primary.opacity(0.055))
@@ -1029,13 +1156,13 @@ struct PanelNetworkView: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.networkTodayLabel)
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.app(size: 10, weight: .semibold))
                     .kerning(0.4)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
 
                 Text(SystemFormat.bytes(network.today))
-                    .font(.system(size: 27, weight: .semibold))
+                    .font(.app(size: 27, weight: .semibold))
                     .monospacedDigit()
                     .tracking(-0.6)
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -1060,13 +1187,13 @@ struct PanelNetworkView: View {
     private func historyItem(_ label: String, _ bytes: UInt64) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.system(size: 9.5, weight: .medium))
+                .font(.app(size: 9.5, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
             Text(SystemFormat.bytes(bytes))
-                .font(.system(size: 11.5, weight: .semibold))
+                .font(.app(size: 11.5, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -1146,14 +1273,14 @@ struct PanelNetworkProcessList: View {
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
 
                 Text(L10n.networkTopProcessesLabel)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.app(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 0)
 
                 if isExpanded, !monitor.processes.isEmpty {
                     Text("\(monitor.processes.count)")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.app(size: 10, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                 }
@@ -1173,7 +1300,7 @@ struct PanelNetworkProcessList: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(L10n.networkProcessesHint)
-                    .font(.system(size: 9.5))
+                    .font(.app(size: 9.5))
                     .foregroundStyle(.tertiary)
                     .lineLimit(2)
             }
@@ -1191,7 +1318,7 @@ struct PanelNetworkProcessList: View {
             }
 
             Text(L10n.networkProcessesHint)
-                .font(.system(size: 9.5))
+                .font(.app(size: 9.5))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1205,7 +1332,7 @@ struct PanelNetworkProcessList: View {
                 .foregroundStyle(.tertiary)
 
             Text(text)
-                .font(.system(size: 10.5))
+                .font(.app(size: 10.5))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1232,7 +1359,7 @@ private struct PanelNetworkProcessRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(presentation.displayName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.app(size: 12, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -1246,7 +1373,7 @@ private struct PanelNetworkProcessRow: View {
 
             VStack(alignment: .trailing, spacing: 3) {
                 Text(SystemFormat.bytes(usage.total))
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.app(size: 11.5, weight: .semibold))
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
                     .lineLimit(1)
@@ -1298,7 +1425,7 @@ private struct PanelNetworkProcessRow: View {
                 .foregroundStyle(color)
 
             Text(SystemFormat.bytes(bytes))
-                .font(.system(size: 10))
+                .font(.app(size: 10))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .foregroundStyle(.secondary)
@@ -1340,6 +1467,6 @@ private struct PanelNetworkProcessRow: View {
             .accessibilityLabel(L10n.networkProcessQuit)
             .onHover { isQuitHovering = $0 && isControllable }
         }
-        .font(.system(size: 12, weight: .medium))
+        .font(.app(size: 12, weight: .medium))
     }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.dadebay.GlassDo.NetworkAgent</string>
+	<!-- `BundleProgram`, `SMAppService.agent(plistName:)`'in beklediği anahtar:
+	     yol uygulama paketine göreli. Mutlak yol (`ProgramArguments`) yerine
+	     bu kullanılıyor çünkü uygulama /Applications dışına taşınsa ya da
+	     Gatekeeper tarafından geçici bir konuma çevrilse (translocation) bile
+	     doğru kalıyor. -->
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/GlassDoNetworkAgent</string>
+	<key>RunAtLoad</key>
+	<true/>
+	<!-- Çökerse yeniden başlasın; kasıtlı `launchctl unload`/kayıt iptali
+	     bunu etkilemiyor. -->
+	<key>KeepAlive</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Background</string>
+</dict>
+</plist>

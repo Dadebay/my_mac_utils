@@ -214,12 +214,39 @@ struct NetworkProcessPresentation {
         application?.activate(options: [])
     }
 
+    /// Süreç kapatılabilir mi?
+    ///
+    /// `isControllable`den ayrı: öne getirmek yalnızca Dock uygulamalarında
+    /// anlamlı, ama **kapatmak** arka plan süreçlerinde de mümkün. Listedeki
+    /// süreçlerin çoğu (adb, tarayıcı yardımcıları, çalışma zamanları)
+    /// `NSRunningApplication` karşılığı taşımıyor; onlara doğrudan sinyal
+    /// gönderiliyor.
+    ///
+    /// Root'a ait olanlar (mDNSResponder, netbiosd gibi) burada eleniyor —
+    /// kullanıcı olarak sinyallenemezler, düğmenin etkin görünmesi yalan
+    /// olurdu.
+    var canQuit: Bool {
+        guard usage.pid != ProcessInfo.processInfo.processIdentifier,
+              application?.bundleIdentifier != Bundle.main.bundleIdentifier
+        else { return false }
+        return ProcessSafety.canTerminate(pid: usage.pid, name: usage.processName)
+    }
+
     /// Nazik kapatma isteği: uygulama kaydedilmemiş işi varsa kendi
     /// soruyor. Zorla sonlandırma (`forceTerminate`) bilerek kullanılmıyor —
     /// veri kaybettirebilir.
     @discardableResult
     func requestTermination() -> Bool {
-        guard isControllable, let application else { return false }
-        return application.terminate()
+        guard canQuit else { return false }
+
+        // Uygulamalar nazik yoldan: kaydedilmemiş işi varsa kendisi sorar.
+        if let application, application.activationPolicy == .regular {
+            return application.terminate()
+        }
+
+        // Arka plan süreçlerinde tek yol sinyal. `SIGKILL` değil `SIGTERM`:
+        // süreç kendi temizliğini yapıp çıkabilsin — açık dosyası olan bir
+        // çalışma zamanını sertçe öldürmek veri kaybettirebilir.
+        return kill(usage.pid, SIGTERM) == 0
     }
 }

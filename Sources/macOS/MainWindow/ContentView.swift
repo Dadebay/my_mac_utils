@@ -10,16 +10,17 @@ struct ContentView: View {
     // sütun tamamen gizlenir, ikon rayına küçülmez.
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @AppStorage(AppTheme.storageKey) private var themeRaw = AppTheme.system.rawValue
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private var sidebarHidden: Bool { columnVisibility == .detailOnly }
+    /// Açık sayfanın üst şeritte gösterilen ikinci satırı; sayfanın
+    /// kendisinden geliyor (bkz. `pageSubtitle(_:)`).
+    @State private var pageSubtitle: String?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(selection: $selection)
                 .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
-                // Sistemin kendi kenar çubuğu düğmesi bizimkiyle yan yana
-                // düşüyordu; tek düğme kalsın diye kaldırıldı.
+                // Kenar çubuğu gizlenmiyor: pencerede zaten iki sütun var
+                // ve gizleme düğmesi başlığın yanında sürekli duran,
+                // neredeyse hiç kullanılmayan bir kontroldü.
                 .toolbar(removing: .sidebarToggle)
         } detail: {
             Group {
@@ -39,7 +40,23 @@ struct ContentView: View {
                 case .processor:
                     SystemMetricPage(metric: .processor)
                 case .folders:
-                    PanelFolderShelfView(isCompact: false)
+                    // Klasör hiyerarşisi kalktı: Raf tek düzlemli bir yığın
+                    // (bkz. `PanelShelfView`). Kenar paneliyle aynı görünüm,
+                    // yalnızca geniş ölçülerle.
+                    //
+                    // Rafın kendi başlık şeridi var; pencerenin başlık
+                    // çubuğu için ayrılan güvenli alan onun üstünde boş bir
+                    // bant bırakıyordu. Trafik ışıkları kenar çubuğunun
+                    // üstünde durduğu için bu sütunda o alanı boş tutmanın
+                    // karşılığı yok.
+                    PanelShelfView(isCompact: false)
+                        .ignoresSafeArea(.container, edges: .top)
+                case .focusHistory:
+                    ScrollView {
+                        FocusHistoryView()
+                            .padding(20)
+                    }
+                    .navigationTitle(L10n.focusHistoryTitle)
                 case nil:
                     ContentUnavailableView(L10n.selectAList, systemImage: "sidebar.left")
                 }
@@ -51,23 +68,28 @@ struct ContentView: View {
             .id(selection)
             .transition(.opacity)
             .animation(.easeOut(duration: 0.18), value: selection)
-            // Düğme, dar sütunda trafik ışıklarıyla çakışmasın diye
-            // ayrıntı sütununun başlangıcında duruyor.
+            .onPageSubtitleChange { pageSubtitle = $0 }
+            // Pencere başlığı gizli: her sayfada aynı "GlassDo" yazısı üst
+            // şeridi doldurup hiçbir şey söylemiyordu. Yerine sayfanın
+            // kendi kimliği geçiyor.
+            .toolbar(removing: .title)
             .toolbar {
                 ToolbarItem(placement: .navigation) {
-                    Button {
-                        withAnimation(
-                            reduceMotion
-                                ? nil
-                                : .spring(response: 0.34, dampingFraction: 1.0)
-                        ) {
-                            columnVisibility = sidebarHidden ? .all : .detailOnly
-                        }
-                    } label: {
-                        Image(systemName: sidebarHidden ? "sidebar.left" : "sidebar.leading")
+                    // Raf kendi kimlik satırını zaten çiziyor (bkz.
+                    // `PanelShelfView.titleBlock`) — buradaki rozet üst
+                    // üste ikinci bir "Shelf" başlığı olurdu.
+                    if let entry = selection?.entry, selection != .folders {
+                        PageToolbarBadge(entry: entry, subtitle: pageSubtitle)
                     }
-                    .help(sidebarHidden ? L10n.expandSidebar : L10n.collapseSidebar)
                 }
+                // Rozet bir düğme değil, "neredeyim" yazısı: araç çubuğunun
+                // ortak cam zemini onu tıklanabilir bir denetim gibi
+                // gösteriyordu.
+                .sharedBackgroundVisibility(.hidden)
+
+                // Sayfanın kendi eylemleri rozetin dibine yapışmasın:
+                // solda neredeyim, sağda ne yapabilirim.
+                ToolbarSpacer(.flexible, placement: .navigation)
             }
         }
         .navigationSplitViewStyle(.balanced)

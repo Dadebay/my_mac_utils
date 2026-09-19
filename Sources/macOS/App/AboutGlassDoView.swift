@@ -24,6 +24,11 @@ enum AppLinks {
 // MARK: - About penceresi
 
 struct AboutGlassDoView: View {
+    /// Ayarlar penceresinin "Hakkında" bölümünde gömülü çalışırken kendi
+    /// kaydırma görünümünü ve pencere zeminini kurmuyor: dıştaki sayfa
+    /// zaten kaydırıyor, iç içe iki kaydırma alanı tekerleği bölüyor.
+    var isEmbedded = false
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -36,24 +41,18 @@ struct AboutGlassDoView: View {
     @State private var showResetConfirmation = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
-                hero
-
-                if !AppLinks.all.isEmpty {
-                    quickLinks
+        Group {
+            if isEmbedded {
+                content
+            } else {
+                ScrollView {
+                    content
                 }
-
-                usageSection
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .background(.windowBackground)
             }
-            .padding(.horizontal, 30)
-            .padding(.top, 28)
-            .padding(.bottom, 24)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(.windowBackground)
         .task {
             await reloadAll()
             isLoaded = true
@@ -77,6 +76,22 @@ struct AboutGlassDoView: View {
                 "Удаляются только счётчики использования. Задачи, папки и настройки приложения не затрагиваются. Это действие необратимо."
             ))
         }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: isEmbedded ? 22 : 30) {
+            hero
+
+            if !AppLinks.all.isEmpty {
+                quickLinks
+            }
+
+            usageSection
+        }
+        .padding(.horizontal, isEmbedded ? 0 : 30)
+        .padding(.top, isEmbedded ? 0 : 28)
+        .padding(.bottom, isEmbedded ? 0 : 24)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func reloadAll() async {
@@ -109,7 +124,7 @@ struct AboutGlassDoView: View {
 
             VStack(spacing: 5) {
                 Text("GlassDo")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.app(size: 24, weight: .semibold))
                     .kerning(-0.3)
 
                 Text(L10n.s(
@@ -117,14 +132,14 @@ struct AboutGlassDoView: View {
                     "Tasks and system insights at the edge of your Mac",
                     "Задачи и системная информация на краю экрана"
                 ))
-                .font(.system(size: 13))
+                .font(.app(size: 13))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             }
 
             Text(versionString)
-                .font(.system(size: 11, weight: .medium))
+                .font(.app(size: 11, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
@@ -132,7 +147,7 @@ struct AboutGlassDoView: View {
                 .background(Capsule().fill(Color.primary.opacity(0.06)))
 
             Text(copyrightString)
-                .font(.system(size: 10.5))
+                .font(.app(size: 10.5))
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -231,7 +246,7 @@ struct AboutGlassDoView: View {
                 "No activity in this period.",
                 "В этот период активности не было."
             ))
-            .font(.system(size: 11))
+            .font(.app(size: 11))
         }
         .foregroundStyle(.tertiary)
     }
@@ -240,14 +255,14 @@ struct AboutGlassDoView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 Text(L10n.s("Kullanım", "Usage", "Использование"))
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.app(size: 19, weight: .semibold))
                     .kerning(-0.2)
 
                 Spacer(minLength: 12)
 
                 if let last = allTimeSnapshot.lastUsedDate, let feature = allTimeSnapshot.lastUsedFeature {
                     Text(lastUsedSummary(feature: feature, date: last))
-                        .font(.system(size: 11))
+                        .font(.app(size: 11))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -272,7 +287,7 @@ struct AboutGlassDoView: View {
                     )
                 }
             }
-            .font(.system(size: 11.5))
+            .font(.app(size: 11.5))
             .foregroundStyle(.secondary)
             .lineLimit(1)
 
@@ -281,7 +296,7 @@ struct AboutGlassDoView: View {
                 "Statistics are kept only on this Mac.",
                 "Статистика хранится только на этом Mac."
             ))
-            .font(.system(size: 10.5))
+            .font(.app(size: 10.5))
             .foregroundStyle(.tertiary)
         }
         .accessibilityElement(children: .combine)
@@ -327,11 +342,11 @@ struct AboutGlassDoView: View {
     private func summaryCard(title: String, value: String, isNumeric: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.app(size: 10.5, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(value)
-                .font(.system(size: isNumeric ? 26 : 16, weight: .semibold))
+                .font(.app(size: isNumeric ? 26 : 16, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
@@ -352,7 +367,7 @@ struct AboutGlassDoView: View {
     private var miniChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.s("Son 7 Gün", "Last 7 Days", "Последние 7 дней"))
-                .font(.system(size: 10.5, weight: .medium))
+                .font(.app(size: 10.5, weight: .medium))
                 .foregroundStyle(.secondary)
 
             let maxTotal = max(periodSnapshot.dailyTotals.map(\.total).max() ?? 0, 1)
@@ -363,7 +378,7 @@ struct AboutGlassDoView: View {
                             .fill(Color.accentColor.opacity(day.total > 0 ? 0.75 : 0.12))
                             .frame(height: max(4, 44 * CGFloat(day.total) / CGFloat(maxTotal)))
                         Text(Self.weekdayFormatter.string(from: day.day))
-                            .font(.system(size: 8.5, weight: .medium))
+                            .font(.app(size: 8.5, weight: .medium))
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity)
@@ -418,14 +433,14 @@ struct AboutGlassDoView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.s("Henüz kullanım kaydedilmedi", "No usage recorded yet", "Использование пока не зафиксировано"))
-                .font(.system(size: 13, weight: .medium))
+                .font(.app(size: 13, weight: .medium))
 
             Text(L10n.s(
                 "Etkinliğinizi burada görmek için kenar rayındaki widget'ları açın.",
                 "Open widgets from the edge rail to see your activity here.",
                 "Откройте виджеты на боковой панели, чтобы увидеть здесь свою активность."
             ))
-            .font(.system(size: 11.5))
+            .font(.app(size: 11.5))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
@@ -442,7 +457,7 @@ struct AboutGlassDoView: View {
                 "Usage statistics stay on this Mac and are never uploaded.",
                 "Статистика использования остаётся на этом Mac и никогда не загружается."
             ))
-            .font(.system(size: 10.5))
+            .font(.app(size: 10.5))
             .foregroundStyle(.tertiary)
             .fixedSize(horizontal: false, vertical: true)
 
@@ -452,7 +467,7 @@ struct AboutGlassDoView: View {
                 showResetConfirmation = true
             } label: {
                 Text(L10n.s("Kullanım Verisini Sıfırla…", "Reset Usage Data…", "Сбросить данные…"))
-                    .font(.system(size: 11))
+                    .font(.app(size: 11))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -463,7 +478,7 @@ struct AboutGlassDoView: View {
 
     private func sectionEyebrow(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .semibold))
+            .font(.app(size: 11, weight: .semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .kerning(0.4)
@@ -487,7 +502,7 @@ private struct AppLinkRow: View {
                     .frame(width: 18)
 
                 Text(link.title)
-                    .font(.system(size: 12.5))
+                    .font(.app(size: 12.5))
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 8)
@@ -541,7 +556,7 @@ private struct UsageBarRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 5) {
                     Text(usage.feature.title)
-                        .font(.system(size: 12.5))
+                        .font(.app(size: 12.5))
                         .foregroundStyle(isUnused ? .secondary : .primary)
 
                     if isTopUsed {
@@ -554,12 +569,12 @@ private struct UsageBarRow: View {
                     Spacer(minLength: 8)
 
                     Text("\(usage.count)")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.app(size: 12, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(isUnused ? .tertiary : .secondary)
                         .contentTransition(reduceMotion ? .identity : .numericText())
                     Text(percentText)
-                        .font(.system(size: 10.5, weight: .medium))
+                        .font(.app(size: 10.5, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                         .frame(width: 34, alignment: .trailing)

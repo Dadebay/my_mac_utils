@@ -18,7 +18,7 @@ struct PanelQuickAddView: View {
 
             TextField(L10n.panelQuickAddPlaceholder, text: $newTaskTitle)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.app(size: 12.5, weight: .medium))
                 .onSubmit(addTask)
 
             if !newTaskTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

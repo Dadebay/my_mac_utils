@@ -5,6 +5,22 @@ options:
     macOS: "26.0"
   createIntermediateGroups: true
 
+packages:
+  # Yalnızca çekirdek + Firestore ürünleri seçili — tüm firebase-ios-sdk
+  # paketi çok daha fazla ürün (Auth, Storage, Messaging vb.) içeriyor ve
+  # kullanılmayanı bağlamak derleme süresini gereksiz uzatırdı.
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    from: 11.0.0
+
+  # Satın alma ve "Pro açık mı" kontrolü doğrudan RevenueCat sunucusuyla
+  # konuşuyor — makbuz doğrulaması orada yapıldığı için bu akış kendi
+  # arka ucumuzu gerektirmiyor. `functions/` yalnızca promo kod ve admin
+  # paneli için; onlar secret anahtar kullandığından uygulamaya konulamaz.
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios
+    from: 5.0.0
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -37,22 +53,83 @@ targets:
       - path: Sources/Widgets
         excludes:
           - GlassDoWidgetBundle.swift
+      - path: Config/GoogleService-Info.plist
+        buildPhase: resources
     dependencies:
       - target: GlassDoKit
       - target: GlassDoWidgets
+      - target: GlassDoNetworkAgent
+      - package: Firebase
+        product: FirebaseCore
+      - package: Firebase
+        product: FirebaseFirestore
+      # Anonim oturum: RevenueCat'in `appUserID`'si bu `uid` oluyor.
+      # Cihazda üretilen bir UUID de yeterdi, ama `functions/`'daki promo
+      # kod akışı `request.auth.uid` bekliyor — aynı kimliği kullanmak,
+      # ileride o backend devreye girdiğinde uygulamada hiçbir değişiklik
+      # gerektirmemesini sağlıyor. Firebase Auth ücretsiz planda çalışır.
+      - package: Firebase
+        product: FirebaseAuth
+      - package: RevenueCat
+        product: RevenueCat
+    # `GlassDoNetworkAgent` bir `tool` ürünü: xcodegen'in `embed: true`
+    # bağımlılık mekanizması yalnızca uygulama uzantısı/framework gibi
+    # gömülebilir ürün türlerini otomatik algılıyor, çıplak bir komut satırı
+    # aracını değil. Bu yüzden ikili + `launchd` plist'i elle kopyalanıyor —
+    # `SMAppService.agent(plistName:)`'in beklediği tam yerleşim:
+    # `Contents/MacOS/<araç>` ve `Contents/Library/LaunchAgents/<label>.plist`.
+    postbuildScripts:
+      - name: Embed Network Agent
+        script: |
+          set -e
+          mkdir -p "${CODESIGNING_FOLDER_PATH}/Contents/Library/LaunchAgents"
+          cp "${BUILT_PRODUCTS_DIR}/GlassDoNetworkAgent" "${CODESIGNING_FOLDER_PATH}/Contents/MacOS/GlassDoNetworkAgent"
+          cp "${SRCROOT}/Config/GlassDoNetworkAgent.plist" \
+             "${CODESIGNING_FOLDER_PATH}/Contents/Library/LaunchAgents/com.dadebay.GlassDo.NetworkAgent.plist"
     settings:
       base:
         CODE_SIGN_ENTITLEMENTS: Config/GlassDo.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      configs:
+        # Mac App Store App Sandbox zorunlu tutuyor, ama sandbox pencere
+        # değiştirici ve sistem ölçerlerinin dayandığı API'leri kapatıyor.
+        # Sandbox yalnızca Release'e uygulanıyor: günlük geliştirme
+        # (Debug) bütün özellikler açık şekilde sürüyor, mağaza yapısı ise
+        # gerçekte neyin ayakta kaldığını ölçülebilir kılıyor.
+        Release:
+          CODE_SIGN_ENTITLEMENTS: Config/GlassDo-AppStore.entitlements
     info:
       path: Sources/macOS/Info.plist
       properties:
         LSUIElement: false
         NSHumanReadableCopyright: ""
+        # `AppBrandMark` bu anahtara bakıp gerçek ikonu mu yoksa çizdiği
+        # yer tutucuyu mu göstereceğine karar veriyor.
+        CFBundleIconName: AppIcon
+
+  GlassDoNetworkAgent:
+    type: tool
+    platform: macOS
+    # `NetworkHistoryPersistence`, `NetworkUsageAccumulator`,
+    # `NetworkInterfaceCounters` — hepsi `Sources/Shared`'de, ana
+    # uygulamayla birebir aynı mantığı paylaşıyor.
+    sources: [Sources/NetworkAgent, Sources/Shared]
+    settings:
+      base:
+        PRODUCT_NAME: GlassDoNetworkAgent
+        CODE_SIGN_ENTITLEMENTS: Config/GlassDoNetworkAgent.entitlements
+        SKIP_INSTALL: YES
 
   GlassDoWidgets:
     type: app-extension
     platform: macOS
-    sources: [Sources/Widgets, Sources/Shared]
+    sources:
+      - path: Sources/Widgets
+      - path: Sources/Shared
+      # Uzantı ayrı bir süreç: uygulamanın paketindeki yazı tipini göremez,
+      # kendi kopyasını taşıması gerekiyor.
+      - path: Sources/macOS/Resources/Fonts
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dadebay.GlassDo-macOS.Widgets
@@ -82,10 +159,8 @@ targets:
       # kökü dışarıdan alabilen bir `actor` — testler gerçek Application
       # Support yerine geçici bir dizin veriyor.
       - path: Sources/macOS/Usage
-      # Ağ kullanımı toplayıcısı saf aritmetik: saat, takvim ve arayüz
-      # örnekleri enjekte ediliyor, `getifaddrs` çağırmıyor. Tekrar sayım
-      # ve sayaç sıfırlama regresyonları ancak burada test edilebiliyor.
-      - path: Sources/macOS/NetworkUsage
+      # NetworkUsageAccumulator.swift `Sources/Shared` altında yaşıyor
+      # (ağ ajanı hedefiyle de paylaşılıyor), o klasör zaten yukarıda dahil.
     dependencies:
       - target: GlassDoKit
     info:

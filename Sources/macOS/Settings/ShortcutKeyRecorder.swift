@@ -18,7 +18,7 @@ struct ShortcutKeyRecorder: View {
             isRecording ? stopRecording() : startRecording()
         } label: {
             Text(isRecording ? L10n.s("Bir tuşa bas…", "Press a key…", "Нажмите клавишу…") : keyLabel)
-                .font(.system(size: 12, weight: .medium))
+                .font(.app(size: 12, weight: .medium))
                 .foregroundStyle(isRecording ? Color.accentColor : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)

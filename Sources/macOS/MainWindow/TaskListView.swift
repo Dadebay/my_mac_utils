@@ -116,7 +116,7 @@ struct TaskListView: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(searchText.isEmpty ? emptyMessage : L10n.noSearchResults)
-                .font(.system(size: 13))
+                .font(.app(size: 13))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -140,13 +140,13 @@ struct TaskListView: View {
 
             TextField(L10n.mainWindowQuickAddPlaceholder, text: $newTaskTitle)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13.5))
+                .font(.app(size: 13.5))
                 .focused($quickAddFocused)
                 .onSubmit(addTask)
 
             if !newTaskTitle.isEmpty {
                 Text(L10n.enterHint)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.app(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)

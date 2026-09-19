@@ -10,8 +10,12 @@ public enum PanelVisualState: Equatable, Sendable {
 
 public enum PanelContent: Hashable, Sendable {
     case tasks, completed, folders, memory
+    /// Kopyalanan metin/görsellerin geçmişi.
+    case clipboard
     /// Sistem panosunun tek tek ray ikonu olarak yerleştirilebilen parçaları.
     case network, battery, disk, processor
+    /// Ses çıkışı/girişi ve o an ses çalan uygulamalar.
+    case volume
 }
 
 public enum PanelPresentation {

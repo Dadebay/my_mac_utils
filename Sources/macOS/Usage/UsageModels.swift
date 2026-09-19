@@ -8,7 +8,7 @@ import GlassDoKit
 /// eylemler var. Görev başlığı, dosya adı veya benzeri hiçbir içerik burada
 /// tutulmuyor — yalnızca "hangi özellik" ve "ne zaman".
 enum UsageFeature: String, Codable, CaseIterable, Sendable {
-    case tasks, quickAdd, completed, folders, memory, network, battery, disk, processor
+    case tasks, quickAdd, completed, folders, memory, clipboard, network, battery, disk, processor, volume
     case windowSwitcher, panelVisibility, pinMode
 
     /// Usage panelindeki "widget listesi" yalnızca bunları gösterir —
@@ -16,7 +16,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
     /// olarak listelenmez (spec'in "öncelikli widget kullanım listesi").
     var isWidget: Bool {
         switch self {
-        case .tasks, .completed, .folders, .memory, .network, .battery, .disk, .processor: true
+        case .tasks, .completed, .folders, .memory, .clipboard, .network, .battery, .disk, .processor, .volume: true
         case .quickAdd, .windowSwitcher, .panelVisibility, .pinMode: false
         }
     }
@@ -26,12 +26,14 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .tasks: L10n.activeTasks
         case .quickAdd: L10n.s("Hızlı Ekle", "Quick Add", "Быстрое добавление")
         case .completed: L10n.completedTasks
-        case .folders: L10n.folders
+        case .folders: L10n.shelfTitle
         case .memory: L10n.s("Bellek", "Memory", "Память")
+        case .clipboard: L10n.clipboardTitle
         case .network: L10n.s("Ağ", "Network", "Сеть")
         case .battery: L10n.s("Batarya", "Battery", "Батарея")
         case .disk: L10n.s("Disk", "Disk", "Диск")
         case .processor: L10n.s("İşlemci", "Processor", "Процессор")
+        case .volume: L10n.volumeMixerLabel
         case .windowSwitcher: L10n.s("Pencere Değiştirici", "Window Switcher", "Переключатель окон")
         case .panelVisibility: L10n.s("Panel Görünürlüğü", "Panel Visibility", "Видимость панели")
         case .pinMode: L10n.s("Sabitleme", "Pin Mode", "Закрепление")
@@ -45,10 +47,12 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .completed: "checkmark.circle"
         case .folders: "folder"
         case .memory: "memorychip"
+        case .clipboard: "doc.on.clipboard"
         case .network: "globe"
         case .battery: "battery.100percent"
         case .disk: "internaldrive"
         case .processor: "cpu"
+        case .volume: "speaker.wave.2"
         case .windowSwitcher: "rectangle.on.rectangle"
         case .panelVisibility: "eye"
         case .pinMode: "pin"
@@ -64,10 +68,12 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .completed: Color(red: 0.30, green: 0.78, blue: 0.45)
         case .folders: Color(red: 0.56, green: 0.61, blue: 0.72)
         case .memory: Color(red: 0.95, green: 0.42, blue: 0.34)
+        case .clipboard: Color(red: 0.42, green: 0.62, blue: 0.98)
         case .network: Color(red: 0.24, green: 0.78, blue: 0.74)
         case .battery: Color(red: 0.36, green: 0.80, blue: 0.44)
         case .disk: Color(red: 1.0, green: 0.68, blue: 0.28)
         case .processor: Color(red: 0.64, green: 0.44, blue: 0.98)
+        case .volume: Color(red: 0.98, green: 0.55, blue: 0.30)
         case .windowSwitcher: Color(red: 1.0, green: 0.62, blue: 0.24)
         case .panelVisibility: Color(white: 0.62)
         case .pinMode: Color(white: 0.62)

@@ -8,6 +8,12 @@ import GlassDoKit
 /// kendisi açılıyor — panelde ve panoda kullanılan bileşenlerin aynısı.
 struct MenuBarPopoverView: View {
     let category: MenuBarCategory
+    /// Ölçeri menü çubuğundan kaldırır. Kart, ölçerin kendisine tıklanınca
+    /// açıldığı için kaldırma eylemi de burada: kullanıcı ayarları açmadan,
+    /// bulduğu yerden kapatabiliyor.
+    var onRemove: (() -> Void)?
+    /// Ana pencereyi öne getirir — kartın gösterdiği sayfanın tamamı orada.
+    var onOpenApp: (() -> Void)?
 
     private let controller = SystemStatsController.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -69,6 +75,10 @@ struct MenuBarPopoverView: View {
             // baskın sayı 16 pt'lik bir kenarla kutunun duvarına yapışık
             // duruyordu.
             .padding(18)
+
+            if onRemove != nil || onOpenApp != nil {
+                footer
+            }
         }
         // 340 pt, üç sütunlu lejantı ("32% • 7,56 GB" ×3) küçültmeden
         // sığdıramıyordu; 360 pt hem onu hem de rozet satırını rahatlatıyor.
@@ -77,6 +87,34 @@ struct MenuBarPopoverView: View {
         // Açıkken ölçüm dursa kart donardı; kapanınca abonelik bırakılıyor.
         .task { controller.start() }
         .onDisappear { controller.stop() }
+    }
+
+    private var footer: some View {
+        VStack(spacing: 0) {
+            Divider().opacity(0.45)
+
+            HStack(spacing: 10) {
+                if let onOpenApp {
+                    Button(L10n.s("Uygulamada Aç", "Open in App", "Открыть в приложении"), action: onOpenApp)
+                        .buttonStyle(.plain)
+                        .font(.app(size: 11.5, weight: .medium))
+                }
+
+                Spacer(minLength: 8)
+
+                if let onRemove {
+                    Button(
+                        L10n.s("Menü Çubuğundan Kaldır", "Remove from Menu Bar", "Убрать из строки меню"),
+                        action: onRemove
+                    )
+                    .buttonStyle(.plain)
+                    .font(.app(size: 11.5))
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+        }
     }
 }
 

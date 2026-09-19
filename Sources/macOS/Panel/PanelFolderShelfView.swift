@@ -58,7 +58,7 @@ struct PanelFolderShelfView: View {
         // Kayan görünümler yüzeyin dışına taşmasın.
         .clipped()
         .animation(motion, value: openedFolderID)
-        .navigationTitle(L10n.folders)
+        .navigationTitle(L10n.shelfTitle)
     }
 
     // MARK: - Liste
@@ -135,13 +135,13 @@ struct PanelFolderShelfView: View {
                         .fill(Color.accentColor.opacity(0.14))
                 }
 
-            Text(L10n.folders)
-                .font(.system(size: 15, weight: .semibold))
+            Text(L10n.shelfTitle)
+                .font(.app(size: 15, weight: .semibold))
 
             Spacer(minLength: 4)
 
             Text("\(folders.count)")
-                .font(.system(size: 11, weight: .medium))
+                .font(.app(size: 11, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .contentTransition(reduceMotion ? .identity : .numericText())
@@ -188,7 +188,7 @@ struct PanelFolderShelfView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.emptyFoldersHint)
-                .font(.system(size: 11))
+                .font(.app(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -215,7 +215,7 @@ struct PanelFolderShelfView: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.secondary)
                     Text(L10n.addFolder)
-                        .font(.system(size: 12))
+                        .font(.app(size: 12))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 }
@@ -239,14 +239,14 @@ struct PanelFolderShelfView: View {
 
             TextField(L10n.folderNameLabel, text: $draftName)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
+                .font(.app(size: 12))
                 .focused($isDraftFocused)
                 .onSubmit(createFolder)
                 .onExitCommand(perform: cancelCreate)
 
             Button(action: createFolder) {
                 Text(L10n.create)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
@@ -281,7 +281,7 @@ struct PanelFolderShelfView: View {
                 .foregroundStyle(SystemPalette.warning)
 
             Text(message)
-                .font(.system(size: 10.5))
+                .font(.app(size: 10.5))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -469,7 +469,7 @@ private struct FolderRow: View {
                 if isRenaming {
                     TextField("", text: $renameDraft)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.app(size: 12, weight: .medium))
                         .focused($isRenameFocused)
                         .onSubmit(onCommitRename)
                         .onExitCommand(perform: onCancelRename)
@@ -477,12 +477,12 @@ private struct FolderRow: View {
                 } else {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(folder.name)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.app(size: 12, weight: .medium))
                             .lineLimit(1)
                             .truncationMode(.middle)
 
                         Text(subtitle)
-                            .font(.system(size: 10))
+                            .font(.app(size: 10))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }

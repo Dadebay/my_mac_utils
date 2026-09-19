@@ -10,6 +10,10 @@ public enum TaskKind: Int, CaseIterable, Sendable, Identifiable {
     case bullet = 3
     case numbered = 4
     case divider = 5
+    /// Boş satır — çizgisiz, işaretsiz, yalnızca dikey nefes payı.
+    /// Ayırıcıdan farkı görünür bir çizgi çizmemesi: listeyi bölmeden
+    /// gruplamak için.
+    case spacer = 6
 
     public var id: Int { rawValue }
 
@@ -21,6 +25,7 @@ public enum TaskKind: Int, CaseIterable, Sendable, Identifiable {
         case .bullet: "list.bullet"
         case .numbered: "list.number"
         case .divider: "minus"
+        case .spacer: "space"
         }
     }
 
@@ -32,6 +37,7 @@ public enum TaskKind: Int, CaseIterable, Sendable, Identifiable {
         case .bullet: L10n.s("Madde", "Bulleted", "Маркированный список")
         case .numbered: L10n.s("Numaralı", "Numbered", "Нумерованный список")
         case .divider: L10n.s("Ayırıcı", "Divider", "Разделитель")
+        case .spacer: L10n.s("Boşluk", "Spacer", "Отступ")
         }
     }
 
@@ -39,6 +45,6 @@ public enum TaskKind: Int, CaseIterable, Sendable, Identifiable {
     /// başlıklar, metinler ve ayırıcılar "yapılacak iş" değil.
     public var isCompletable: Bool { self == .todo }
 
-    /// Ayırıcının yazılabilir metni yok.
-    public var hasText: Bool { self != .divider }
+    /// Ayırıcının ve boşluğun yazılabilir metni yok.
+    public var hasText: Bool { self != .divider && self != .spacer }
 }

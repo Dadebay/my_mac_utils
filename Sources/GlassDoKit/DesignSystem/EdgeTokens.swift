@@ -1,7 +1,7 @@
 import Foundation
 
 public enum EdgeTokens {
-    public static let railWidth: CGFloat = 44
+    public static let railWidth: CGFloat = 46
     public static let railIconHitSize: CGFloat = 28
     public static let railRowHeight: CGFloat = 44
     public static let railIconCount = 8

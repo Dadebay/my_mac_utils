@@ -53,20 +53,29 @@ enum SystemFormat {
 // MARK: - Ağ
 
 struct NetworkCard: View {
+    /// Panoda hız testi kendi kartında duruyor; orada bu kartın içinde
+    /// ikinci kez görünmesin diye kapatılıyor. Menü çubuğu popover'ında
+    /// ayrı bir kart yok, orada açık kalıyor.
+    ///
+    /// `network`'ten önce: çağrı yerleri bayrağı ilk argüman olarak
+    /// veriyor, Swift'te bellek düzeni sırası çağrı sırasını belirliyor.
+    var showsSpeedTest = true
     let network: NetworkStats
     var reduceMotion = false
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "globe",
             title: L10n.networkDataLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.networkTodayLabel)
-                        .font(.system(size: 13))
+                        .font(.app(size: 13))
                         .foregroundStyle(.secondary)
 
                     StatHeadline(
@@ -85,18 +94,21 @@ struct NetworkCard: View {
                 )
 
                 Text(L10n.networkHistoryHint)
-                    .font(.system(size: 10.5))
+                    .font(.app(size: 10.5))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Divider().overlay(Color.primary.opacity(0.08))
+                if showsSpeedTest {
+                    Divider().overlay(Color.primary.opacity(0.08))
 
-                // Günlük toplamların grafiği yerine: menü çubuğu
-                // popover'ı dar, otuz günlük bir çubuk grafik burada zaten
-                // okunmuyordu. Aynı hız testi bileşeni ana pencere ve kenar
-                // panelindeki ağ sayfalarında da kullanılıyor — üçü aynı
-                // tasarımı paylaşsın diye burada da o.
-                SpeedTestSection(isCompact: true)
+                    // Günlük toplamların grafiği yerine: menü çubuğu
+                    // popover'ı dar, otuz günlük bir çubuk grafik burada
+                    // zaten okunmuyordu. Aynı hız testi bileşeni ana
+                    // pencere ve kenar panelindeki ağ sayfalarında da
+                    // kullanılıyor — üçü aynı tasarımı paylaşsın diye
+                    // burada da o.
+                    SpeedTestSection(isCompact: true)
+                }
             }
         }
     }
@@ -109,27 +121,29 @@ struct NetworkActivityCard: View {
     let network: NetworkStats
     var reduceMotion = false
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "antenna.radiowaves.left.and.right",
             title: L10n.networkActivityLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(L10n.networkConnectionLabel)
-                            .font(.system(size: 12))
+                            .font(.app(size: 12))
                             .foregroundStyle(.secondary)
 
                         Text(network.interfaceName.isEmpty ? "—" : network.interfaceName)
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.app(size: 14, weight: .semibold))
                             .lineLimit(1)
 
                         if !network.localAddress.isEmpty {
                             Label(network.localAddress, systemImage: "network")
-                                .font(.system(size: 11))
+                                .font(.app(size: 11))
                                 .foregroundStyle(.tertiary)
                                 .labelStyle(.titleAndIcon)
                                 .lineLimit(1)
@@ -169,7 +183,7 @@ struct NetworkActivityCard: View {
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.app(size: 15, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -185,12 +199,14 @@ struct BatteryCard: View {
     var reduceMotion = false
     var animation: Animation?
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "battery.100percent",
             title: L10n.batteryLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             if battery.isPresent {
                 VStack(alignment: .leading, spacing: 14) {
@@ -265,13 +281,13 @@ struct BatteryCard: View {
                 )
 
             Text(L10n.batteryAdapterLabel)
-                .font(.system(size: 12.5, weight: .medium))
+                .font(.app(size: 12.5, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 8)
 
             Text(adapterStatus)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.app(size: 12.5, weight: .semibold))
                 .foregroundStyle(
                     battery.isAdapterConnected ? Color.primary : Color.secondary.opacity(0.65)
                 )
@@ -299,12 +315,14 @@ struct BatteryHealthCard: View {
     var reduceMotion = false
     var animation: Animation?
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "heart.text.square",
             title: L10n.batteryHealthLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             if battery.isPresent {
                 VStack(alignment: .leading, spacing: 14) {
@@ -373,12 +391,14 @@ struct MemoryCard: View {
     var reduceMotion = false
     var animation: Animation?
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "memorychip",
             title: L10n.memoryLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .center, spacing: 14) {
@@ -470,12 +490,14 @@ struct DiskCard: View {
     var reduceMotion = false
     var animation: Animation?
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "internaldrive",
             title: L10n.diskLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .center, spacing: 14) {
@@ -533,12 +555,14 @@ struct ProcessorCard: View {
     let cpu: CPULoadStats
     var reduceMotion = false
     var onOpenSettings: (() -> Void)?
+    var onDetach: (() -> Void)?
 
     var body: some View {
         StatCard(
             symbolName: "cpu",
             title: L10n.processorLoadLabel,
-            onOpenSettings: onOpenSettings
+            onOpenSettings: onOpenSettings,
+            onDetach: onDetach
         ) {
             VStack(alignment: .leading, spacing: 14) {
                 // Diğer kartlarla aynı düzen: baskın sayı üstte, rozetler
@@ -586,14 +610,14 @@ struct ProcessorCard: View {
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(spacing: 6) {
                             Text(L10n.processorCoreActivityLabel)
-                                .font(.system(size: 11.5, weight: .semibold))
+                                .font(.app(size: 11.5, weight: .semibold))
                                 .foregroundStyle(.secondary)
 
                             Spacer(minLength: 4)
 
                             if let busiest = PerCoreLoadChart.busiest(in: cpu.perCoreUsage) {
                                 Text(L10n.processorBusiestCore(busiest.number, busiest.usage))
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.app(size: 11, weight: .medium))
                                     .monospacedDigit()
                                     .foregroundStyle(.tertiary)
                                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -638,7 +662,7 @@ func unavailable(_ message: String, symbolName: String) -> some View {
             .font(.system(size: 26, weight: .light))
             .foregroundStyle(.tertiary)
         Text(message)
-            .font(.system(size: 12))
+            .font(.app(size: 12))
             .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity)

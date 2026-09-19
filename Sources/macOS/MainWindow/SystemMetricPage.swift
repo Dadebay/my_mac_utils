@@ -20,7 +20,7 @@ struct SystemMetricPage: View {
     /// Grafiklerin ve sayıların yerine oturma hareketi: kritik sönümlü,
     /// taşmasız. İki saniyede bir gelen veri dikkat çekmeden değişmeli.
     private var animation: Animation? {
-        reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 1.0)
+        reduceMotion ? nil : Motion.dataUpdate
     }
 
     var body: some View {
@@ -32,14 +32,31 @@ struct SystemMetricPage: View {
                         PanelNetworkView(
                             network: controller.network,
                             reduceMotion: reduceMotion,
-                            animation: animation
+                            animation: animation,
+                            isWide: true
                         )
                     }
-                    section {
-                        PanelNetworkProcessList(reduceMotion: reduceMotion)
-                    }
+                    // Süreç listesi ile hız testi yan yana: ikisi de kısa,
+                    // alt alta dizilince sayfanın yarısı boş kalıyordu.
                     section(isLast: true) {
-                        SpeedTestSection()
+                        // Eşik 820: hız testi artık kadran + açıklama
+                        // sütunundan oluşuyor, tek başına ~420 pt istiyor.
+                        // Daha dar bir eşikte iki sütun yan yana sıkışıp
+                        // ikisi de okunmaz hâle geliyordu.
+                        ViewThatFits(in: .horizontal) {
+                            HStack(alignment: .top, spacing: 18) {
+                                PanelNetworkProcessList(reduceMotion: reduceMotion)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                SpeedTestSection(network: controller.network)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .frame(minWidth: 820)
+
+                            VStack(alignment: .leading, spacing: 18) {
+                                PanelNetworkProcessList(reduceMotion: reduceMotion)
+                                SpeedTestSection(network: controller.network)
+                            }
+                        }
                     }
 
                 case .battery:
@@ -47,7 +64,8 @@ struct SystemMetricPage: View {
                         PanelBatteryView(
                             battery: controller.battery,
                             reduceMotion: reduceMotion,
-                            animation: animation
+                            animation: animation,
+                            isWide: true
                         )
                     }
 
@@ -56,33 +74,57 @@ struct SystemMetricPage: View {
                         PanelDiskView(
                             disk: controller.disk,
                             reduceMotion: reduceMotion,
-                            animation: animation
+                            animation: animation,
+                            isWide: true
                         )
                     }
 
                 case .processor:
-                    section(isLast: true) {
-                        PanelProcessorView(
-                            cpu: controller.cpu,
-                            memory: controller.memory,
-                            reduceMotion: reduceMotion,
-                            animation: animation
-                        )
-                    }
+                    // İşlemci sayfasının kendi panosu var: panelin tek
+                    // sütunlu bileşeni yerine pencerenin genişliğini kullanan
+                    // eşit genişlikte iki sütun (bkz. `ProcessorDashboardView`).
+                    ProcessorDashboardView(
+                        cpu: controller.cpu,
+                        battery: controller.battery,
+                        uptime: controller.device.uptime,
+                        reduceMotion: reduceMotion,
+                        animation: animation
+                    )
                 }
             }
-            .padding(.horizontal, 22)
+            .padding(.horizontal, 16)
             .padding(.vertical, 6)
-            .frame(maxWidth: 640, alignment: .leading)
+            .frame(maxWidth: contentWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .scrollBounceBehavior(.basedOnSize)
         .navigationTitle(title)
-        .navigationSubtitle(subtitle)
+        // Alt başlık pencere başlığında değil, üst şeritteki sayfa
+        // rozetinin altında görünüyor.
+        .pageSubtitle(subtitle)
         // Ölçüm aboneliği sayfayla birlikte açılıp kapanıyor; denetleyici
         // sayaçlı olduğu için panel de açıksa ikinci bir döngü kurulmuyor.
         .task { controller.start() }
         .onDisappear { controller.stop() }
+    }
+
+    /// Sayfanın okunur genişliği.
+    ///
+    /// İşlemci panosu ızgara biçiminde: satır uzunluğu okunabilirliği
+    /// bozmadığı için sayfanın tamamına yayılıyor. Disk sayfası kart ve
+    /// sütunlardan oluşuyor, dar bir sütunda iki yanında kocaman boşluk
+    /// kalıyordu — o da daha geniş. Ağ ve batarya ise metin ağırlıklı tek
+    /// sütun akışı; onlar okunur bir ölçüde kalıyor.
+    private var contentWidth: CGFloat {
+        switch metric {
+        case .processor: .infinity
+        // Disk sayfası da ızgaraya geçti: kartlar ve liste sütunları
+        // pencereyle birlikte çoğalıyor, sabit bir sütunda sıkışmıyor.
+        case .disk: .infinity
+        // Ağ sayfası da iki sütuna açıldı; dar bir sütunda sıkışmasın.
+        case .network: .infinity
+        case .battery: 640
+        }
     }
 
     private var title: String {
@@ -90,7 +132,7 @@ struct SystemMetricPage: View {
         case .network: L10n.networkActivityLabel
         case .battery: L10n.batteryLabel
         case .disk: L10n.diskLabel
-        case .processor: L10n.processorLoadLabel
+        case .processor: L10n.processorBatteryTitle
         }
     }
 

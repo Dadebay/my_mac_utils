@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import AppKit
 import GlassDoKit
+import FirebaseCore
 
 @main
 struct GlassDoApp: App {
@@ -12,6 +13,7 @@ struct GlassDoApp: App {
     @State private var noteController = PoppedNoteController()
 
     init() {
+        FirebaseApp.configure()
         do {
             container = try AppStore.makeContainer()
         } catch {
@@ -62,10 +64,41 @@ private struct RootWindowView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
+    /// Yalnızca daha önce hiç sorulmadıysa `true` olur — reddedilmiş bir
+    /// seçim bir daha sorulmaz, yalnızca Ayarlar'dan değiştirilebilir.
+    @State private var showingAnalyticsPrompt = !AnalyticsConsent.hasBeenAsked
+    /// Analytics sayfası kapanana kadar gösterilmez — aynı anda iki sheet
+    /// açılmaya çalışılmasın diye (bkz. `.task` içindeki sıralama).
+    @State private var showingWorkspaceOnboarding = false
+
     var body: some View {
         ContentView()
             .environment(noteController)
+            .sheet(isPresented: $showingAnalyticsPrompt) {
+                AnalyticsConsentPromptView { granted in
+                    AnalyticsConsent.setGranted(granted)
+                    if granted {
+                        DeviceAnalyticsService.recordLaunch()
+                        _Concurrency.Task { await DeviceAnalyticsService.syncFeatureUsage() }
+                    }
+                    showingAnalyticsPrompt = false
+                    presentWorkspaceOnboardingIfNeeded()
+                }
+            }
+            .sheet(isPresented: $showingWorkspaceOnboarding) {
+                WorkspaceOnboardingSheet {
+                    WorkspaceOnboarding.markShown()
+                    showingWorkspaceOnboarding = false
+                }
+            }
             .task {
+                // Analytics sayfası zaten yanıtlanmışsa (yeni sorulmuyor)
+                // çalışma alanı seçimi doğrudan burada teklif edilir;
+                // aksi hâlde analytics kapandıktan sonra yukarıdaki
+                // callback'te tetiklenir — aynı anda iki sheet çakışmasın.
+                if !showingAnalyticsPrompt {
+                    presentWorkspaceOnboardingIfNeeded()
+                }
                 noteController.configure(container: container)
                 panelController.openMainWindow = {
                     NSApp.activate(ignoringOtherApps: true)
@@ -79,12 +112,32 @@ private struct RootWindowView: View {
                     NSApp.activate(ignoringOtherApps: true)
                     openSettings()
                 }
+                MenuBarStatsController.shared.openMainWindow = {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: "main")
+                }
+                switcherController.openSettings = {
+                    NSApp.activate(ignoringOtherApps: true)
+                    openSettings()
+                }
                 panelController.attach(container: container) {
                     EdgeShellView()
                         .environment(switcherController)
                 }
                 switcherController.startIfAuthorized()
             }
+    }
+
+    /// Analytics sayfası kapanır kapanmaz aynısını açmak SwiftUI'da bazen
+    /// önceki sheet'in kapanma animasyonuyla çakışıyor; kısa bir gecikme
+    /// ikisinin üst üste binmesini önlüyor.
+    private func presentWorkspaceOnboardingIfNeeded() {
+        guard WorkspaceOnboarding.shouldShow else { return }
+        _Concurrency.Task { @MainActor in
+            try? await _Concurrency.Task.sleep(for: .milliseconds(350))
+            guard WorkspaceOnboarding.shouldShow else { return }
+            showingWorkspaceOnboarding = true
+        }
     }
 }
 
@@ -118,7 +171,12 @@ private struct SettingsWindowChromeConfigurator: NSViewRepresentable {
         guard let window, window.styleMask.contains(.titled) else { return }
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.styleMask.insert(.fullSizeContentView)
+        // SwiftUI'ın `Settings` sahnesi pencereyi küçültme/büyütme
+        // düğmeleri olmadan, `.windowResizability(.contentMinSize)`e rağmen
+        // sabit boyutlu kuruyor — trafik ışıklarındaki sarı/yeşil düğmeler
+        // pasif görünüyordu. Bu iki bit eksikti, geri kalanı zaten SwiftUI
+        // tarafından yönetiliyor.
+        window.styleMask.insert([.fullSizeContentView, .resizable, .miniaturizable])
 
         // Ayarlar kendi sabit HSplitView kenar çubuğunu kullanıyor; başlık
         // çubuğunda trafik ışıkları dışında ek bir araç yok.
@@ -141,18 +199,56 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
     /// de sayılmazsa "Bugün" yalnızca kullanıcının ekrana baktığı süreyi
     /// gösterirdi.
     func applicationDidFinishLaunching(_ notification: Notification) {
+
         NetworkHistoryStore.shared.startSampling()
 
         // Menü çubuğu ölçerleri ana pencereye bağlı değil: pencere hiç
         // açılmasa da görünmeliler.
         MenuBarStatsController.shared.start()
+
+        // Pano geçmişi de panel kapalıyken kopyalanan şeyi kaçırmamalı.
+        ClipboardHistoryStore.shared.startMonitoring()
+        ScreenshotShelfWatcher.shared.syncWithSetting()
+
+        if PanelSettings.contextAwareRailEnabled {
+            ActiveApplicationMonitor.shared.start()
+        }
+
+        // Disk sayfasındaki "en büyük öğeler" taraması ana klasörü ve
+        // /Applications'ı geziyor; sayfa açıldığında başlatılınca kullanıcı
+        // boş bir listeye bakarak bekliyordu. Açılıştan birkaç saniye sonra
+        // arka planda başlıyor: açılışın kendi disk trafiğiyle yarışmasın,
+        // ama sayfaya gidildiğinde sonuç çoktan hazır olsun.
+        _Concurrency.Task { @MainActor in
+            try? await _Concurrency.Task.sleep(for: .seconds(3))
+            DiskSpaceAnalyzer.shared.scanIfNeeded()
+        }
+
+        // Geçen oturumda masaüstünde bırakılan ölçerler geri geliyor.
+        DesktopWidgetController.shared.restore()
+
+        // İlk açılışta izin ekranı henüz gösterilmedi — o zaman kaydı
+        // kullanıcı seçimini yaptığı an `RootWindowView` kendisi tetikler.
+        // Sonraki her açılışta izin zaten "evet" ise burada devam eder.
+        if AnalyticsConsent.isGranted {
+            DeviceAnalyticsService.recordLaunch()
+            _Concurrency.Task { await DeviceAnalyticsService.syncFeatureUsage() }
+        }
     }
 
     /// Son birkaç saniyelik trafik, otuz saniyelik boşaltma aralığına
-    /// takılıp kaybolmasın.
+    /// takılıp kaybolmasın. Özellik kullanım senkronu da aynı sebeple
+    /// burada tekrarlanıyor — bir sonraki açılışa kadar beklerse o
+    /// oturumdaki son tıklamalar admin panelde eksik görünürdü. (En iyi
+    /// çaba: süreç bu isteğin ağ üzerinden tamamlanmasını beklemeden
+    /// sonlanabilir; asıl doğruluk kaynağı bir sonraki açılıştaki senkron.)
     func applicationWillTerminate(_ notification: Notification) {
         NetworkHistoryStore.shared.recordCurrentTraffic()
         NetworkHistoryStore.shared.flush()
+
+        if AnalyticsConsent.isGranted {
+            _Concurrency.Task { await DeviceAnalyticsService.syncFeatureUsage() }
+        }
     }
 }
 
@@ -204,15 +300,6 @@ private struct MenuBarContentView: View {
             switcherController.toggleSummon()
         } label: {
             Label(L10n.s("Pencere Değiştirici", "Window Switcher", "Переключатель окон"), systemImage: "rectangle.on.rectangle")
-        }
-
-        Button {
-            switcherController.requestPermissionsAndStart()
-        } label: {
-            Label(
-                switcherController.hasPermissions ? L10n.windowSwitcherReady : L10n.checkWindowSwitcherPermissions,
-                systemImage: switcherController.hasPermissions ? "checkmark.shield" : "exclamationmark.shield"
-            )
         }
 
         Divider()

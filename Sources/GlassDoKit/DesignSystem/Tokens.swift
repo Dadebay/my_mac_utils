@@ -6,6 +6,10 @@ public enum Layout {
     public static let rowHeight: CGFloat = 34
     public static let gutter: CGFloat = 14
     public static let tightGutter: CGFloat = 8
+    /// Pencere araç çubuğunun içeriğini kenardan ayıran pay. Sayfa
+    /// içerikleri de bunu kullanıyor: araç çubuğundaki sayfa rozeti ile
+    /// altındaki ilk sütun tek bir dikey çizgide başlasın diye.
+    public static let toolbarSideInset: CGFloat = 14
 }
 
 public enum Motion {
@@ -26,6 +30,10 @@ public enum Motion {
         .timingCurve(0.23, 1, 0.32, 1, duration: 0.18)
     public static let panelContentSwapOut = Animation
         .timingCurve(0.23, 1, 0.32, 1, duration: 0.12)
+    /// Bir ölçüm değeri (CPU, bellek, ağ…) yenilendiğinde kullanılır — her
+    /// sistem ölçer yüzeyinde (ana pencere, panel, menü çubuğu popover'ı)
+    /// aynı his için tek yerden ayarlanabilsin diye.
+    public static let dataUpdate = Animation.spring(response: 0.4, dampingFraction: 1.0)
 }
 
 public enum Palette {

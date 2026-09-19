@@ -124,10 +124,38 @@ struct SwitcherOverlayView: View {
 
         /// Çerçeve yalnızca seçimi/hover'ı anlatır ve kartın TAMAMINI sarar —
         /// pencere görüntüsünün kendisi hiçbir kalıba sokulmaz.
+        ///
+        /// Seçim, kenar çubuğundaki satırla aynı cam dilini kullanıyor
+        /// (bkz. `ChromePalette`): düz `systemBlue` bir çerçeve yerine
+        /// çapraz mavi-indigo degrade, ince mavi kenarlık, üst kenarda iç
+        /// parlama ve yumuşak bir hale. Değerler kenar çubuğundakinden bir
+        /// tık güçlü: değiştirici masaüstünün üstünde, rastgele bir
+        /// arka planın önünde duruyor ve klavyeyle hızla gezilirken
+        /// seçimin nerede olduğu bir bakışta görünmeli.
         private var cardBorderColor: Color {
-            if isSelected { return Color(nsColor: .systemBlue) }
+            if isSelected { return ChromePalette.selectionEdge.opacity(0.55) }
             if isHovering { return Color.white.opacity(0.35) }
             return .clear
+        }
+
+        @ViewBuilder
+        private var cardFill: some View {
+            let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            if isSelected {
+                shape.fill(
+                    LinearGradient(
+                        colors: [
+                            ChromePalette.selectionTop.opacity(0.42),
+                            ChromePalette.selectionMid.opacity(0.32),
+                            ChromePalette.selectionEnd.opacity(0.26),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            } else {
+                shape.fill(Color.white.opacity(isHovering ? 0.07 : 0.0001))
+            }
         }
 
         var body: some View {
@@ -141,7 +169,7 @@ struct SwitcherOverlayView: View {
                             .frame(width: 17, height: 17)
                     }
                     Text(window.appName)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.app(size: 12, weight: .medium))
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
@@ -156,7 +184,7 @@ struct SwitcherOverlayView: View {
 
                     if let profileLabel = window.profileLabel {
                         Text(profileLabel)
-                            .font(.system(size: 9, weight: .semibold))
+                            .font(.app(size: 9, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.85))
                             .lineLimit(1)
                             .padding(.horizontal, 5)
@@ -210,16 +238,34 @@ struct SwitcherOverlayView: View {
                 .animation(.easeOut(duration: 0.12), value: isHovering)
             }
             .padding(8)
-            .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(isSelected ? 0.10 : (isHovering ? 0.07 : 0.0001)))
-            }
+            .background { cardFill }
             .overlay {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(cardBorderColor, lineWidth: isSelected ? 3 : 1)
+                    .strokeBorder(cardBorderColor, lineWidth: isSelected ? 1.5 : 1)
             }
+            .overlay {
+                // İç parlama yalnızca üst kenarda: ışık yukarıdan geliyor,
+                // çerçevenin tamamı parlarsa cam değil neon olur.
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [.white.opacity(0.18), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 1.5
+                        )
+                }
+            }
+            .shadow(
+                color: ChromePalette.selectionTop.opacity(isSelected ? 0.35 : 0),
+                radius: isSelected ? 14 : 0,
+                y: isSelected ? 4 : 0
+            )
             .scaleEffect(isHighlighted ? 1.04 : 1.0)
             .animation(.easeOut(duration: 0.12), value: isHighlighted)
+            .animation(.easeOut(duration: 0.14), value: isSelected)
             .contentShape(Rectangle())
             .onHover { isHovering = $0 }
             .onTapGesture(perform: onSelect)

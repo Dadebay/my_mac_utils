@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Kimlik doğrulaması yok (Firebase Auth kullanılmıyor) — bu yüzden
+    // "kendi cihazın" diye bir doğrulama yapılamıyor. Bunun yerine yazma
+    // serbest, okuma tamamen kapalı: herhangi bir istemci kendi cihaz
+    // belgesini oluşturup güncelleyebilir ama hiçbir istemci toplanan
+    // veriyi (kendisininkini bile) geri okuyamaz. Veriye yalnızca Firebase
+    // konsolundan ya da Admin SDK'dan (kuralları hiç görmez) erişilir.
+    //
+    // "if true" tek başına HERHANGİ bir alanı, herhangi bir boyutta kabul
+    // ederdi — client API key'i uygulama paketinden çıkarılabildiği için
+    // (Firebase'de bu normaldir, gizli sayılmaz) bu, kötüye kullanıma açık
+    // bir yazma deliğiydi. Aşağıdaki `isValidDeviceDoc`/`isValidDailyUsage`
+    // yalnızca `DeviceAnalyticsService`'in gerçekte yazdığı alanları,
+    // beklenen tipte ve makul uzunlukta kabul ediyor; kalan her şeyi
+    // reddediyor.
+    match /devices/{deviceId} {
+      allow create, update: if isValidDeviceDoc(deviceId, request.resource.data);
+      allow read, delete: if false;
+
+      match /dailyUsage/{day} {
+        allow create, update: if isValidDailyUsageDoc(day, request.resource.data);
+        allow read, delete: if false;
+      }
+    }
+
+    // Promocode/admin/RevenueCat verisi `/devices` analitiğinden tamamen
+    // ayrı. Aşağıdaki dört koleksiyon zaten en alttaki genel-geçer "hepsi
+    // kapalı" kuralına düşer — burada yine de açıkça yazılıyor, çünkü bu
+    // veri hassas (satın alma/promo durumu) ve ileride birisi genel kuralı
+    // gevşetirse bu blok "burası özel, dokunma" diye açıkça uyarsın diye.
+    // Tüm okuma/yazma yalnızca Admin SDK (Cloud Functions) üzerinden olur —
+    // Admin SDK bu kuralları hiç görmez, dolayısıyla asıl güvenlik sınırı
+    // Functions'ın kendi session/CSRF/auth kontrolleri, bu değil.
+    match /promoCodes/{promoId} {
+      allow read, write: if false;
+    }
+    match /redemptions/{redemptionId} {
+      allow read, write: if false;
+    }
+    match /customerSummaries/{uid} {
+      allow read, write: if false;
+    }
+    match /revenueCatEvents/{eventId} {
+      allow read, write: if false;
+    }
+    match /adminAuditLogs/{logId} {
+      allow read, write: if false;
+    }
+    // `functions/src/lib/rateLimit.ts`'in Admin SDK üzerinden yazdığı
+    // sabit-pencere sayaçları — client'ın bunlara erişmesi için hiçbir
+    // sebep yok.
+    match /rateLimits/{key} {
+      allow read, write: if false;
+    }
+
+    // Yukarıdakiler dışında hiçbir belgeye erişim yok.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidDeviceDoc(deviceId, data) {
+      return data.keys().hasOnly([
+          'deviceID', 'deviceModel', 'osVersion', 'appVersion',
+          'country', 'language', 'firstSeen', 'lastSeen', 'featureUsage'
+        ])
+        && data.deviceID == deviceId
+        && data.deviceID is string && data.deviceID.size() <= 64
+        && data.deviceModel is string && data.deviceModel.size() <= 100
+        && data.osVersion is string && data.osVersion.size() <= 100
+        && data.appVersion is string && data.appVersion.size() <= 20
+        && data.country is string && data.country.size() <= 10
+        && data.language is string && data.language.size() <= 10
+        && (!('featureUsage' in data) || isValidFeatureCounts(data.featureUsage, 10000000));
+    }
+
+    function isValidDailyUsageDoc(day, data) {
+      return data.keys().hasOnly(['date', 'launchCount', 'lastLaunchAt', 'featureCounts'])
+        && data.date == day
+        && data.date is string && data.date.size() == 10
+        && data.launchCount is number && data.launchCount >= 0 && data.launchCount <= 100000
+        && (!('featureCounts' in data) || isValidFeatureCounts(data.featureCounts, 100000));
+    }
+
+    // `UsageFeature` (Swift) ile bire bir aynı 14 vaka — admin panelin
+    // beklediği şema bu yüzden sabit tutuluyor. `maxValue` günlük ile tüm
+    // zamanlar sayaçları arasında farklı üst sınır kullanabilmek için.
+    function isValidFeatureCounts(map, maxValue) {
+      return map.keys().hasOnly([
+          'tasks', 'quickAdd', 'completed', 'folders', 'memory', 'clipboard',
+          'network', 'battery', 'disk', 'processor', 'volume',
+          'windowSwitcher', 'panelVisibility', 'pinMode'
+        ])
+        && (!('tasks' in map) || isValidCount(map.tasks, maxValue))
+        && (!('quickAdd' in map) || isValidCount(map.quickAdd, maxValue))
+        && (!('completed' in map) || isValidCount(map.completed, maxValue))
+        && (!('folders' in map) || isValidCount(map.folders, maxValue))
+        && (!('memory' in map) || isValidCount(map.memory, maxValue))
+        && (!('clipboard' in map) || isValidCount(map.clipboard, maxValue))
+        && (!('network' in map) || isValidCount(map.network, maxValue))
+        && (!('battery' in map) || isValidCount(map.battery, maxValue))
+        && (!('disk' in map) || isValidCount(map.disk, maxValue))
+        && (!('processor' in map) || isValidCount(map.processor, maxValue))
+        && (!('volume' in map) || isValidCount(map.volume, maxValue))
+        && (!('windowSwitcher' in map) || isValidCount(map.windowSwitcher, maxValue))
+        && (!('panelVisibility' in map) || isValidCount(map.panelVisibility, maxValue))
+        && (!('pinMode' in map) || isValidCount(map.pinMode, maxValue));
+    }
+
+    function isValidCount(value, maxValue) {
+      return value is number && value >= 0 && value <= maxValue;
+    }
+  }
+}

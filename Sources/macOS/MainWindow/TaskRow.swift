@@ -50,8 +50,8 @@ struct TaskRow: View {
                 NoteTextField(
                     text: $task.title,
                     font: task.kind == .heading
-                        ? .systemFont(ofSize: 14, weight: .semibold)
-                        : .systemFont(ofSize: 13.5),
+                        ? AppFont.nsFont(size: 14, weight: .semibold)
+                        : AppFont.nsFont(size: 13.5),
                     textColor: NSColor(task.isCompleted || task.kind == .text ? Color.secondary : Color.primary),
                     strikethrough: task.isCompleted,
                     isFocused: Binding(

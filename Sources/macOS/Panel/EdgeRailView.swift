@@ -6,9 +6,13 @@ struct EdgeRailView: View {
   @Environment(EdgePanelController.self) private var controller
   @Environment(WindowSwitcherController.self) private var switcherController
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Query(filter: Task.activePredicate()) private var activeTasks: [Task]
+  @Query(filter: Task.activeTodoPredicate()) private var activeTasks: [Task]
   @Namespace private var selectionNamespace
   @State private var isDragging = false
+  /// Raf ikonunun üzerinde bir dosya sürükleniyor mu.
+  @State private var isShelfDropTargeted = false
+  /// Üzerinde bekletme sayacı — bkz. raf ikonundaki `onChange`.
+  @State private var springLoadTask: _Concurrency.Task<Void, Never>?
   @AppStorage(PanelSettings.railWidthKey) private var railWidth = Double(EdgeTokens.railWidth)
 
   @AppStorage(PanelSettings.showTasksIconKey) private var showTasksIcon = true
@@ -16,10 +20,12 @@ struct EdgeRailView: View {
   @AppStorage(PanelSettings.showCompletedIconKey) private var showCompletedIcon = true
   @AppStorage(PanelSettings.showFoldersIconKey) private var showFoldersIcon = true
   @AppStorage(PanelSettings.showMemoryIconKey) private var showMemoryIcon = true
+  @AppStorage(PanelSettings.showClipboardIconKey) private var showClipboardIcon = true
   @AppStorage(PanelSettings.showNetworkIconKey) private var showNetworkIcon = false
   @AppStorage(PanelSettings.showBatteryIconKey) private var showBatteryIcon = false
   @AppStorage(PanelSettings.showDiskIconKey) private var showDiskIcon = false
   @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessorIcon = false
+  @AppStorage(PanelSettings.showVolumeIconKey) private var showVolumeIcon = false
   @AppStorage(PanelSettings.showPinIconKey) private var showPinIcon = true
   @AppStorage(PanelSettings.showSettingsIconKey) private var showSettingsIcon = true
   @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcherIcon = true
@@ -27,8 +33,9 @@ struct EdgeRailView: View {
   private var iconVisibility: [Bool] {
     [
       showTasksIcon, showAddIcon, showCompletedIcon, showFoldersIcon,
-      showMemoryIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
-      showProcessorIcon, showPinIcon, showWindowSwitcherIcon, showSettingsIcon,
+      showMemoryIcon, showClipboardIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
+      showProcessorIcon, showVolumeIcon,
+      showPinIcon, showWindowSwitcherIcon, showSettingsIcon,
     ]
   }
 
@@ -69,17 +76,53 @@ struct EdgeRailView: View {
       }
       if showFoldersIcon {
         RailIconButton(
-          systemName: "folder", isActive: controller.content == .folders,
+          systemName: "tray.full", isActive: controller.content == .folders,
           selectionNamespace: selectionNamespace,
           action: { controller.selectContent(.folders) }
         )
         .transition(iconTransition)
+        // Panel kapalıyken raf ikonu tek başına bir bırakma hedefi:
+        // önceden dar rayda hiç `onDrop` yoktu, dolayısıyla sürüklenen
+        // görsel panele "varınca" ortada kabul edecek bir şey olmuyordu.
+        // Üzerinde bekletmek paneli açıyor (macOS'un yaylı klasörleri
+        // gibi), doğrudan bırakmak ise paneli açmadan rafa ekliyor.
+        .scaleEffect(reduceMotion ? 1 : (isShelfDropTargeted ? 1.18 : 1))
+        .animation(
+          reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.62),
+          value: isShelfDropTargeted
+        )
+        .onDrop(of: ShelfImporter.acceptedTypes, isTargeted: $isShelfDropTargeted) { providers in
+          _Concurrency.Task {
+            _ = try? await ShelfImporter.importDropped(providers)
+            controller.selectContent(.folders)
+          }
+          return true
+        }
+        .onChange(of: isShelfDropTargeted) { _, targeted in
+          springLoadTask?.cancel()
+          guard targeted else { return }
+          // Kısa gecikme: rayın üzerinden geçip giden bir sürükleme
+          // paneli açıp kapatmasın.
+          springLoadTask = _Concurrency.Task { @MainActor in
+            try? await _Concurrency.Task.sleep(for: .milliseconds(420))
+            guard !_Concurrency.Task.isCancelled, isShelfDropTargeted else { return }
+            controller.selectContent(.folders)
+          }
+        }
       }
       if showMemoryIcon {
         RailIconButton(
           systemName: "memorychip", isActive: controller.content == .memory,
           selectionNamespace: selectionNamespace,
           action: { controller.selectContent(.memory) }
+        )
+        .transition(iconTransition)
+      }
+      if showClipboardIcon {
+        RailIconButton(
+          systemName: "doc.on.clipboard", isActive: controller.content == .clipboard,
+          selectionNamespace: selectionNamespace,
+          action: { controller.selectContent(.clipboard) }
         )
         .transition(iconTransition)
       }
@@ -112,6 +155,14 @@ struct EdgeRailView: View {
           systemName: "cpu", isActive: controller.content == .processor,
           selectionNamespace: selectionNamespace,
           action: { controller.selectContent(.processor) }
+        )
+        .transition(iconTransition)
+      }
+      if showVolumeIcon {
+        RailIconButton(
+          systemName: "speaker.wave.2", isActive: controller.content == .volume,
+          selectionNamespace: selectionNamespace,
+          action: { controller.selectContent(.volume) }
         )
         .transition(iconTransition)
       }

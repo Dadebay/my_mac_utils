@@ -44,6 +44,10 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
     case cpuLoadBar
     case cpuLoadPercent
     case cpuLoadChart
+    /// Toplam yükün geçmişi yerine o anki çekirdek başına yük — makinede
+    /// kaç mantıksal çekirdek varsa o kadar ince çubuk, aynı anda hangi
+    /// çekirdeğin çalıştığını gösteriyor.
+    case cpuPerCoreBars
     case cpuTemperatureBar
     case cpuTemperatureValue
 
@@ -84,7 +88,7 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
 
     var category: MenuBarCategory {
         switch self {
-        case .cpuLoadBar, .cpuLoadPercent, .cpuLoadChart, .cpuTemperatureBar, .cpuTemperatureValue:
+        case .cpuLoadBar, .cpuLoadPercent, .cpuLoadChart, .cpuPerCoreBars, .cpuTemperatureBar, .cpuTemperatureValue:
             .processor
         case .memoryUsedBar, .memoryUsedBytes, .memoryUsedPercent, .memorySwapBytes, .memoryPressureChart:
             .memory
@@ -106,6 +110,8 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .cpuLoadBar, .cpuLoadPercent, .cpuLoadChart:
             L10n.s("Toplam yük", "Total Load", "Общая загрузка")
+        case .cpuPerCoreBars:
+            L10n.s("Çekirdekler", "Cores", "Ядра")
         case .cpuTemperatureBar, .cpuTemperatureValue:
             L10n.s("Sıcaklık", "Temperature", "Температура")
         case .memoryUsedBar, .memoryUsedBytes, .memoryUsedPercent:

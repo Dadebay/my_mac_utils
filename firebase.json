@@ -1,0 +1,33 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"]
+    }
+  ],
+  "hosting": {
+    "public": "website/out",
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/admin-api/**",
+        "function": { "functionId": "adminApi", "region": "europe-west1" }
+      }
+    ],
+    "redirects": [
+      { "source": "/", "destination": "/en", "type": 302 },
+      { "source": "/destek", "destination": "/en/destek", "type": 302 },
+      {
+        "source": "/gizlilik-politikasi",
+        "destination": "/en/gizlilik-politikasi",
+        "type": 302
+      }
+    ]
+  }
+}

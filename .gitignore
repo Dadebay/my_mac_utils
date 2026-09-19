@@ -24,8 +24,22 @@ build/
 
 # Secrets / local config
 Config/ExportOptions-*.plist
+Config/GoogleService-Info.plist
 *.p8
 *.mobileprovision
 
+# Firebase CLI local cache
+.firebase/
+
 # Claude Code — kişisel/yerel oturum ayarları
 .claude/settings.local.json
+
+# Derleme çıktısı (build/ zaten yukarıda)
+build-release/
+
+# Node bağımlılıkları — package-lock.json'dan yeniden kurulur
+node_modules/
+
+# NOT: website/out bilerek izleniyor. Normalde derleme çıktısıdır ve
+# git'e girmez, ama sitenin Next.js kaynağı kayboldu; bu dizin artık
+# yeniden üretilemeyen tek kopya.

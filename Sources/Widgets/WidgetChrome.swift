@@ -93,7 +93,7 @@ struct WidgetHeader: View {
             Image(systemName: symbolName)
                 .font(.system(size: 11, weight: .regular))
             Text(title)
-                .font(.system(size: 12, weight: .medium))
+                .font(.app(size: 12, weight: .medium))
             Spacer(minLength: 0)
         }
         .foregroundStyle(.secondary)

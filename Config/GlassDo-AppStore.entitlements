@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store zorunlu tutuyor. Yalnızca Release yapılandırmasında
+	     kullanılıyor; günlük geliştirme (Debug) sandbox'sız devam ediyor,
+	     bkz. project.yml. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+
+	<!-- Widget uzantısıyla ortak veri alanı. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>V793RH49BX.group.com.dadebay.glassdo</string>
+	</array>
+
+	<!-- Hız testi ve ağ ölçerleri giden bağlantı açıyor. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+
+	<!-- Rafa sürüklenen dosyalar ve NSOpenPanel ile seçilen dosyalar. -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+
+	<!-- Bağlanmış klasörlere uygulama yeniden açıldıktan sonra da
+	     erişebilmek için güvenlik kapsamlı yer imleri. -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+
+	<!-- Ekran görüntüsü rafı: varsayılan kayıt yeri Masaüstü olduğu için
+	     kullanıcı hiçbir şey seçmeden o klasöre erişim gerekiyor. Kayıt yeri
+	     `screencapture` ile başka bir klasöre taşınmışsa (sandbox'ta) bu
+	     kapsamın dışında kalır — özellik yalnızca o durumda sessizce
+	     çalışmaz, bkz. ScreenshotShelfWatcher. -->
+	<key>com.apple.security.files.desktop-folder.read-write</key>
+	<true/>
+</dict>
+</plist>

@@ -168,7 +168,10 @@ struct SettingsView: View {
   private var sidebar: some View {
     VStack(spacing: 0) {
       sidebarIdentity
-        .padding(.top, 50)
+        // Kimlik satırı pencerenin tepesine yakın duruyor. Trafik
+        // ışıklarıyla çakışmıyor: `SettingsView` başlık çubuğunun altından
+        // başlıyor, bu pay yalnızca onun üstüne eklenen nefes payı.
+        .padding(.top, 10)
 
       settingsSearchField
         .padding(.top, 14)
@@ -195,10 +198,10 @@ struct SettingsView: View {
 
       VStack(alignment: .leading, spacing: 1) {
         Text("GlassDo")
-          .font(.system(size: 15, weight: .semibold))
+          .font(.app(size: 15, weight: .semibold))
           .foregroundStyle(.primary)
         Text(L10n.settingsTitle)
-          .font(.system(size: 11.5, weight: .medium))
+          .font(.app(size: 11.5, weight: .medium))
           .foregroundStyle(.secondary)
       }
 
@@ -219,7 +222,7 @@ struct SettingsView: View {
         text: $searchText
       )
       .textFieldStyle(.plain)
-      .font(.system(size: 13))
+      .font(.app(size: 13))
 
       if !searchText.isEmpty {
         Button {
@@ -313,12 +316,12 @@ private struct SettingsSidebarRowLabel: View {
 
       VStack(alignment: .leading, spacing: 1) {
         Text(category.title)
-          .font(.system(size: 13))
+          .font(.app(size: 13))
           .foregroundStyle(.primary)
         Text(category.subtitle)
           // Malzeme üzerindeki ikincil metin `.tertiary` ile
           // okunmuyordu; canlılık için bir kademe yukarı.
-          .font(.system(size: 10.5))
+          .font(.app(size: 10.5))
           .foregroundStyle(.secondary)
           .lineLimit(1)
           .accessibilityLabel(category.subtitle)
@@ -405,7 +408,7 @@ extension SettingsView {
 
       VStack(alignment: .leading, spacing: 3) {
         Text(selection.title)
-          .font(.system(size: 28, weight: .semibold))
+          .font(.app(size: 28, weight: .semibold))
           // Büyük puntoda harfler olduğundan daha aralıklı görünür;
           // sistem yazı tipinin optik boyutlandırmasıyla aynı yönde
           // hafifçe sıkılıyor.
@@ -414,7 +417,7 @@ extension SettingsView {
           .minimumScaleFactor(0.7)
 
         Text(selection.subtitle)
-          .font(.system(size: 15))
+          .font(.app(size: 15))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
       }
@@ -643,7 +646,7 @@ private struct NetworkSettingsSection: View {
             "Deletes every stored daily network total and restarts counting from zero. Tasks, folders and other settings are not affected.",
             "Удаляет все сохранённые дневные сетевые итоги и начинает подсчёт с нуля. Задачи, папки и другие настройки не затрагиваются."
           ))
-          .font(.system(size: 11.5))
+          .font(.app(size: 11.5))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
 
@@ -653,7 +656,7 @@ private struct NetworkSettingsSection: View {
             isConfirmingReset = true
           } label: {
             Text(L10n.s("Ağ Geçmişini Sıfırla…", "Reset Network History…", "Сбросить историю сети…"))
-              .font(.system(size: 12, weight: .medium))
+              .font(.app(size: 12, weight: .medium))
           }
           .fixedSize()
         }
@@ -691,7 +694,7 @@ private struct NetworkSettingsSection: View {
         .foregroundStyle(.secondary)
         .frame(width: 16)
       Text(text)
-        .font(.system(size: 11.5))
+        .font(.app(size: 11.5))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -747,7 +750,7 @@ private struct WindowSwitcherSettingsSection: View {
 
         HStack {
           Text(L10n.s("Tekrarlanan tuş", "Repeated key", "Повторяемая клавиша"))
-            .font(.system(size: 13))
+            .font(.app(size: 13))
           Spacer(minLength: 12)
           ShortcutKeyRecorder(keyCode: $triggerKeyCode, keyLabel: $triggerKeyLabel)
             .onChange(of: triggerKeyCode) { _, newValue in
@@ -770,7 +773,7 @@ private struct WindowSwitcherSettingsSection: View {
                 ? L10n.s("Kapat", "Close", "Закрыть")
                 : L10n.s("Test Et", "Test It", "Протестировать")
             )
-            .font(.system(size: 12, weight: .medium))
+            .font(.app(size: 12, weight: .medium))
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
@@ -794,7 +797,7 @@ private struct WindowSwitcherSettingsSection: View {
                 "Оставляет наложение открытым, пока вы его не закроете, если разрешения предоставлены"
               )
           )
-          .font(.system(size: 11))
+          .font(.app(size: 11))
           .foregroundStyle(.tertiary)
           // Uzun metin genişlik talep etmek yerine satır atlasın.
           .fixedSize(horizontal: false, vertical: true)
@@ -873,7 +876,7 @@ private struct WindowSwitcherSettingsSection: View {
             refreshPermissions()
           } label: {
             Text(L10n.s("İzin İste", "Request Access", "Запросить доступ"))
-              .font(.system(size: 12, weight: .medium))
+              .font(.app(size: 12, weight: .medium))
           }
           .buttonStyle(.plain)
           .foregroundStyle(Color.accentColor)
@@ -888,7 +891,7 @@ private struct WindowSwitcherSettingsSection: View {
                 "Открыть системные настройки"
               )
             )
-            .font(.system(size: 12, weight: .medium))
+            .font(.app(size: 12, weight: .medium))
           }
           .buttonStyle(.plain)
           .foregroundStyle(Color.accentColor)
@@ -942,7 +945,7 @@ private struct WindowSwitcherSettingsSection: View {
         .foregroundStyle(isWarning ? Color.orange : Color.secondary)
 
       Text(text)
-        .font(.system(size: 11))
+        .font(.app(size: 11))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -968,7 +971,7 @@ private struct WindowSwitcherSettingsSection: View {
   private func animationToggleRow(label: String, isOn: Binding<Bool>) -> some View {
     HStack {
       Text(label)
-        .font(.system(size: 13))
+        .font(.app(size: 13))
       Spacer(minLength: 12)
       Toggle("", isOn: isOn)
         .toggleStyle(.switch)
@@ -986,9 +989,9 @@ private struct WindowSwitcherSettingsSection: View {
 
       VStack(alignment: .leading, spacing: 1) {
         Text(title)
-          .font(.system(size: 13))
+          .font(.app(size: 13))
         Text(subtitle)
-          .font(.system(size: 11))
+          .font(.app(size: 11))
           .foregroundStyle(.tertiary)
       }
 
@@ -1001,27 +1004,10 @@ private struct WindowSwitcherSettingsSection: View {
 // MARK: - Hakkında
 
 private struct AboutSettingsSection: View {
+  /// Ayarlardaki "Hakkında" ile ayrı pencerede açılan "GlassDo Hakkında"
+  /// aynı içerik: sürüm, bağlantılar ve kullanım istatistikleri. İki ayrı
+  /// görünüm yazılsaydı biri güncellenip öteki geride kalırdı.
   var body: some View {
-    SettingsCard {
-      HStack(spacing: 12) {
-        RoundedRectangle(cornerRadius: 11, style: .continuous)
-          .fill(Color.black.opacity(0.6))
-          .frame(width: 48, height: 48)
-          .overlay {
-            Image(systemName: "checklist")
-              .font(.system(size: 22))
-              .foregroundStyle(.white)
-          }
-        VStack(alignment: .leading, spacing: 3) {
-          Text("GlassDo")
-            .font(.system(size: 15, weight: .semibold))
-          Text("\(L10n.versionLabel) \(GlassDoKit.version)")
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
-        }
-        Spacer(minLength: 0)
-      }
-      .padding(.vertical, 8)
-    }
+    AboutGlassDoView(isEmbedded: true)
   }
 }

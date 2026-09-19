@@ -36,11 +36,11 @@ struct MenuBarSettingsSection: View {
             ) {
                 HStack(spacing: 8) {
                     Text(L10n.s("Görünen ölçer", "Visible readings", "Показателей"))
-                        .font(.system(size: 12.5))
+                        .font(.app(size: 12.5))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                     Text("\(enabled.count)")
-                        .font(.system(size: 12.5, weight: .semibold))
+                        .font(.app(size: 12.5, weight: .semibold))
                         .monospacedDigit()
                 }
                 .padding(.vertical, 2)
@@ -57,7 +57,7 @@ struct MenuBarSettingsSection: View {
     private func categorySection(_ category: MenuBarCategory) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(category.title, systemImage: category.symbolName)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.app(size: 13, weight: .semibold))
                 .labelStyle(.titleAndIcon)
                 .foregroundStyle(.secondary)
 
@@ -96,7 +96,7 @@ struct MenuBarSettingsSection: View {
                     }
 
                 Text(kind.title)
-                    .font(.system(size: 10.5))
+                    .font(.app(size: 10.5))
                     .foregroundStyle(isOn ? .primary : .secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)

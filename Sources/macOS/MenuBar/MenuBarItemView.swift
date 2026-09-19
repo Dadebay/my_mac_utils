@@ -43,6 +43,11 @@ struct MenuBarItemView: View {
                 MenuBarChart(samples: snapshot.cpu.history, color: loadTint)
             }
 
+        case .cpuPerCoreBars:
+            MenuBarGlyphGroup(letters: "CPU") {
+                MenuBarPerCoreBars(usages: snapshot.cpu.perCoreUsage, color: loadTint)
+            }
+
         case .cpuTemperatureBar:
             MenuBarGlyphGroup(letters: "TMP") {
                 MenuBarFillBar(fraction: temperatureFraction, color: temperatureTint)
@@ -349,7 +354,7 @@ private struct MenuBarGlyphGroup<Content: View>: View {
             VStack(spacing: -1.7) {
                 ForEach(Array(letters), id: \.self) { letter in
                     Text(String(letter))
-                        .font(.system(size: 7, weight: .heavy))
+                        .font(.app(size: 7, weight: .heavy))
                 }
             }
             // Menü çubuğu, altındaki masaüstü duvar kâğıdını şeffaf
@@ -374,7 +379,7 @@ private struct MenuBarValue: View {
 
     var body: some View {
         MenuBarReservedText(text: text, samples: reserving)
-            .font(.system(size: 11, weight: .medium))
+            .font(.app(size: 11, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(tint)
             .lineLimit(1)
@@ -419,7 +424,7 @@ private struct MenuBarStackedValue: View {
             MenuBarReservedText(text: top, samples: reserving)
             MenuBarReservedText(text: bottom, samples: reserving)
         }
-        .font(.system(size: 8.5, weight: .medium))
+        .font(.app(size: 8.5, weight: .medium))
         .monospacedDigit()
         .lineLimit(1)
     }
@@ -482,6 +487,43 @@ private struct MenuBarChart: View {
     }
 }
 
+/// Çekirdek başına anlık yük: her mantıksal çekirdek için bir ince çubuk.
+///
+/// `MenuBarChart` zamanın seyrini gösteriyor, bu tek bir anın çekirdekler
+/// arasındaki dağılımını — ikisi farklı soru yanıtlıyor (bkz.
+/// `CPULoadStats.perCoreUsage`). Çekirdek sayısı makineden makineye
+/// değiştiği için çubuk kalınlığı sabit değil: menü çubuğunda ayrılan
+/// genişlik sabit kalsın diye çok çekirdekli makinelerde inceliyor.
+private struct MenuBarPerCoreBars: View {
+    let usages: [Double]
+    var color: Color = .primary
+
+    /// Menü çubuğu dar; bunun ötesinde çubuklar ayırt edilemez hâle
+    /// geliyor, o yüzden fazlası çizilmiyor.
+    private static let maxBars = 16
+    private static let totalWidth: CGFloat = 26
+
+    private var visible: [Double] { Array(usages.prefix(Self.maxBars)) }
+
+    private var barWidth: CGFloat {
+        guard !visible.isEmpty else { return 1 }
+        let spacing = CGFloat(visible.count - 1)
+        return max((Self.totalWidth - spacing) / CGFloat(visible.count), 1)
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 1) {
+            ForEach(Array(visible.enumerated()), id: \.offset) { _, usage in
+                let fraction = min(max(usage, 0), 1)
+                RoundedRectangle(cornerRadius: 0.5, style: .continuous)
+                    .fill(color.opacity(fraction < 0.02 ? 0.18 : 0.85))
+                    .frame(width: barWidth, height: max(14 * fraction, 1))
+            }
+        }
+        .frame(height: 14, alignment: .bottom)
+    }
+}
+
 /// İki ok — trafik varken doluyor, yokken soluyor. Sayı okumadan
 /// "bir şey oluyor mu" sorusuna cevap veriyor.
 private struct MenuBarActivityArrows: View {
@@ -498,7 +540,7 @@ private struct MenuBarActivityArrows: View {
             Image(systemName: "arrowtriangle.up.fill")
                 .foregroundStyle(upload > Self.threshold ? AnyShapeStyle(SystemPalette.accent) : AnyShapeStyle(.tertiary))
         }
-        .font(.system(size: 6.5))
+        .font(.app(size: 6.5))
     }
 }
 
@@ -508,7 +550,7 @@ private struct MenuBarBadge: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 8.5, weight: .semibold))
+            .font(.app(size: 8.5, weight: .semibold))
             .padding(.horizontal, 3)
             .padding(.vertical, 1)
             .foregroundStyle(isActive ? AnyShapeStyle(Color.primary) : AnyShapeStyle(.tertiary))

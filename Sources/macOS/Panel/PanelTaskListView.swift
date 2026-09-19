@@ -87,12 +87,12 @@ struct PanelTaskListView: View {
                 }
 
             Text(showCompleted ? L10n.completedTasks : L10n.activeTasks)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.app(size: 15, weight: .semibold))
 
             Spacer(minLength: 0)
 
             Text("\(tasks.count)")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.app(size: 11, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
@@ -131,7 +131,7 @@ struct PanelTaskListView: View {
             .buttonStyle(.pressScale(reduceMotion ? 1 : 0.92))
 
             Text(task.title)
-                .font(.system(size: 13.5, weight: .medium))
+                .font(.app(size: 13.5, weight: .medium))
                 .strikethrough(isChecked)
                 .foregroundStyle(isChecked ? .secondary : .primary)
                 .lineLimit(1)
@@ -172,7 +172,7 @@ struct PanelTaskListView: View {
                 .foregroundStyle(.tertiary)
 
             Text(showCompleted ? L10n.emptyCompleted : L10n.emptyTasks)
-                .font(.system(size: 11.5, weight: .medium))
+                .font(.app(size: 11.5, weight: .medium))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)

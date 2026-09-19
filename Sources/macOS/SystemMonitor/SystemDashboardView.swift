@@ -7,103 +7,99 @@ import GlassDoKit
 /// yüzey üzerinde okunur.
 struct SystemDashboardView: View {
     private let controller = SystemStatsController.shared
+    private let widgets = DesktopWidgetController.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.openSettings) private var openSettings
 
     private var animation: Animation? {
-        reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 1.0)
+        reduceMotion ? nil : Motion.dataUpdate
     }
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                section {
-                    ProcessorCard(
-                        cpu: controller.cpu,
-                        reduceMotion: reduceMotion,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+            // Kartlar tek bir dar sütunda ayraçlarla değil, pencereyle
+            // birlikte çoğalan sütunlarda duruyor — "CPU & Batarya"
+            // sayfasıyla aynı düzen dili. Sütun sayısını `.adaptive`
+            // belirliyor: kart 360 pt'nin altına inmiyor, artan yer yeni
+            // bir sütuna gidiyor.
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 330), spacing: 14)],
+                alignment: .leading,
+                spacing: 14
+            ) {
+                ProcessorCard(
+                    cpu: controller.cpu,
+                    reduceMotion: reduceMotion,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.processor) }
+                )
+                .dashboardCard()
 
-                section {
-                    MemoryCard(
-                        memory: controller.memory,
-                        reduceMotion: reduceMotion,
-                        animation: animation,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                MemoryCard(
+                    memory: controller.memory,
+                    reduceMotion: reduceMotion,
+                    animation: animation,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.memory) }
+                )
+                .dashboardCard()
 
-                section {
-                    NetworkCard(
-                        network: controller.network,
-                        reduceMotion: reduceMotion,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                NetworkCard(
+                    // Hız testi panoda kendi kartında; burada ikinci kez
+                    // görünmesin.
+                    showsSpeedTest: false,
+                    network: controller.network,
+                    reduceMotion: reduceMotion,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.network) }
+                )
+                .dashboardCard()
 
-                section {
-                    NetworkActivityCard(
-                        network: controller.network,
-                        reduceMotion: reduceMotion,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                NetworkActivityCard(
+                    network: controller.network,
+                    reduceMotion: reduceMotion,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.networkActivity) }
+                )
+                .dashboardCard()
 
-                section {
-                    SpeedTestSection()
-                }
+                SpeedTestSection(network: controller.network)
+                    .dashboardCard()
 
-                section {
-                    BatteryCard(
-                        battery: controller.battery,
-                        reduceMotion: reduceMotion,
-                        animation: animation,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                BatteryCard(
+                    battery: controller.battery,
+                    reduceMotion: reduceMotion,
+                    animation: animation,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.battery) }
+                )
+                .dashboardCard()
 
-                section {
-                    BatteryHealthCard(
-                        battery: controller.battery,
-                        reduceMotion: reduceMotion,
-                        animation: animation,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                BatteryHealthCard(
+                    battery: controller.battery,
+                    reduceMotion: reduceMotion,
+                    animation: animation,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.batteryHealth) }
+                )
+                .dashboardCard()
 
-                section(isLast: true) {
-                    DiskCard(
-                        disk: controller.disk,
-                        reduceMotion: reduceMotion,
-                        animation: animation,
-                        onOpenSettings: { openSettings() }
-                    )
-                }
+                DiskCard(
+                    disk: controller.disk,
+                    reduceMotion: reduceMotion,
+                    animation: animation,
+                    onOpenSettings: { openSettings() },
+                    onDetach: { widgets.open(.disk) }
+                )
+                .dashboardCard()
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 4)
-            // Sütun çok genişlediğinde büyük başlıklar sayfanın solunda
-            // yalnız kalıyor; okunur bir ölçüde tutuluyor.
-            .frame(maxWidth: 560, alignment: .leading)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
+        .background { ChromeAmbience(placement: .content) }
         .navigationTitle(L10n.systemOverviewTitle)
         .task { controller.start() }
         .onDisappear { controller.stop() }
     }
 
-    private func section<Content: View>(
-        isLast: Bool = false,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            content()
-                .padding(.vertical, 18)
-
-            if !isLast {
-                Divider().opacity(0.45)
-            }
-        }
-    }
 }

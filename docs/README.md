@@ -36,6 +36,7 @@ promptları sırayla kopyala-yapıştır yaparak ilerlemen yeterli.
 | 12 | [12-EDGE-RAIL.md](12-EDGE-RAIL.md) | **En kritik dosya** — kenar rayı + Liquid Glass panel |
 | 13 | [13-WIDGETS-MENUBAR.md](13-WIDGETS-MENUBAR.md) | macOS widget'ları + menü çubuğu sistem ölçerleri |
 | 14 | [14-SHIPPING-MONETIZATION-REVENUECAT.md](14-SHIPPING-MONETIZATION-REVENUECAT.md) | Satış kanalı, Free/Pro planı, RevenueCat ve release checklist |
+| 15 | [15-CURRENT-STATUS.md](15-CURRENT-STATUS.md) | **Şartname değil, anlık durum** — website, admin panel ve macOS app'in bugün repoda gerçekte ne olduğu |
 
 ## 30 saniyelik özet
 

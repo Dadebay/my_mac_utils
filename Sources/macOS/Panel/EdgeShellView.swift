@@ -125,9 +125,11 @@ struct EdgeShellView: View {
     case .completed:
       PanelTaskListView(showCompleted: true)
     case .folders:
-      PanelFolderShelfView()
+      PanelShelfView()
     case .memory:
       PanelMemoryView()
+    case .clipboard:
+      PanelClipboardView()
     case .network:
       PanelSystemStatView(metric: .network)
     case .battery:
@@ -136,6 +138,17 @@ struct EdgeShellView: View {
       PanelSystemStatView(metric: .disk)
     case .processor:
       PanelSystemStatView(metric: .processor)
+    case .volume:
+      ScrollView {
+        PanelVolumeMixerView()
+          .padding(.horizontal, 16)
+          .padding(.vertical, 14)
+      }
+      .frame(
+        width: PanelSettings.panelWidth,
+        height: PanelSettings.effectivePanelHeight,
+        alignment: .top
+      )
     }
   }
 

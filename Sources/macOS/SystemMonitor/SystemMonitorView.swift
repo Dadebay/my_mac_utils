@@ -4,6 +4,10 @@ import GlassDoKit
 struct SystemMonitorView: View {
     private let controller = SystemMonitorController.shared
     @State private var pendingQuit: RunningAppUsage?
+    /// Göstergede seçili dilim: aşağıdaki liste bunu gösteriyor.
+    /// Varsayılan "Uygulamalar" — sayfanın asıl sorusu genelde "hangi
+    /// uygulama yiyor".
+    @State private var selection: MemorySegment.Kind = .apps
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let formatter: ByteCountFormatter = {
@@ -89,7 +93,7 @@ struct SystemMonitorView: View {
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(L10n.memoryUsedLabel)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.app(size: 11, weight: .semibold))
                     .kerning(0.5)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -98,13 +102,13 @@ struct SystemMonitorView: View {
                     Text(Self.text(memory.used))
                         // Büyük metin: negatif tracking ile harfler
                         // dağılmadan tek bir sayı gibi okunur.
-                        .font(.system(size: 30, weight: .semibold))
+                        .font(.app(size: 30, weight: .semibold))
                         .monospacedDigit()
                         .tracking(-0.6)
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("/ \(Self.text(memory.total))")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.app(size: 13, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
@@ -113,7 +117,7 @@ struct SystemMonitorView: View {
             Spacer(minLength: 12)
 
             Text(percentText)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.app(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 9)
@@ -151,6 +155,11 @@ struct SystemMonitorView: View {
                         let fraction = Double(segment.bytes) / total
                         Capsule()
                             .fill(segment.color)
+                            // Seçili dilim tam renkte, diğerleri geri
+                            // çekiliyor: göstergeye basmak yalnızca listeyi
+                            // değil çubuğu da değiştiriyor, yani hangi
+                            // bölüme baktığınız çubukta da görünüyor.
+                            .opacity(segment.id == selection ? 1 : 0.34)
                             .frame(width: fraction > 0.002 ? max(available * fraction, 4) : 0)
                     }
                 }
@@ -158,6 +167,7 @@ struct SystemMonitorView: View {
         }
         .frame(height: 10)
         .animation(barAnimation, value: controller.memory)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: selection)
         .accessibilityHidden(true)
     }
 
@@ -168,29 +178,66 @@ struct SystemMonitorView: View {
             spacing: 10
         ) {
             ForEach(segments) { segment in
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                        .fill(segment.color)
-                        .frame(width: 8, height: 16)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(segment.label)
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        Text(Self.text(segment.bytes))
-                            .font(.system(size: 13, weight: .semibold))
-                            .monospacedDigit()
-                            .contentTransition(reduceMotion ? .identity : .numericText())
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .accessibilityElement(children: .combine)
+                legendItem(segment)
             }
         }
         .animation(barAnimation, value: controller.memory)
+    }
+
+    /// Yalnızca süreç listesi olan iki dilim seçilebiliyor: önbellek ve boş
+    /// bellek bir sürecin değil, çekirdeğin muhasebesi — onlara basınca
+    /// gösterilecek bir liste yok.
+    private func isSelectable(_ kind: MemorySegment.Kind) -> Bool {
+        kind == .apps || kind == .system
+    }
+
+    @ViewBuilder
+    private func legendItem(_ segment: MemorySegment) -> some View {
+        let isSelected = segment.id == selection
+        let selectable = isSelectable(segment.id)
+
+        Button {
+            guard selectable else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+                selection = segment.id
+            }
+        } label: {
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                    .fill(segment.color)
+                    .frame(width: 8, height: 16)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(segment.label)
+                        .font(.app(size: 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    Text(Self.text(segment.bytes))
+                        .font(.app(size: 13, weight: .semibold))
+                        .monospacedDigit()
+                        .contentTransition(reduceMotion ? .identity : .numericText())
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? segment.color.opacity(0.14) : .clear)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(isSelected ? segment.color.opacity(0.45) : .clear, lineWidth: 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(!selectable)
+        .help(selectable ? segment.label : "")
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 
     // MARK: - Uygulama listesi
@@ -198,8 +245,8 @@ struct SystemMonitorView: View {
     private var listSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(L10n.runningAppsLabel)
-                    .font(.system(size: 11, weight: .semibold))
+                Text(selection == .system ? L10n.systemProcessesLabel : L10n.runningAppsLabel)
+                    .font(.app(size: 11, weight: .semibold))
                     .kerning(0.5)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -209,7 +256,7 @@ struct SystemMonitorView: View {
             .padding(.top, 14)
             .padding(.bottom, 6)
 
-            if controller.apps.isEmpty {
+            if visibleProcesses.isEmpty {
                 emptyState
             } else {
                 list
@@ -217,10 +264,18 @@ struct SystemMonitorView: View {
         }
     }
 
+    /// Seçili dilimin süreçleri, en çok yiyen on tanesi. Daha uzun bir
+    /// liste bu sayfada karar vermeye yardım etmiyor: kullanıcı en ağır
+    /// birkaçına bakıp kapatıyor.
+    private var visibleProcesses: [RunningAppUsage] {
+        let source = selection == .system ? controller.systemProcesses : controller.apps
+        return Array(source.prefix(10))
+    }
+
     private var list: some View {
         ScrollView {
             LazyVStack(spacing: 3) {
-                ForEach(controller.apps) { app in
+                ForEach(visibleProcesses) { app in
                     AppUsageRow(
                         app: app,
                         fraction: fraction(of: app),
@@ -234,10 +289,12 @@ struct SystemMonitorView: View {
         }
     }
 
-    /// Satırdaki oran çubuğu, listenin en büyük değerine göre ölçekleniyor —
-    /// toplam RAM'e göre olsaydı bütün satırlar görünmez incelikte kalırdı.
+    /// Satırdaki oran çubuğu, **gösterilen** listenin en büyük değerine
+    /// göre ölçekleniyor — toplam RAM'e göre olsaydı bütün satırlar görünmez
+    /// incelikte kalırdı, uygulama listesinin tepesine göre olsaydı sistem
+    /// süreçleri hep silik görünürdü.
     private func fraction(of app: RunningAppUsage) -> Double {
-        let largest = controller.largestAppMemory
+        let largest = visibleProcesses.first?.memoryBytes ?? 0
         guard largest > 0 else { return 0 }
         return Double(app.memoryBytes) / Double(largest)
     }
@@ -248,7 +305,7 @@ struct SystemMonitorView: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.systemMonitorEmpty)
-                .font(.system(size: 13))
+                .font(.app(size: 13))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -282,13 +339,13 @@ private struct AppUsageRow: View {
             icon
 
             Text(app.name)
-                .font(.system(size: 13))
+                .font(.app(size: 13))
                 .lineLimit(1)
 
             Spacer(minLength: 8)
 
             Text(valueText)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.app(size: 12, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .contentTransition(reduceMotion ? .identity : .numericText())

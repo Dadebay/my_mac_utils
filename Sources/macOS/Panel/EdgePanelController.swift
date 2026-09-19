@@ -14,10 +14,12 @@ private extension PanelContent {
         case .completed: .completed
         case .folders: .folders
         case .memory: .memory
+        case .clipboard: .clipboard
         case .network: .network
         case .battery: .battery
         case .disk: .disk
         case .processor: .processor
+        case .volume: .volume
         }
     }
 }
@@ -48,6 +50,17 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
     private var railTop: CGFloat = 0
     private var floatingOrigin: NSPoint = .zero
     private var sliverTimer: _Concurrency.Task<Void, Never>?
+    /// Panel açıkken başka bir uygulamaya tıklamayı dinler — bkz.
+    /// `syncOutsideClickMonitor`.
+    private var outsideClickMonitor: Any?
+    /// Rafa (ya da benzer bir panel içeriğine) Finder'dan dosya
+    /// sürüklenirken `true`. Bırakmayı bitiren `mouseUp`, sürüklemenin
+    /// kaynağı Finder olduğu için genel izleyiciye "başka bir uygulamaya
+    /// tıklandı" gibi görünüyor — görsel olarak tam panelin üstüne
+    /// bırakılsa bile. `setExternalDragActive(true)` bu süre boyunca
+    /// izleyiciyi tamamen kaldırıyor ki bırakma tamamlanmadan panel
+    /// kapanmasın — bkz. `EdgePanel`in sürükleme hedefi.
+    private var isExternalDragActive = false
     private var dragStartFrame: NSRect?
     /// Sürükleme başlangıcındaki imleç konumu — EKRAN koordinatlarında.
     /// SwiftUI'ın `DragGesture.translation` değeri pencerenin kendi koordinat
@@ -126,10 +139,13 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
 
         let panel = EdgePanel(contentRect: frame)
         panel.delegate = self
+        wireShelfDrop(into: panel)
         let rootView = content()
             .environment(self)
             .modelContainer(container)
-        let hostingView = NSHostingView(rootView: rootView)
+        // Düz `NSHostingView` değil: panel key değilken ilk tıklamanın
+        // yutulmaması için `acceptsFirstMouse` gerekiyor — bkz. EdgePanel.swift.
+        let hostingView = FirstMouseHostingView(rootView: rootView)
         // NSHostingView autoresizingMask varsayılan olarak .notSizable —
         // pencere rail'den genişlemiş panele animasyonla büyüyünce, içerik
         // eski (küçük) boyutunda köşede kalıp yuvarlatılmış alanın yalnızca
@@ -168,6 +184,9 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
 
     private func modeChanged() {
         sliverTimer?.cancel()
+        // Pinleme açılıp kapandığında "dışarı tıklayınca daral" davranışı da
+        // değişiyor: pinliyken panel açık kalmalı.
+        syncOutsideClickMonitor()
         guard isDocked else { return }
         switch mode {
         case .pinned:
@@ -214,20 +233,110 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
         setVisualState(.rail)
     }
 
-    private func setVisualState(_ newState: PanelVisualState) {
-        guard let panel, let screen = panel.screen ?? Self.primaryScreen else { return }
-        guard newState != visualState else { return }
-        visualState = newState
+    // MARK: - Dışarı tıklayınca daralma
 
+    /// Panel açıkken başka bir uygulamaya tıklanınca ray genişliğine döner:
+    /// bataryaya bakmak için açılan panel, kullanıcı yazmaya başka bir
+    /// uygulamaya geçtiğinde ekranı kaplamaya devam etmemeli.
+    ///
+    /// Genel (global) izleyici yalnızca **başka** uygulamalara giden
+    /// olayları görüyor; kendi rayımıza/panelimize yapılan tıklamalar hiç
+    /// buraya düşmüyor, dolayısıyla panelin içinde çalışmak onu kapatmıyor.
+    /// `NSWorkspace.didActivateApplication` bildirimi bu iş için yeterli
+    /// değildi: zaten önplanda olan uygulamanın penceresine tıklamak
+    /// uygulama değişimi saymadığı için bildirim hiç gelmiyor.
+    ///
+    /// **Neden `mouseDown` değil `mouseUp`:** Raf panelinin üstüne Finder'dan
+    /// bir dosya sürüklemek de Finder'da bir `mouseDown` ile başlıyor — bu da
+    /// "dışarıya tıklandı" sayılıp paneli sürükleme daha panele ulaşmadan
+    /// raya kapatıyordu, bu yüzden bırakma bölgesi hiç görünmüyordu. Bırakma
+    /// yerine kalkışa bakmak bu iki durumu ayırıyor: bırakma normal bir
+    /// tıklamada da anlık farkedilmeyecek kadar yakın zamanda geliyor, ama
+    /// sürüklenen dosya panelin üstüne bırakılırsa o `mouseUp` **kendi**
+    /// penceremizde oluyor — global izleyici zaten yalnızca başka
+    /// uygulamalara giden olayları gördüğü için o durumda hiç tetiklenmiyor
+    /// ve panel açık kalıyor.
+    ///
+    /// Pinlenmiş modda izleyici hiç kurulmuyor — "her zaman açık kal"
+    /// zaten bu davranışın kapatılması demek.
+    private func syncOutsideClickMonitor() {
+        let shouldWatch = isDocked
+            && visualState == .expanded
+            && PanelPresentation.shouldCollapseOnHoverExit(mode: mode)
+            && !isExternalDragActive
+
+        guard shouldWatch else {
+            if let outsideClickMonitor {
+                NSEvent.removeMonitor(outsideClickMonitor)
+            }
+            outsideClickMonitor = nil
+            return
+        }
+
+        guard outsideClickMonitor == nil else { return }
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseUp, .rightMouseUp, .otherMouseUp]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.setExpanded(false)
+            }
+        }
+    }
+
+    /// Pencere düzeyindeki sürükleme hedefini rafa bağlar.
+    ///
+    /// Kabul yalnızca raf sayfası açıkken: panel kapalıyken ya da başka bir
+    /// sayfadayken bırakma raydaki raf ikonunun kendi `onDrop`'una kalıyor.
+    private func wireShelfDrop(into panel: EdgePanel) {
+        panel.shouldAcceptDrop = { [weak self] in
+            self?.content == .folders
+        }
+        panel.dropTargetingChanged = { [weak self] targeted in
+            // Bırakmayı bitiren mouseUp "dışarı tıklandı" sanılıp paneli
+            // kapatmasın diye sürükleme boyunca izleyici askıya alınıyor.
+            self?.setExternalDragActive(targeted)
+            ShelfDropTargeting.shared.isTargeted = targeted
+        }
+        panel.performDrop = { providers in
+            _Concurrency.Task { @MainActor in
+                do {
+                    let accepted = try await ShelfImporter.importDropped(providers)
+                    guard accepted else { return }
+                    NotificationCenter.default.post(name: .glassDoShelfContentsChanged, object: nil)
+                } catch {
+                    // Hata rafın kendi bandına düşsün: pencere katmanında
+                    // sessizce yutulursa kullanıcı neden bir şey eklenmediğini
+                    // hiç öğrenemezdi.
+                    ShelfDropTargeting.shared.lastErrorMessage = error.localizedDescription
+                }
+            }
+            return true
+        }
+    }
+
+    /// Rafa dosya sürüklenirken/sürükleme bitince çağrılır — bkz.
+    /// `isExternalDragActive`.
+    func setExternalDragActive(_ active: Bool) {
+        guard isExternalDragActive != active else { return }
+        isExternalDragActive = active
+        syncOutsideClickMonitor()
+    }
+
+    /// Verilen durumun, o anki ayar değerleriyle hesaplanmış pencere
+    /// çerçevesi. Hem durum geçişleri hem de ayarlardan gelen "uygula"
+    /// aynı hesabı kullansın diye ayrı bir yerde.
+    private func targetFrame(for state: PanelVisualState, on screen: NSScreen) -> NSRect {
         let visible = screen.visibleFrame
-        let railFrame = EdgeGeometry.railFrame(edge: edge, top: railTop, height: PanelSettings.railHeight, width: PanelSettings.railWidth, visible: visible)
+        let railFrame = EdgeGeometry.railFrame(
+            edge: edge, top: railTop, height: PanelSettings.railHeight,
+            width: PanelSettings.railWidth, visible: visible
+        )
 
-        let target: NSRect
-        switch newState {
+        switch state {
         case .rail:
-            target = railFrame
+            return railFrame
         case .expanded:
-            target = EdgeGeometry.expandedFrame(
+            return EdgeGeometry.expandedFrame(
                 railFrame: railFrame, edge: edge,
                 panelSize: CGSize(
                     width: PanelSettings.panelWidth,
@@ -236,8 +345,33 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
                 visible: visible
             )
         case .sliver:
-            target = EdgeGeometry.sliverFrame(railFrame: railFrame, edge: edge, sliverWidth: EdgeTokens.sliverWidth)
+            return EdgeGeometry.sliverFrame(
+                railFrame: railFrame, edge: edge, sliverWidth: EdgeTokens.sliverWidth
+            )
         }
+    }
+
+    /// Ayarlardaki boyutlar (ray genişliği, panel ölçüsü) değiştikten sonra
+    /// pencereyi yeni ölçülere göre yeniden yerleştirir.
+    ///
+    /// SwiftUI içeriği `@AppStorage` üzerinden anında güncelleniyor ama
+    /// pencerenin kendi çerçevesi AppKit tarafında ve yalnızca durum
+    /// değişiminde hesaplanıyordu; bu yüzden ayar değişince içerik ile
+    /// pencere boyutu bir sonraki aç/kapat'a kadar uyuşmuyordu. Kaydırıcı
+    /// sürüklenirken her karede pencereyi yeniden boyutlandırmak yerine
+    /// kullanıcı "Uygula"ya bastığında bir kez uygulanıyor.
+    func applyLayoutSettings() {
+        guard isDocked, let panel, let screen = panel.screen ?? Self.primaryScreen else { return }
+        panel.setFrame(targetFrame(for: visualState, on: screen), display: true)
+    }
+
+    private func setVisualState(_ newState: PanelVisualState) {
+        guard let panel, let screen = panel.screen ?? Self.primaryScreen else { return }
+        guard newState != visualState else { return }
+        visualState = newState
+        syncOutsideClickMonitor()
+
+        let target = targetFrame(for: newState, on: screen)
 
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             panel.setFrame(target, display: true)

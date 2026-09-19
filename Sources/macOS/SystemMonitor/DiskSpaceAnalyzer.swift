@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import GlassDoKit
 
 struct StorageCandidate: Identifiable, Equatable, Sendable {
     enum Kind: Sendable {
@@ -44,9 +45,9 @@ final class DiskSpaceAnalyzer {
         isScanning = true
         errorMessage = nil
 
-        Task {
-            let results = await Task.detached(priority: .utility) {
-                Self.findLargestItems(limit: 8)
+        _Concurrency.Task {
+            let results = await _Concurrency.Task.detached(priority: .utility) {
+                Self.findLargestItems(limit: 12)
             }.value
 
             items = results
@@ -59,21 +60,43 @@ final class DiskSpaceAnalyzer {
         NSWorkspace.shared.activateFileViewerSelecting([item.url])
     }
 
+    /// Silme başarısız olduğunda, kullanıcıyı Finder'a yönlendirebilmek için
+    /// hangi öğede takıldığımızı da tutuyoruz — çıplak bir hata metni
+    /// "peki şimdi ne yapayım" sorusunu cevapsız bırakıyordu.
+    private(set) var blockedItem: StorageCandidate?
+
     func moveToTrash(_ item: StorageCandidate) {
         guard !removingIDs.contains(item.id) else { return }
+
+        // Önden tahmin edilmiyor: silinebilirlik yalnızca POSIX izinlerine
+        // değil, macOS'un "Uygulama Yönetimi" (App Management) iznine de
+        // bağlı ve o izin durumu sorgulanamıyor. `isDeletableFile` ile
+        // `isWritableFile` ölçüldü, ikisi de yanlış cevap veriyor — biri
+        // silinemeyene "silinebilir", öteki silinebilene "silinemez" diyor.
+        // Bu yüzden deneniyor ve başarısızlık açıklanıyor.
         removingIDs.insert(item.id)
+        errorMessage = nil
+        blockedItem = nil
 
         NSWorkspace.shared.recycle([item.url]) { [weak self] _, error in
-            Task { @MainActor in
+            _Concurrency.Task { @MainActor in
                 guard let self else { return }
                 self.removingIDs.remove(item.id)
-                if let error {
-                    self.errorMessage = error.localizedDescription
+                if error != nil {
+                    // Tarama ile silme arasında izinler değişmiş olabilir;
+                    // burada da aynı açıklamaya düşüyoruz.
+                    self.errorMessage = L10n.storageNeedsAdminRights(item.name)
+                    self.blockedItem = item
                 } else {
                     self.items.removeAll { $0.id == item.id }
                 }
             }
         }
+    }
+
+    func dismissError() {
+        errorMessage = nil
+        blockedItem = nil
     }
 
     nonisolated private static func findLargestItems(limit: Int) -> [StorageCandidate] {
@@ -103,7 +126,7 @@ final class DiskSpaceAnalyzer {
             ) else { continue }
 
             while let url = enumerator.nextObject() as? URL {
-                if Task.isCancelled { return [] }
+                if _Concurrency.Task.isCancelled { return [] }
 
                 guard let values = try? url.resourceValues(forKeys: Set(resourceKeys)),
                       values.isSymbolicLink != true
@@ -125,15 +148,11 @@ final class DiskSpaceAnalyzer {
                         seenPaths: &seenPaths,
                         workingLimit: limit * 3
                     )
-                } else if values.isRegularFile == true {
-                    let size = UInt64(max(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0, 0))
-                    appendCandidate(
-                        StorageCandidate(url: url, allocatedSize: size, kind: .file),
-                        to: &candidates,
-                        seenPaths: &seenPaths,
-                        workingLimit: limit * 3
-                    )
                 }
+                // Tekil dosyalar listelenmiyor. Liste "en büyük uygulamalar"
+                // diyor ve gerçekten öyle: arada beliren tek tük büyük
+                // dosya (disk imajı, video) kullanıcıya silinebilir bir şey
+                // gibi görünüyordu, oysa çoğu bir uygulamanın verisiydi.
             }
         }
 
@@ -176,7 +195,7 @@ final class DiskSpaceAnalyzer {
 
         var total: UInt64 = 0
         while let url = enumerator.nextObject() as? URL {
-            if Task.isCancelled { return total }
+            if _Concurrency.Task.isCancelled { return total }
             guard let values = try? url.resourceValues(forKeys: Set(resourceKeys)),
                   values.isRegularFile == true,
                   values.isSymbolicLink != true

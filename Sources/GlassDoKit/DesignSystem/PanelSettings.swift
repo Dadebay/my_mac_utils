@@ -18,17 +18,28 @@ public enum PanelSettings {
     public static let showCompletedIconKey = "panel.icon.completed"
     public static let showFoldersIconKey = "panel.icon.folders"
     public static let showMemoryIconKey = "panel.icon.memory"
+    public static let showClipboardIconKey = "panel.icon.clipboard"
     public static let showNetworkIconKey = "panel.icon.network"
     public static let showBatteryIconKey = "panel.icon.battery"
     public static let showDiskIconKey = "panel.icon.disk"
     public static let showProcessorIconKey = "panel.icon.processor"
+    public static let showVolumeIconKey = "panel.icon.volume"
     public static let showPinIconKey = "panel.icon.pin"
     public static let showSettingsIconKey = "panel.icon.settings"
     public static let showWindowSwitcherIconKey = "panel.icon.windowSwitcher"
 
+    /// Ekran görüntülerini çekildikleri klasörden otomatik olarak Rafa
+    /// taşıyıp taşımayacağı. Varsayılan kapalı: Masaüstü'nden dosya
+    /// taşımak kullanıcının haberi olmadan gerçekleşmemeli.
+    public static let autoAddScreenshotsToShelfKey = "panel.shelf.autoAddScreenshots"
+
+    /// Bağlama duyarlı Edge Rail önerileri. Varsayılan kapalı: aktif
+    /// uygulamayı izlemek kullanıcının açık onayı olmadan başlamamalı.
+    public static let contextAwareRailEnabledKey = "panel.contextAwareRail.enabled"
+
     /// Ayarlardaki "görünür ikon" sayacının paydası — yeni bir ikon
     /// eklendiğinde tek yerden güncellensin.
-    public static let totalIconCount = 12
+    public static let totalIconCount = 14
 
     public static let iconScaleRange: ClosedRange<Double> = 0.8...1.3
     public static let panelWidthRange: ClosedRange<Double> = 260...420
@@ -45,7 +56,7 @@ public enum PanelSettings {
     public static let defaultRailWidth = Double(EdgeTokens.railWidth)
     public static let defaultPanelWidth = Double(EdgeTokens.panelWidth)
     public static let defaultPanelHeight = Double(EdgeTokens.panelHeight)
-    public static let defaultCornerRadius: Double = 13
+    public static let defaultCornerRadius: Double = 12
     public static let defaultSelectedIconCornerRadius: Double = 10
     public static let defaultSelectedIconPadding: Double = 4
 
@@ -64,14 +75,14 @@ public enum PanelSettings {
     public static func resetIconDefaults() {
         let d = UserDefaults.standard
         for key in [showTasksIconKey, showAddIconKey, showCompletedIconKey,
-                    showFoldersIconKey, showMemoryIconKey, showPinIconKey,
+                    showFoldersIconKey, showMemoryIconKey, showClipboardIconKey, showPinIconKey,
                     showSettingsIconKey, showWindowSwitcherIconKey] {
             d.set(true, forKey: key)
         }
         // Sistem ölçerleri isteğe bağlı: ray zaten sekiz ikonla dolu, dördünü
         // birden eklemek mevcut yerleşimi habersizce bozardı.
         for key in [showNetworkIconKey, showBatteryIconKey,
-                    showDiskIconKey, showProcessorIconKey] {
+                    showDiskIconKey, showProcessorIconKey, showVolumeIconKey] {
             d.set(false, forKey: key)
         }
         d.set(defaultSelectedIconCornerRadius, forKey: selectedIconCornerRadiusKey)
@@ -102,6 +113,21 @@ public enum PanelSettings {
         return CGFloat(raw ?? defaultCornerRadius)
     }
 
+    /// Raftan dışarı sürüklenen dosya raftan çıkarılsın mı — yani sürükleme
+    /// "kes" mi yoksa "kopyala" mı olsun. Rafın kendi metaforu geçici bir
+    /// yığın olduğu için varsayılan "kes"; öğe çöpe gittiği için karar
+    /// geri alınabilir.
+    public static let shelfRemovesOnDragKey = "panel.shelf.removesOnDrag"
+
+    public static var shelfRemovesOnDrag: Bool { flag(shelfRemovesOnDragKey) }
+
+    /// Rafın sıralaması ve yerleşimi kullanıcıdan kullanıcıya değil,
+    /// oturumdan oturuma sabit kalmalı: raf her açılışta "en yeni" +
+    /// ızgaraya dönseydi, listeyi tercih eden kullanıcı aynı iki tıklamayı
+    /// her seferinde tekrarlardı.
+    public static let shelfSortKey = "panel.shelf.sort"
+    public static let shelfUsesListLayoutKey = "panel.shelf.usesListLayout"
+
     private static func flag(_ key: String, default fallback: Bool = true) -> Bool {
         UserDefaults.standard.object(forKey: key) as? Bool ?? fallback
     }
@@ -111,6 +137,7 @@ public enum PanelSettings {
     public static var showCompletedIcon: Bool { flag(showCompletedIconKey) }
     public static var showFoldersIcon: Bool { flag(showFoldersIconKey) }
     public static var showMemoryIcon: Bool { flag(showMemoryIconKey) }
+    public static var showClipboardIcon: Bool { flag(showClipboardIconKey) }
     public static var showPinIcon: Bool { flag(showPinIconKey) }
     public static var showSettingsIcon: Bool { flag(showSettingsIconKey) }
     public static var showWindowSwitcherIcon: Bool { flag(showWindowSwitcherIconKey) }
@@ -120,11 +147,23 @@ public enum PanelSettings {
     public static var showBatteryIcon: Bool { flag(showBatteryIconKey, default: false) }
     public static var showDiskIcon: Bool { flag(showDiskIconKey, default: false) }
     public static var showProcessorIcon: Bool { flag(showProcessorIconKey, default: false) }
+    public static var showVolumeIcon: Bool { flag(showVolumeIconKey, default: false) }
+
+    /// Masaüstünden dosya taşımak sessizce başlamamalı — kullanıcı
+    /// Ayarlar'dan açana kadar kapalı.
+    public static var autoAddScreenshotsToShelf: Bool {
+        flag(autoAddScreenshotsToShelfKey, default: false)
+    }
+
+    public static var contextAwareRailEnabled: Bool {
+        flag(contextAwareRailEnabledKey, default: false)
+    }
 
     public static var visibleIconCount: Int {
         [showTasksIcon, showAddIcon, showCompletedIcon, showFoldersIcon,
-         showMemoryIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
-         showProcessorIcon, showPinIcon, showSettingsIcon, showWindowSwitcherIcon]
+         showMemoryIcon, showClipboardIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
+         showProcessorIcon, showVolumeIcon,
+         showPinIcon, showSettingsIcon, showWindowSwitcherIcon]
             .filter { $0 }.count
     }
 

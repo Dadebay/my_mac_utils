@@ -124,6 +124,27 @@ struct ManagedStorageService: Sendable {
         return root
     }
 
+    // MARK: - Raf
+
+    /// Rafın dizin adı. Klasörlerin aksine UUID değil sabit: raf tek ve
+    /// her zaman var — kullanıcı onu oluşturmuyor, silmiyor, adlandırmıyor.
+    /// Klasör dizinleri UUID adlı olduğu için bu adla çakışamıyor.
+    static let shelfDirectoryName = "Shelf"
+
+    /// Ekrandan sürüklenen dosyaların düştüğü yer. İlk kullanımda oluşuyor.
+    @discardableResult
+    func prepareShelf() throws -> URL {
+        let root = try prepareRoot()
+        let url = root.appendingPathComponent(Self.shelfDirectoryName, isDirectory: true)
+        guard !FileManager.default.fileExists(atPath: url.path) else { return url }
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        } catch {
+            throw StorageError.folderCreationFailed(error.localizedDescription)
+        }
+        return url
+    }
+
     // MARK: - Klasör
 
     /// Klasör adını doğrular ve kırpar.
@@ -172,6 +193,28 @@ struct ManagedStorageService: Sendable {
 
     // MARK: - Dosya alma
 
+    /// Bir web sayfasından/başka bir uygulamadan doğrudan sürüklenen ham
+    /// görsel/video **verisini** yazar — Finder'da karşılığı olan bir
+    /// dosya yok, bu yüzden `importFile` (kopyalama) burada kullanılamıyor.
+    @discardableResult
+    func importData(
+        _ data: Data, suggestedName: String, type: UTType, into directory: URL
+    ) throws -> URL {
+        guard isInsideStorage(directory) else { throw StorageError.outsideStorage }
+
+        let ext = type.preferredFilenameExtension ?? "dat"
+        let base = suggestedName.isEmpty ? "Image" : suggestedName
+        let fileName = base.hasSuffix(".\(ext)") ? base : "\(base).\(ext)"
+
+        let destination = uniqueDestination(for: fileName, in: directory)
+        do {
+            try data.write(to: destination, options: .atomic)
+        } catch {
+            throw StorageError.copyFailed(name: fileName, reason: error.localizedDescription)
+        }
+        return destination
+    }
+
     /// Kaynak dosyayı yönetilen klasöre **kopyalar**. Kaynağa dokunulmuyor:
     /// kullanıcının Finder'daki dosyası yerinde kalıyor.
     @discardableResult
@@ -192,6 +235,36 @@ struct ManagedStorageService: Sendable {
         let destination = uniqueDestination(for: source.lastPathComponent, in: directory)
         do {
             try FileManager.default.copyItem(at: source, to: destination)
+        } catch {
+            throw StorageError.copyFailed(
+                name: source.lastPathComponent,
+                reason: error.localizedDescription
+            )
+        }
+        return destination
+    }
+
+    /// Kaynak dosyayı yönetilen klasöre **taşır** — `importFile`'ın aksine
+    /// kaynağı kopyalamak yerine oradan kaldırır. Ekran görüntüsü rafı gibi,
+    /// kaynağın (ör. Masaüstü) da temizlenmesi istenen senaryolar için.
+    @discardableResult
+    func moveFile(at source: URL, into directory: URL) throws -> URL {
+        guard isInsideStorage(directory) else { throw StorageError.outsideStorage }
+
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: source.path, isDirectory: &isDirectory) else {
+            throw StorageError.copyFailed(
+                name: source.lastPathComponent,
+                reason: "kaynak bulunamadı"
+            )
+        }
+        guard !isDirectory.boolValue else {
+            throw StorageError.directoriesNotSupported
+        }
+
+        let destination = uniqueDestination(for: source.lastPathComponent, in: directory)
+        do {
+            try FileManager.default.moveItem(at: source, to: destination)
         } catch {
             throw StorageError.copyFailed(
                 name: source.lastPathComponent,
@@ -280,6 +353,56 @@ struct ManagedStorageService: Sendable {
                 reason: error.localizedDescription
             )
         }
+    }
+
+    /// Çöp'e uğramadan kalıcı siler. `moveToTrash`'ten ayrı duruyor:
+    /// kullanıcı arayüzünde de ayrı iki eylem var ("Raftan Kaldır" geri
+    /// alınabilir, "Sil" alınamaz) ve bu ayrımın yanlışlıkla kaybolmaması
+    /// için çağıran tarafın hangisini istediğini açıkça söylemesi gerekiyor.
+    func deletePermanently(_ url: URL) throws {
+        guard isInsideStorage(url) else { throw StorageError.outsideStorage }
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch {
+            throw StorageError.copyFailed(
+                name: url.lastPathComponent,
+                reason: error.localizedDescription
+            )
+        }
+    }
+
+    /// Dosyayı bulunduğu dizinde yeniden adlandırır. Uzantı korunuyor:
+    /// kullanıcı "Ekran görüntüsü" yazdığında dosya türünü kaybetmemeli.
+    @discardableResult
+    func rename(_ url: URL, to rawName: String) throws -> URL {
+        guard isInsideStorage(url) else { throw StorageError.outsideStorage }
+        let trimmed = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return url }
+
+        let ext = url.pathExtension
+        var base = trimmed
+        if !ext.isEmpty, base.lowercased().hasSuffix("." + ext.lowercased()) {
+            base = String(base.dropLast(ext.count + 1))
+        }
+        // Yol ayıracı ve iki nokta dosya adında olamaz.
+        base = base.replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        guard !base.isEmpty else { return url }
+
+        let fileName = ext.isEmpty ? base : "\(base).\(ext)"
+        guard fileName != url.lastPathComponent else { return url }
+
+        let destination = uniqueDestination(
+            for: fileName, in: url.deletingLastPathComponent()
+        )
+        do {
+            try FileManager.default.moveItem(at: url, to: destination)
+        } catch {
+            throw StorageError.copyFailed(
+                name: fileName, reason: error.localizedDescription
+            )
+        }
+        return destination
     }
 
     // MARK: - Sınır denetimi

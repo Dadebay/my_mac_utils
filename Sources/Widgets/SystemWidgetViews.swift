@@ -30,13 +30,13 @@ struct DiskWidgetView: View {
                 HStack(alignment: .center, spacing: 10) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(WidgetFormat.percent(disk.usedFraction))
-                            .font(.system(size: 26, weight: .semibold))
+                            .font(.app(size: 26, weight: .semibold))
                             .monospacedDigit()
                         Text(WidgetFormat.bytes(disk.free))
-                            .font(.system(size: 10))
+                            .font(.app(size: 10))
                             .foregroundStyle(.secondary)
                         Text(s("boş", "free", "свободно"))
-                            .font(.system(size: 9))
+                            .font(.app(size: 9))
                             .foregroundStyle(.tertiary)
                     }
                     Spacer(minLength: 0)
@@ -53,10 +53,10 @@ struct DiskWidgetView: View {
                 HStack(spacing: 8) {
                     Spacer(minLength: 0)
                     Text(WidgetFormat.percent(disk.usedFraction))
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.app(size: 15, weight: .semibold))
                         .monospacedDigit()
                     Text("\(WidgetFormat.bytes(disk.used)) / \(WidgetFormat.bytes(disk.total))")
-                        .font(.system(size: 13))
+                        .font(.app(size: 13))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
@@ -88,10 +88,10 @@ struct NetworkWidgetView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(s("Bugün", "Today", "Сегодня"))
-                    .font(.system(size: 11))
+                    .font(.app(size: 11))
                     .foregroundStyle(.secondary)
                 Text(WidgetFormat.bytes(network.today))
-                    .font(.system(size: family == .systemSmall ? 22 : 28, weight: .semibold))
+                    .font(.app(size: family == .systemSmall ? 22 : 28, weight: .semibold))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
@@ -116,11 +116,11 @@ struct NetworkWidgetView: View {
     private func column(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label)
-                .font(.system(size: 10))
+                .font(.app(size: 10))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.app(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -157,11 +157,11 @@ struct BatteryWidgetView: View {
 
             if battery.isPresent {
                 Text("\(battery.chargePercent)%")
-                    .font(.system(size: family == .systemSmall ? 34 : 40, weight: .bold))
+                    .font(.app(size: family == .systemSmall ? 34 : 40, weight: .bold))
                     .monospacedDigit()
 
                 Text("\(battery.charge) / \(battery.currentCapacity) mAh")
-                    .font(.system(size: 11))
+                    .font(.app(size: 11))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
 
@@ -185,7 +185,7 @@ struct BatteryWidgetView: View {
             } else {
                 Spacer(minLength: 0)
                 Text(s("Batarya yok", "No battery", "Нет батареи"))
-                    .font(.system(size: 12))
+                    .font(.app(size: 12))
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
@@ -206,11 +206,11 @@ struct BatteryWidgetView: View {
     private func detail(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(value)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.app(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
             Text(label)
-                .font(.system(size: 9.5))
+                .font(.app(size: 9.5))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -243,11 +243,11 @@ struct MemoryWidgetView: View {
             WidgetHeader(symbolName: "memorychip", title: s("Bellek", "Memory", "Память"))
 
             Text(WidgetFormat.percent(memory.usedFraction, decimals: 1))
-                .font(.system(size: family == .systemSmall ? 28 : 34, weight: .bold))
+                .font(.app(size: family == .systemSmall ? 28 : 34, weight: .bold))
                 .monospacedDigit()
 
             Text("\(WidgetFormat.memoryBytes(memory.used)) / \(WidgetFormat.memoryBytes(memory.total))")
-                .font(.system(size: 11))
+                .font(.app(size: 11))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .lineLimit(1)
@@ -294,11 +294,11 @@ struct MemoryWidgetView: View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 10))
+                .font(.app(size: 10))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 4)
             Text(WidgetFormat.memoryBytes(bytes))
-                .font(.system(size: 10, weight: .medium))
+                .font(.app(size: 10, weight: .medium))
                 .monospacedDigit()
         }
     }
@@ -334,7 +334,7 @@ struct ProcessorWidgetView: View {
 
             if family == .systemSmall {
                 Text(temperatureText)
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.app(size: 30, weight: .bold))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
@@ -342,27 +342,27 @@ struct ProcessorWidgetView: View {
                 HStack(spacing: 5) {
                     WidgetThermalBars(pressure: cpu.thermalPressure)
                     Text(cpu.thermalPressure.label(s))
-                        .font(.system(size: 10))
+                        .font(.app(size: 10))
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer(minLength: 0)
 
                 Text("\(s("Yük", "Load", "Загрузка")) \(WidgetFormat.percent(cpu.usage))")
-                    .font(.system(size: 11))
+                    .font(.app(size: 11))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             } else {
                 HStack(spacing: 8) {
                     Text(temperatureText)
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.app(size: 28, weight: .semibold))
                         .monospacedDigit()
 
                     Spacer(minLength: 8)
 
                     WidgetThermalBars(pressure: cpu.thermalPressure)
                     Text(cpu.thermalPressure.label(s))
-                        .font(.system(size: 11))
+                        .font(.app(size: 11))
                         .foregroundStyle(.secondary)
                 }
 

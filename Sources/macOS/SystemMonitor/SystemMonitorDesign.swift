@@ -27,6 +27,9 @@ struct StatCard<Content: View>: View {
     let symbolName: String
     let title: String
     var onOpenSettings: (() -> Void)?
+    /// Kartı masaüstünde ayrı bir pencereye çıkarır. Verilmezse düğme
+    /// çizilmiyor — panel ve menü çubuğu kartları çıkarılamıyor.
+    var onDetach: (() -> Void)?
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -38,18 +41,28 @@ struct StatCard<Content: View>: View {
                     .frame(width: 18, height: 18)
 
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.app(size: 15, weight: .semibold))
 
                 Spacer(minLength: 8)
 
-                if let onOpenSettings {
-                    Button(action: onOpenSettings) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 12, weight: .medium))
+                // İki eylem tek düğmede: başlık şeridinde yan yana iki
+                // ikon, kartın adından çok yer kaplıyordu.
+                if onOpenSettings != nil || onDetach != nil {
+                    Menu {
+                        if let onDetach {
+                            Button(L10n.openAsDesktopWidget, action: onDetach)
+                        }
+                        if let onOpenSettings {
+                            Button(L10n.settingsTitle, action: onOpenSettings)
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.tertiary)
                     }
-                    .buttonStyle(.plain)
-                    .help(L10n.settingsTitle)
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
                 }
             }
 
@@ -97,7 +110,7 @@ struct StatHeadline: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(displayedValue)
-                .font(.system(size: size, weight: .bold))
+                .font(.app(size: size, weight: .bold))
                 .monospacedDigit()
                 .tracking(-1.0)
                 .contentTransition(reduceMotion ? .identity : .numericText())
@@ -106,7 +119,7 @@ struct StatHeadline: View {
 
             if let detail {
                 Text(detail)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.app(size: 14, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -150,11 +163,11 @@ struct StatPill: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.system(size: 12))
+                .font(.app(size: 12))
                 .foregroundStyle(.secondary)
 
             Text(value)
-                .font(.system(size: 12, weight: .bold))
+                .font(.app(size: 12, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(tint ?? .primary)
                 .contentTransition(reduceMotion ? .identity : .numericText())
@@ -285,12 +298,12 @@ struct StatColumns: View {
             ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.label)
-                        .font(.system(size: 12))
+                        .font(.app(size: 12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text(item.value)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.app(size: 14, weight: .semibold))
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                         .lineLimit(1)
@@ -326,12 +339,12 @@ struct StatLegend: View {
                             .frame(width: 7, height: 7)
 
                         Text(item.label)
-                            .font(.system(size: 12.5, weight: .medium))
+                            .font(.app(size: 12.5, weight: .medium))
                             .lineLimit(1)
                     }
 
                     Text(item.value)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.app(size: 13, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .contentTransition(reduceMotion ? .identity : .numericText())
@@ -448,6 +461,77 @@ struct StatStackedBarChart: View {
     }
 }
 
+/// Tek bir serinin ince çizgisi ve altındaki yumuşak dolgu.
+///
+/// Çubuk grafiğinden farkı: burada tek tek örnekler değil, hareketin
+/// kendisi okunuyor. Ölçek serinin kendi tepesine göre — ağ hızı saniyede
+/// kilobayt ile megabayt arasında gezindiği için sabit bir tavan çoğu
+/// zaman düz bir çizgi bırakıyordu.
+struct StatSparkline: View {
+    let samples: [Double]
+    var color: Color = SystemPalette.secondary
+    var capacity: Int = 40
+
+    var body: some View {
+        GeometryReader { geo in
+            let values = normalized()
+
+            ZStack {
+                if values.count > 1 {
+                    path(values, in: geo.size, closed: true)
+                        .fill(
+                            LinearGradient(
+                                colors: [color.opacity(0.32), color.opacity(0.02)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    path(values, in: geo.size, closed: false)
+                        .stroke(color, style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// 0…1'e indirgenmiş seri. Tepe sıfırsa (hiç trafik yok) düz taban.
+    private func normalized() -> [Double] {
+        let window = Array(samples.suffix(max(capacity, 2)))
+        guard let peak = window.max(), peak > 0 else {
+            return window.map { _ in 0 }
+        }
+        return window.map { min(max($0 / (peak * 1.12), 0), 1) }
+    }
+
+    private func path(_ values: [Double], in size: CGSize, closed: Bool) -> Path {
+        Path { path in
+            guard values.count > 1 else { return }
+            let step = size.width / CGFloat(values.count - 1)
+            func point(_ index: Int) -> CGPoint {
+                CGPoint(x: CGFloat(index) * step, y: size.height * (1 - CGFloat(values[index])))
+            }
+
+            path.move(to: point(0))
+            for index in 1..<values.count {
+                let previous = point(index - 1)
+                let current = point(index)
+                let mid = CGPoint(x: (previous.x + current.x) / 2, y: (previous.y + current.y) / 2)
+                path.addQuadCurve(to: mid, control: previous)
+                if index == values.count - 1 {
+                    path.addQuadCurve(to: current, control: current)
+                }
+            }
+
+            if closed {
+                path.addLine(to: CGPoint(x: size.width, y: size.height))
+                path.addLine(to: CGPoint(x: 0, y: size.height))
+                path.closeSubpath()
+            }
+        }
+    }
+}
+
 /// Sıfır çizgisinin iki yanına inen/çıkan trafiği ayıran grafik.
 struct StatDualBarChart: View {
     let up: [Double]
@@ -487,10 +571,10 @@ struct StatDualBarChart: View {
                     ForEach(0..<max(upScaled.count, downScaled.count), id: \.self) { index in
                         VStack(spacing: 0) {
                             Spacer(minLength: 0)
-                            Rectangle()
+                            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                                 .fill(downColor)
                                 .frame(height: max(half * CGFloat(downScaled.indices.contains(index) ? downScaled[index] : 0), 0))
-                            Rectangle()
+                            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                                 .fill(upColor)
                                 .frame(height: max(half * CGFloat(upScaled.indices.contains(index) ? upScaled[index] : 0), 0))
                             Spacer(minLength: 0)
@@ -713,5 +797,69 @@ struct PerCoreLoadChart: View {
     private var accessibilityText: String {
         guard let busiest = Self.busiest(in: usages) else { return L10n.processorCoreActivityLabel }
         return L10n.processorPerCoreAccessibility(busiest.number, busiest.usage)
+    }
+}
+
+// MARK: - Pano kartı kabuğu
+
+extension View {
+    /// Panodaki her kartın ortak yüzeyi: kenar çubuğuyla aynı cam dili.
+    ///
+    /// Izgarada yan yana duran kartlar aynı yüksekliğe uzanıyor
+    /// (`maxHeight: .infinity`) — aksi hâlde kısa içerikli kart komşusunun
+    /// yanında yarım kalmış gibi görünüyordu.
+    func dashboardCard(cornerRadius: CGFloat = Layout.cardCornerRadius) -> some View {
+        padding(16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .modifier(DashboardCardSurface(cornerRadius: cornerRadius))
+    }
+}
+
+/// Kartın camı: translüsan koyu yüzey, saç teli kenarlık, üst kenarda iç
+/// parlama ve çok yumuşak bir dış gölge. Parlama yalnızca üstte — ışık
+/// yukarıdan geliyor, çerçevenin tamamı parlarsa cam değil neon olur.
+struct DashboardCardSurface: ViewModifier {
+    var cornerRadius: CGFloat = Layout.cardCornerRadius
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
+
+    private var isDark: Bool { colorScheme == .dark }
+
+    private var fill: Color {
+        guard isDark else { return Color.primary.opacity(reduceTransparency ? 0.09 : 0.05) }
+        return Color.white.opacity(reduceTransparency ? 0.10 : 0.052)
+    }
+
+    private var edge: Color {
+        contrast == .increased ? Color.white.opacity(0.22) : Color.white.opacity(isDark ? 0.09 : 0.14)
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                shape.fill(fill)
+            }
+            .overlay {
+                shape.strokeBorder(edge, lineWidth: contrast == .increased ? 1 : 0.6)
+            }
+            .overlay {
+                // İç parlama: camın üst kenarından geçen ışık.
+                shape.strokeBorder(
+                    LinearGradient(
+                        colors: [.white.opacity(isDark ? 0.10 : 0.35), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 0.6
+                )
+            }
+            .clipShape(shape)
+            .shadow(color: .black.opacity(isDark ? 0.28 : 0.10), radius: 12, y: 4)
     }
 }

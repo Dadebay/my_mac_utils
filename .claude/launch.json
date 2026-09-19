@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "//": "Next.js kaynağı kayboldu; elimizde yalnızca Firebase'e dağıtılmış statik çıktı (website/out) var. Sunucu, firebase.json'daki cleanUrls ve yönlendirmeleri taklit ediyor — düz bir statik sunucuda /en 404 verirdi.",
+      "name": "website",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "/private/tmp/claude-501/-Users-dadebay-Developer-apps-projects-macos-todo-app/489d432b-ecb8-4402-a22c-6d9c327c3b61/scratchpad/serve_site.py",
+        "website/out",
+        "5055"
+      ],
+      "port": 5055
+    }
+  ]
+}

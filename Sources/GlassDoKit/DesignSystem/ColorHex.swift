@@ -10,4 +10,19 @@ public extension Color {
         let b = Double(value & 0xFF) / 255
         self.init(red: r, green: g, blue: b)
     }
+
+    /// Bu rengi hedefe doğru karıştırılmış hâli — `TintedIconBadge` gibi
+    /// tek bir vurgu renginden, SwiftUI'ın otomatik (ve genelde çok soluk
+    /// kalan) `.gradient`'i yerine, iki ucu kasıtlı olarak ayrılmış gerçek
+    /// bir açık/koyu çift üretmek için.
+    func mixed(towards target: Color, amount: Double) -> Color {
+        let a = resolve(in: EnvironmentValues())
+        let b = target.resolve(in: EnvironmentValues())
+        let t = min(max(amount, 0), 1)
+        return Color(
+            red: Double(a.red) + (Double(b.red) - Double(a.red)) * t,
+            green: Double(a.green) + (Double(b.green) - Double(a.green)) * t,
+            blue: Double(a.blue) + (Double(b.blue) - Double(a.blue)) * t
+        )
+    }
 }

@@ -39,13 +39,13 @@ struct SettingsCard<Content: View>: View {
                     if let title {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(title)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.app(size: 11, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .textCase(.uppercase)
                                 .kerning(0.4)
                             if let subtitle {
                                 Text(subtitle)
-                                    .font(.system(size: 11))
+                                    .font(.app(size: 11))
                                     .foregroundStyle(.tertiary)
                             }
                         }
@@ -95,10 +95,10 @@ struct ValueSlider: View {
         VStack(spacing: 6) {
             HStack {
                 Text(label)
-                    .font(.system(size: 13))
+                    .font(.app(size: 13))
                 Spacer(minLength: 12)
                 Text(format(value))
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.app(size: 12, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 8)
@@ -155,7 +155,7 @@ struct IconToggleRow: View {
                 }
 
             Text(label)
-                .font(.system(size: 13))
+                .font(.app(size: 13))
                 .foregroundStyle(isOn ? .primary : .secondary)
 
             Spacer(minLength: 8)
@@ -199,7 +199,7 @@ struct SettingsSegmentedRow<T: Hashable>: View {
 
     private var labelText: some View {
         Text(label)
-            .font(.system(size: 13))
+            .font(.app(size: 13))
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -229,7 +229,7 @@ struct ResetButton: View {
                 Image(systemName: "arrow.counterclockwise")
                     .font(.system(size: 9, weight: .semibold))
                 Text(L10n.resetDefaults)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.app(size: 11, weight: .medium))
             }
             .foregroundStyle(.secondary)
             .padding(.horizontal, 9)

@@ -18,11 +18,17 @@ final class MenuBarStatsController {
     private let stats = SystemStatsController.shared
     private var popover: NSPopover?
     private var defaultsObserver: NSObjectProtocol?
+    /// Popover açıkken dışarıya yapılan tıklamayı ve başka bir uygulamanın
+    /// öne geçmesini dinleyenler — bkz. `installPopoverDismissMonitors`.
+    private var outsideClickMonitor: Any?
+    private var resignActiveObserver: NSObjectProtocol?
 
     /// Ayarlar penceresini açan kanca — `EdgePanelController` ile aynı
     /// desen: SwiftUI'nin `openSettings` ortam eylemi yalnızca bir
     /// görünümün içinden çağrılabiliyor, menü çubuğu ise görünüm değil.
     var openSettings: (() -> Void)?
+    /// Ana pencereyi açan kanca — aynı gerekçe.
+    var openMainWindow: (() -> Void)?
 
     private var isRunning = false
     /// Ölçüm döngüsü yalnızca en az bir ölçer görünürken çalışsın:
@@ -180,10 +186,47 @@ final class MenuBarStatsController {
         }
     }
 
+    /// Popover'ı kapatır ve dışarıyı dinleyen izleyicileri bırakır.
+    private func dismissPopover() {
+        popover?.performClose(nil)
+        popover = nil
+
+        if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
+        outsideClickMonitor = nil
+
+        if let resignActiveObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(resignActiveObserver)
+        }
+        resignActiveObserver = nil
+    }
+
+    /// `.transient` popover'ın kendi kapanma mantığı bu kullanımda yetmiyor:
+    /// `NSStatusItem` penceresi uygulamayı etkinleştirmediği için başka bir
+    /// uygulamaya tıklandığında GlassDo hiç "pasifleşmiyor" ve kart ekranda
+    /// asılı kalıyordu. İki dinleyici bu boşluğu kapatıyor: dışarıya yapılan
+    /// her tıklama ve başka bir uygulamanın öne geçmesi.
+    private func installPopoverDismissMonitors() {
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.dismissPopover() }
+        }
+
+        resignActiveObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                  app.processIdentifier != ProcessInfo.processInfo.processIdentifier
+            else { return }
+            MainActor.assumeIsolated { self?.dismissPopover() }
+        }
+    }
+
     private func togglePopover(for kind: MenuBarItemKind, button: NSStatusBarButton) {
         if let popover, popover.isShown {
-            popover.performClose(nil)
-            self.popover = nil
+            dismissPopover()
             return
         }
 
@@ -200,12 +243,24 @@ final class MenuBarStatsController {
         // içindeki `.frame(width:).frame(maxHeight:)` ile zaten sınırlı,
         // burada onu tekrar sabitlemeye gerek yok.
         let hostingController = NSHostingController(
-            rootView: MenuBarPopoverView(category: kind.category)
+            rootView: MenuBarPopoverView(
+                category: kind.category,
+                onRemove: { [weak self] in
+                    self?.dismissPopover()
+                    MenuBarSettings.toggle(kind)
+                },
+                onOpenApp: { [weak self] in
+                    self?.dismissPopover()
+                    NSApp.activate(ignoringOtherApps: true)
+                    self?.openMainWindow?()
+                }
+            )
         )
         hostingController.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hostingController
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         self.popover = popover
+        installPopoverDismissMonitors()
     }
 
     private func showMenu(for kind: MenuBarItemKind, button: NSStatusBarButton) {
@@ -226,6 +281,8 @@ private final class StatusItemHost: NSObject {
     private let hosting: MenuBarHostingView
     private let onClick: (MenuBarItemKind, NSStatusBarButton) -> Void
     private let onOpenSettings: () -> Void
+    /// Bu ölçer için şimdiye kadar ölçülen en geniş hâl. Bkz. `update`.
+    private var reservedWidth: CGFloat = 0
 
     init(
         kind: MenuBarItemKind,
@@ -245,6 +302,12 @@ private final class StatusItemHost: NSObject {
         // için (bkz. `MenuBarItemKind`) ad da öge yeniden yaratılsa bile
         // aynı kalıyor.
         statusItem.autosaveName = "menubar.\(kind.rawValue)"
+        // Kalıcı ad yalnız konumu değil görünürlüğü de saklıyor: öge bir
+        // kez gizli kaldıysa (menü çubuğu sıkışması, Command+sürükleyip
+        // dışarı atma) bu durum kullanıcı defaults'ında kalıyor ve ölçer
+        // bir daha hiç görünmüyor. Ayarlarda açık olan her ölçer her
+        // açılışta görünür olmalı — saklanan gizlilik burada eziliyor.
+        statusItem.isVisible = true
         hosting = MenuBarHostingView(
             rootView: AnyView(MenuBarItemView(kind: kind, snapshot: SystemSnapshot()))
         )
@@ -271,15 +334,19 @@ private final class StatusItemHost: NSObject {
         hosting.rootView = AnyView(MenuBarItemView(kind: kind, snapshot: snapshot))
 
         // Genişlik ölçerden ölçere değişiyor (grafik, çubuk, iki satır
-        // sayı aynı yeri kaplamıyor), o yüzden ölçülüyor. Aynı ölçerin
-        // genişliği ise değer değiştikçe oynamıyor: `MenuBarItemView`
+        // sayı aynı yeri kaplamıyor), o yüzden bir kez ölçülüyor. Aynı
+        // ölçerin genişliği ise değer değiştikçe oynamıyor: `MenuBarItemView`
         // her sayı alanına, alabileceği en geniş metne göre yer ayırıyor.
-        // Tam puana yuvarlanıyor ki yarım puanlık ölçüm farkları da
-        // menü çubuğunu oynatmasın.
+        //
+        // Ölçüm yalnız büyütebiliyor, asla daraltmıyor. İki şeye karşı:
+        // beklenmedik bir değer yer ayrılan genişliği aşarsa ölçer bir kez
+        // genişleyip orada kalıyor (her turda gidip gelmiyor); yerleşim
+        // henüz oturmamışken (uyanma, ekran değişimi, tema geçişi) gelen
+        // sıfıra yakın bir ölçüm de ölçeri menü çubuğundan silmiyor.
         let width = hosting.fittingSize.width.rounded(.up)
-        if width > 0, abs(statusItem.length - width) > 0.5 {
-            statusItem.length = width
-        }
+        guard width > reservedWidth else { return }
+        reservedWidth = width
+        statusItem.length = width
     }
 
     @objc private func handleClick() {

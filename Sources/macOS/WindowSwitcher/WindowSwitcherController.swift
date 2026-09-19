@@ -29,6 +29,18 @@ private extension CGRect {
 final class WindowSwitcherController {
 
     private(set) var isVisible = false
+    /// ⌥ basılı tutulduğu andan bırakılana kadar süren "değiştirici
+    /// oturumu". `isVisible`'dan ayrı olması şart: `isVisible` ancak
+    /// bindirim ekrana çizildikten sonra `true` oluyor, tuş olayları ise
+    /// o ana kadar da gelmeye devam ediyor. İkisi tek değişkende
+    /// toplandığında, hazırlık sürerken basılan Tab'lar "oturum yok" sayılıp
+    /// yeni bir gösterim başlatıyor, bu arada bırakılan ⌥ ise hiç
+    /// yakalanmıyordu — bindirim kullanıcı tuşu bıraktıktan sonra açılıp
+    /// ekranda asılı kalıyordu.
+    private var isSessionActive = false
+    /// Pencere listesi hazır olmadan basılan Tab'lar burada birikip liste
+    /// gelince tek seferde uygulanıyor; aksi hâlde o basışlar kayboluyordu.
+    private var pendingAdvance = 0
     private(set) var windows: [SwitcherWindowInfo] = []
     private(set) var selectedIndex = 0
 
@@ -42,6 +54,8 @@ final class WindowSwitcherController {
     private var overlayPanel: SwitcherOverlayPanel?
     private var activationObserver: (any NSObjectProtocol)?
     private var otherAppActivationObserver: (any NSObjectProtocol)?
+    /// Bindirim açıkken dışarıya yapılan tıklamaları dinler — bkz. `hide`.
+    private var outsideClickMonitor: Any?
 
     /// Etkinleşme bildirimi statik bir kapanıştan geliyor; uygulamada tek
     /// bir değiştirici olduğu için en son kurulan örnek burada tutuluyor.
@@ -61,11 +75,10 @@ final class WindowSwitcherController {
     /// Ayarları'nda anahtar açık görünür, macOS ise yeni ikiliyi tanımaz.
     private(set) var isAuthorizationStale = false
 
-    /// Her iki izin de verilmiş mi? Yalnızca Ayarlar'daki durum göstergesi
-    /// için — özelliğin çalışması buna bağlı değil.
-    var hasPermissions: Bool {
-        hasAccessibilityPermission && hasScreenRecordingPermission
-    }
+    /// Ayarlar penceresini açan kanca — `EdgePanelController` ile aynı
+    /// desen. İzin eksikken kullanıcıyı durumun açıklandığı sayfaya
+    /// götürmek için kullanılıyor.
+    var openSettings: (() -> Void)?
 
     /// Global ⌥+Tab yakalamak için gereken tek izin. Küçük resimler ayrı
     /// bir izne bağlı ve o olmadan da pencere değiştirme çalışmalı —
@@ -89,9 +102,28 @@ final class WindowSwitcherController {
 
     func showPreview() {
         guard hasAccessibilityPermission else {
-            requestPermissionsAndStart()
+            // Ray ikonuna/menüye basmak bilinçli bir kullanıcı eylemi:
+            // `userInitiated: true` olmadan, izin isteği ömür boyu bir kez
+            // gösterildiği için (kalıcı `accessibilityPromptRequestedKey`)
+            // buradan hiçbir şey olmuyordu — düğme sessizce ölüydü.
+            requestPermissionsAndStart(userInitiated: true)
+
+            // Sistem isteği ikinci kez göstermeyi reddedebilir (özellikle
+            // listede duran ama imzası değişmiş bir derlemede). O durumda
+            // da kullanıcı boşluğa basmış olmasın: durumu ve ne yapması
+            // gerektiğini anlatan Ayarlar sayfasına götür.
+            if !hasAccessibilityPermission {
+                openSettings?()
+            }
             return
         }
+        // `presentSwitcher()` sonunda `isSessionActive` kontrol ediliyor —
+        // hazırlık sürerken kullanıcı ⌥'i bırakırsa bindirim açılmasın diye
+        // eklenmişti (bkz. o denetimin yanındaki yorum). Yalnızca klavye
+        // yolu (`decide()`) bunu `true` yapıyordu; ray ikonu ve Ayarlar'daki
+        // "Test Et" gibi doğrudan çağrılar hiç ayarlamıyordu, bu yüzden aynı
+        // denetime takılıp bindirim sessizce hiç açılmıyordu.
+        isSessionActive = true
         _Concurrency.Task { await presentSwitcher() }
     }
 
@@ -253,12 +285,16 @@ final class WindowSwitcherController {
 
         if type == .flagsChanged {
             let modifierDown = flags.contains(modifierFlag)
-            if isVisible, !modifierDown {
+            guard !modifierDown else { return false }
+
+            if isVisible {
                 commitSelection()
-            } else if !modifierDown {
-                // Beliriş gecikmesi dolmadan tuş bırakıldı — bindirim hiç
-                // görünmeden bekleyen gösterim iptal edilir.
-                pendingShowTask?.cancel()
+            } else if isSessionActive {
+                // Bindirim daha çizilmeden tuş bırakıldı. Oturum burada
+                // kapatılıyor ki hazırlığı süren gösterim kendini iptal
+                // etsin — yoksa bindirim iş bittiğinde açılıp ekranda
+                // sahipsiz kalıyordu.
+                endSession()
             }
             return false
         }
@@ -274,15 +310,20 @@ final class WindowSwitcherController {
             return false
         }
 
-        if isVisible {
+        if isSessionActive {
             advanceSelection(backward: flags.contains(.maskShift))
         } else {
+            isSessionActive = true
+            pendingAdvance = 0
             show()
         }
         return true
     }
 
     private static let escapeKeyCode: Int64 = 53
+
+    /// Pencere değiştiricide hiç görünmeyecek uygulamalar.
+    private static let excludedBundleIdentifiers: Set<String> = ["com.apple.finder"]
 
     // MARK: - Gösterme / gezinme / etkinleştirme
 
@@ -315,7 +356,11 @@ final class WindowSwitcherController {
     }
 
     private func advanceSelection(backward: Bool) {
-        guard !windows.isEmpty else { return }
+        guard !windows.isEmpty else {
+            // Liste hazırlanıyor; basış kaybolmasın diye saklanıyor.
+            pendingAdvance += backward ? -1 : 1
+            return
+        }
         let count = windows.count
         selectedIndex = ((selectedIndex + (backward ? -1 : 1)) % count + count) % count
         updateOverlay()
@@ -348,7 +393,19 @@ final class WindowSwitcherController {
 
     private func hide() {
         isVisible = false
+        endSession()
+        stopOutsideClickMonitor()
         dismissOverlay()
+    }
+
+    /// Oturumu kapatır: bekleyen gösterimi iptal eder ve birikmiş Tab
+    /// sayacını sıfırlar. Hazırlığı süren `presentSwitcher` bunu görüp
+    /// kendini iptal ediyor.
+    private func endSession() {
+        isSessionActive = false
+        pendingAdvance = 0
+        pendingShowTask?.cancel()
+        pendingShowTask = nil
     }
 
     /// Seçilen pencereyi gerçekten öne getirir. Yalnızca `activate()` ya da
@@ -357,6 +414,55 @@ final class WindowSwitcherController {
     /// uygulama öne gelse bile başka bir penceresi ana pencere olarak
     /// kalıyor ve seçtiğimiz pencere arkada duruyordu.
     private func activate(_ window: SwitcherWindowInfo) {
+        _Concurrency.Task { await performActivation(window) }
+    }
+
+    /// Uygulamayı gerçekten **en öne** getirir.
+    ///
+    /// `NSRunningApplication.activate()` bu iş için yetmiyor: macOS 14'ten
+    /// beri geçerli olan "cooperative activation" kuralı, önplanda olmayan
+    /// normal (`.regular`) bir uygulamanın başka bir uygulamayı
+    /// etkinleştirme isteğini reddediyor ya da yalnızca kısmen uyguluyor.
+    /// Ölçtüğümüzde hedef pencere yükseliyor ama o an önde duran uygulamanın
+    /// **arkasında** kalıyordu — kullanıcının gördüğü hata buydu.
+    /// `activate(options: .activateIgnoringOtherApps)` de çare değil:
+    /// `ignoringOtherApps` macOS 14'te kullanımdan kaldırıldı ve derleyicinin
+    /// kendi uyarısındaki ifadeyle artık "hiçbir etkisi yok".
+    ///
+    /// LaunchServices üzerinden açmak — Dock ikonuna tıklamanın yaptığı şey —
+    /// bu kısıta tabi değil ve hedefi güvenilir biçimde en öne alıyor.
+    /// Uygulama zaten çalışıyorsa yeni bir kopya başlatmıyor
+    /// (`createsNewApplicationInstance` varsayılan olarak `false`), yalnızca
+    /// öne getiriyor.
+    private func bringToFront(_ runningApp: NSRunningApplication?) async {
+        guard let runningApp else { return }
+        guard let bundleURL = runningApp.bundleURL else {
+            runningApp.activate()
+            return
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        _ = try? await NSWorkspace.shared.openApplication(
+            at: bundleURL, configuration: configuration
+        )
+    }
+
+    /// Seçilen pencereyi uygulamanın kendi pencereleri arasında öne alır ve
+    /// odaklar. Uygulamanın önplana geçmesi ayrı iş — bkz. `bringToFront`.
+    ///
+    /// "Ana" ve "odaklı" işaretleri **pencerenin kendisine** yazılıyor;
+    /// uygulama elemanındaki `kAXMainWindow` / `kAXFocusedWindow` salt
+    /// okunur, oraya yazmak sessizce başarısız oluyor.
+    private func focusWindow(_ element: AXUIElement) {
+        // Simge durumuna küçültülmüş pencere `kAXRaiseAction`'a yanıt
+        // vermez — önce Dock'tan geri çağrılması gerekiyor.
+        AXUIElementSetAttributeValue(element, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
+        AXUIElementSetAttributeValue(element, kAXMainAttribute as CFString, kCFBooleanTrue)
+        AXUIElementSetAttributeValue(element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
+        AXUIElementPerformAction(element, kAXRaiseAction as CFString)
+    }
+
+    private func performActivation(_ window: SwitcherWindowInfo) async {
         let runningApp = NSRunningApplication(processIdentifier: window.pid)
 
         // Simge durumundaki kart: `windowID` yok (giriş Erişilebilirlik
@@ -365,16 +471,16 @@ final class WindowSwitcherController {
         // küçültülmüş pencerelerine dokunma.
         if window.isMinimized {
             runningApp?.unhide()
-            runningApp?.activate()
+            await bringToFront(runningApp)
             restoreMinimizedWindow(pid: window.pid, title: window.windowTitle)
             return
         }
 
         // Penceresiz giriş: uygulamanın hiç penceresi yok (hepsi kapatılmış).
-        // Tek başına `activate()` yetmiyor — Dock ikonuna tıklamış gibi
-        // davranıp yeni bir pencere açtırmak gerekiyor.
+        // Öne almak yetmiyor — Dock ikonuna tıklamış gibi davranıp yeni bir
+        // pencere açtırmak gerekiyor.
         guard window.windowID != nil else {
-            restoreWindowlessApp(runningApp, pid: window.pid)
+            await restoreWindowlessApp(runningApp, pid: window.pid)
             return
         }
 
@@ -383,34 +489,20 @@ final class WindowSwitcherController {
         ) else {
             // Pencere kesin olarak bulunamadı: yanlış pencereyi öne
             // getirmektense yalnızca uygulamayı öne al.
-            runningApp?.activate()
+            await bringToFront(runningApp)
             return
         }
 
         // Aynı uygulamanın iki penceresi arasında geçiş yaparken (iki Chrome
-        // profili gibi) uygulama zaten öndedir. Bu durumda `activate()` —
-        // ve uygulama elemanına yazılan `kAXFrontmost` — seçtiğimiz
-        // pencereyi geri alıyordu: macOS uygulamayı öne getirirken onun
-        // kendi "key window"unu, yani hâlâ eski pencereyi geri çağırıyor.
-        // Farklı bir uygulamaya geçerken böyle bir çakışma olmadığı için
-        // hata yalnızca aynı uygulamanın pencerelerinde görünüyordu.
-        let isAlreadyFrontmost = runningApp?.isActive == true
+        // profili gibi) uygulama zaten öndedir. Onu yeniden öne almak macOS'a
+        // uygulamanın kendi "key window"unu geri çağırtıyor, yani seçtiğimiz
+        // pencereyi geri alıyordu; bu durumda yalnızca doğru pencereyi
+        // seçmek yeterli.
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier != window.pid {
+            await bringToFront(runningApp)
+        }
 
-        // Simge durumuna küçültülmüş pencere `kAXRaiseAction`'a yanıt
-        // vermez — önce Dock'tan geri çağrılması gerekiyor.
-        AXUIElementSetAttributeValue(target, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
-
-        // "Ana" ve "odaklı" işaretleri **pencerenin kendisine** yazılıyor.
-        // Uygulama elemanındaki `kAXMainWindow` / `kAXFocusedWindow`
-        // salt okunur; oraya yazmak sessizce başarısız oluyordu ve seçim
-        // yalnızca `activate()`'in yan etkisiyle çalışıyormuş gibi
-        // görünüyordu.
-        AXUIElementSetAttributeValue(target, kAXMainAttribute as CFString, kCFBooleanTrue)
-        AXUIElementSetAttributeValue(target, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        AXUIElementPerformAction(target, kAXRaiseAction as CFString)
-
-        guard !isAlreadyFrontmost else { return }
-        runningApp?.activate()
+        focusWindow(target)
     }
 
     /// Başlığı verilen tek bir küçültülmüş pencereyi Dock'tan geri çağırır.
@@ -431,13 +523,7 @@ final class WindowSwitcherController {
         }
 
         guard let target else { return }
-        // `activate()` yolundaki ile aynı gerekçe: işaretler pencerenin
-        // kendisine yazılıyor, uygulama elemanındaki karşılıkları salt
-        // okunur.
-        AXUIElementSetAttributeValue(target, kAXMinimizedAttribute as CFString, kCFBooleanFalse)
-        AXUIElementSetAttributeValue(target, kAXMainAttribute as CFString, kCFBooleanTrue)
-        AXUIElementSetAttributeValue(target, kAXFocusedAttribute as CFString, kCFBooleanTrue)
-        AXUIElementPerformAction(target, kAXRaiseAction as CFString)
+        focusWindow(target)
     }
 
     /// Yalnızca logo gösteren (ekranda penceresi olmayan) bir kart
@@ -445,21 +531,14 @@ final class WindowSwitcherController {
     /// uygulama öne gelir ama pencereleri Dock'ta küçülmüş kalır, kullanıcıya
     /// "hiçbir şey açılmadı" gibi görünür.
     ///
-    /// Önce Erişilebilirlik üzerinden pencereleri geri çağırmayı deniyoruz;
-    /// uygulama hiç AX penceresi bildirmiyorsa (Chrome tüm pencereleri
-    /// küçültülmüşken bazen bu durumda oluyor) Dock ikonuna tıklamayla aynı
-    /// davranışı veren `openApplication` yoluna düşüyoruz.
-    private func restoreWindowlessApp(_ runningApp: NSRunningApplication?, pid: pid_t) {
+    /// `bringToFront` zaten Dock ikonuna tıklamayla aynı yolu (LaunchServices)
+    /// kullanıyor: penceresi olmayan bir uygulamada bu, uygulamaya yeni bir
+    /// pencere açtırıyor. Ardından Erişilebilirlik üzerinden küçültülmüş
+    /// pencereler de geri çağrılıyor.
+    private func restoreWindowlessApp(_ runningApp: NSRunningApplication?, pid: pid_t) async {
         runningApp?.unhide()
-        runningApp?.activate()
-
-        if deminiaturizeAllWindows(pid: pid) { return }
-
-        // AX hiç pencere vermedi — Dock ikonuna tıklamış gibi davran.
-        guard let bundleURL = runningApp?.bundleURL else { return }
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.activates = true
-        NSWorkspace.shared.openApplication(at: bundleURL, configuration: configuration)
+        await bringToFront(runningApp)
+        deminiaturizeAllWindows(pid: pid)
     }
 
     /// Uygulamanın bütün AX pencerelerini simge durumundan geri çağırır.
@@ -599,6 +678,25 @@ final class WindowSwitcherController {
         }
     }
 
+    /// GlassDo'nun kendi pencerelerinden hangileri değiştiricide yer alır.
+    ///
+    /// Ana pencere ve ekrana çıkarılmış görev listesi gerçek pencere: onlara
+    /// geçmek anlamlı. Değiştiricinin kendi bindirmesi, kenar paneli/rayı ve
+    /// masaüstü widget'ları pencere değil yüzey — listede kendilerini
+    /// gösterselerdi kullanıcı "geçtiği" anda hiçbir şey olmazdı,
+    /// bindirmenin kendisi ise listede kendini gösterirdi.
+    private static func isSwitchableOwnWindow(_ windowNumber: CGWindowID) -> Bool {
+        guard let window = NSApp.window(withWindowNumber: Int(windowNumber)) else {
+            // Tanınmayan bir pencere: SwiftUI'ın kendi yardımcı pencereleri
+            // (menü, popover) buraya düşüyor, listeye alınmıyorlar.
+            return false
+        }
+        if window is SwitcherOverlayPanel { return false }
+        if window is EdgePanel { return false }
+        if window is DesktopWidgetPanel { return false }
+        return true
+    }
+
     private func presentSwitcher() async {
         // Fare (ray/menü çubuğu) ya da klavye — hangi yoldan geldiğine
         // bakmaksızın gerçek bir çağırma anı burada tek yerde toplanıyor;
@@ -617,13 +715,26 @@ final class WindowSwitcherController {
             [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
         ) as? [[String: Any]] else { return }
 
-        // Yalnızca Dock'ta görünen normal uygulamalar. Finder kasıtlı olarak
-        // dışarıda: değiştiriciden seçilince açık klasör pencerelerini
-        // kapatıp masaüstünü öne alıyordu.
+        // Yalnızca Dock'ta görünen normal uygulamalar — Finder hariç.
+        //
+        // Finder bir ara listeye alınmıştı: etkinleştirme yolu düzeltilince
+        // açık klasör pencerelerine de geçilebilir olmuştu. Ama karttaki
+        // kırmızı düğme pencereyi değil **uygulamayı** sonlandırıyor (bkz.
+        // `closeWindow`, bilinçli bir karar) ve masaüstünü çizen süreç
+        // Finder'ın kendisi: sonlandırıldığı anda masaüstündeki bütün
+        // dosyalar ekrandan siliniyor. Üstelik Finder'ın çoğu zaman açık
+        // klasör penceresi olmadığı için listede genellikle yalnızca
+        // "penceresiz uygulama" kartı olarak beliriyordu — yani kullanıcıya
+        // sunduğu tek eylem, masaüstünü yok etme riski taşıyan o düğmeydi.
+        // GlassDo'nun kendi pencereleri de listeye giriyor: ekrana
+        // çıkarılmış görev listesi ve ana pencere de kullanıcının geçmek
+        // isteyeceği pencereler. Eskiden uygulamanın tamamı PID ile
+        // dışarıda bırakılıyordu; bunun yerine yalnızca pencere olmayan
+        // yüzeyler eleniyor (bkz. `isSwitchableOwnWindow`) — değiştiricinin
+        // kendi bindirmesi listede kendini gösteremez.
         let eligibleApps = NSWorkspace.shared.runningApplications.filter { app in
             app.activationPolicy == .regular
-                && app.processIdentifier != ownPID
-                && app.bundleIdentifier != "com.apple.finder"
+                && !Self.excludedBundleIdentifiers.contains(app.bundleIdentifier ?? "")
         }
         let eligiblePIDs = Set(eligibleApps.map(\.processIdentifier))
 
@@ -633,6 +744,7 @@ final class WindowSwitcherController {
             guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0 else { return nil }
             guard let pid = info[kCGWindowOwnerPID as String] as? pid_t, eligiblePIDs.contains(pid) else { return nil }
             guard let windowID = info[kCGWindowNumber as String] as? CGWindowID else { return nil }
+            if pid == ownPID, !Self.isSwitchableOwnWindow(windowID) { return nil }
             guard let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
                   (bounds["Width"] ?? 0) > 60, (bounds["Height"] ?? 0) > 60 else { return nil }
             let appName = info[kCGWindowOwnerName as String] as? String ?? ""
@@ -644,9 +756,12 @@ final class WindowSwitcherController {
             return (pid, windowID, appName, title, frame)
         }
 
+        // Küçültülmüş pencere taraması kendi uygulamamızı atlıyor: panel
+        // ve widget'lar küçültülemiyor, ana pencere zaten yukarıda
+        // yakalanıyor.
         // Gerçekten simge durumuna küçültülmüş pencereler (AX `kAXMinimized`).
         let minimized: [(app: NSRunningApplication, title: String, frame: CGRect)] =
-            eligibleApps.flatMap { app in
+            eligibleApps.filter { $0.processIdentifier != ownPID }.flatMap { app in
                 minimizedWindows(of: app).map { (app, $0.title, $0.frame) }
             }
 
@@ -654,24 +769,20 @@ final class WindowSwitcherController {
 
         // Hiç penceresi olmayan (hepsi kapatılmış) uygulamalar — Cmd+Tab'ın
         // da yaptığı gibi en azından logolarıyla listede yer alır.
-        let windowlessApps = eligibleApps.filter { !pidsWithWindows.contains($0.processIdentifier) }
+        let windowlessApps = eligibleApps.filter {
+            !pidsWithWindows.contains($0.processIdentifier) && $0.processIdentifier != ownPID
+        }
 
         guard !entries.isEmpty || !minimized.isEmpty || !windowlessApps.isEmpty else { return }
-
-        let shareable = try? await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
 
         var built: [SwitcherWindowInfo] = []
 
         for entry in entries {
             let icon = NSRunningApplication(processIdentifier: entry.pid)?.icon
-            var thumbnail: NSImage?
-            if let scWindow = shareable?.windows.first(where: { $0.windowID == entry.windowID }) {
-                thumbnail = await Self.captureThumbnail(of: scWindow)
-            }
-            // Pencere küçültüldüğünde gösterebilmek için son görüntüyü sakla.
-            if let thumbnail {
-                thumbnailCache[Self.cacheKey(pid: entry.pid, title: entry.title)] = thumbnail
-            }
+            // Önce elde olanla çiziliyor: bu pencerenin daha önce alınmış
+            // görüntüsü varsa o, yoksa boş. Taze görüntüler bindirim
+            // açıldıktan sonra arkada yükleniyor (bkz. `loadThumbnails`).
+            let thumbnail = thumbnailCache[Self.cacheKey(pid: entry.pid, title: entry.title)]
 
             built.append(SwitcherWindowInfo(
                 windowID: entry.windowID, pid: entry.pid, appName: entry.appName,
@@ -706,12 +817,54 @@ final class WindowSwitcherController {
             .union(minimized.map { Self.cacheKey(pid: $0.app.processIdentifier, title: $0.title) })
         thumbnailCache = thumbnailCache.filter { liveKeys.contains($0.key) }
 
+        // Kullanıcı hazırlık sürerken ⌥'i bıraktıysa bindirimi hiç açma.
+        guard isSessionActive else { return }
+
         windows = built
         // İlk Option+Tab, aktif pencerede değil bir sonrakinde başlar —
-        // Cmd+Tab'ın alışılmış davranışıyla aynı.
-        selectedIndex = built.count > 1 ? 1 : 0
+        // Cmd+Tab'ın alışılmış davranışıyla aynı. Hazırlık sürerken basılan
+        // Tab'lar da buraya ekleniyor, böylece hiçbiri kaybolmuyor.
+        let start = built.count > 1 ? 1 : 0
+        let count = max(built.count, 1)
+        selectedIndex = ((start + pendingAdvance) % count + count) % count
+        pendingAdvance = 0
         isVisible = true
         presentOverlay()
+
+        await loadThumbnails(for: entries)
+    }
+
+    /// Küçük resimleri bindirim açıldıktan SONRA yükler.
+    ///
+    /// Önceden bunlar `isVisible = true` olmadan önce, pencere başına
+    /// sırayla yakalanıyordu; tek başına `SCShareableContent` ~50 ms,
+    /// üstüne her pencere için ayrı bir yakalama. Bu süre boyunca
+    /// değiştirici "açık değil" sayıldığı için basılan Tab'lar kayboluyor,
+    /// bırakılan ⌥ yakalanmıyordu. Artık liste anında çiziliyor, görüntüler
+    /// geldikçe yerine oturuyor.
+    private func loadThumbnails(
+        for entries: [(pid: pid_t, windowID: CGWindowID, appName: String, title: String, frame: CGRect)]
+    ) async {
+        guard let shareable = try? await SCShareableContent.excludingDesktopWindows(
+            false, onScreenWindowsOnly: true
+        ) else { return }
+
+        for entry in entries {
+            // Kullanıcı bu arada seçimini yaptıysa yakalamayı sürdürmenin
+            // anlamı yok.
+            guard isVisible else { return }
+            guard let scWindow = shareable.windows.first(where: { $0.windowID == entry.windowID }),
+                  let thumbnail = await Self.captureThumbnail(of: scWindow) else { continue }
+
+            let key = Self.cacheKey(pid: entry.pid, title: entry.title)
+            thumbnailCache[key] = thumbnail
+
+            guard isVisible,
+                  let index = windows.firstIndex(where: { $0.windowID == entry.windowID })
+            else { continue }
+            windows[index].thumbnail = thumbnail
+            updateOverlay()
+        }
     }
 
     private static func captureThumbnail(of window: SCWindow) async -> NSImage? {
@@ -760,6 +913,32 @@ final class WindowSwitcherController {
         panel.contentView = hostingView
         layoutOverlay()
         panel.orderFrontRegardless()
+        startOutsideClickMonitor()
+    }
+
+    /// Bindirimin dışına tıklayınca kapanması.
+    ///
+    /// `NSWorkspace.didActivateApplication` gözlemcisi (bkz.
+    /// `installActivationObserverIfNeeded`) bunun yalnızca bir kısmını
+    /// yakalıyordu: tıklanan uygulama zaten önplandaysa uygulama değişimi
+    /// olmuyor, bildirim hiç gelmiyor ve bindirim ekranda asılı kalıyordu.
+    /// Genel fare izleyicisi yalnızca **başka** uygulamalara giden olayları
+    /// gördüğü için kartlara yapılan tıklamalar buraya düşmüyor.
+    private func startOutsideClickMonitor() {
+        guard outsideClickMonitor == nil else { return }
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.dismissPreview()
+            }
+        }
+    }
+
+    private func stopOutsideClickMonitor() {
+        guard let outsideClickMonitor else { return }
+        NSEvent.removeMonitor(outsideClickMonitor)
+        self.outsideClickMonitor = nil
     }
 
     private func updateOverlay() {
