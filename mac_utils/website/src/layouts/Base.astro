@@ -101,8 +101,54 @@ const structuredData = {
     <slot />
 
     {/*
+      Kum taneciği maskesini nav bar'ın altına sabitle.
+
+      Maske, maskelenen öğenin kendi kutusuna göre konumlanıyor; öğe
+      sayfayla birlikte kaydığı için bandın viewport'ta sabit durması adına
+      her karede öğenin üst kenarına olan uzaklığı yazıyoruz. Kare başına
+      iki özellik yazımı — scroll dinleyicisi `passive` ve iş rAF'a
+      toplanıyor, yani kaydırma bloke edilmiyor.
+    */}
+    <script is:inline>
+      (() => {
+        const roots = document.querySelectorAll("[data-dissolve-root]");
+        if (!roots.length) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        /* Nav bar'ın alt hizası: üst boşluk + yüksekliği. */
+        const navBottom = 88;
+        let queued = false;
+
+        const update = () => {
+          queued = false;
+          for (const root of roots) {
+            const band = parseFloat(getComputedStyle(root).getPropertyValue("--dissolve-band")) || 0;
+            const offset = navBottom - root.getBoundingClientRect().top;
+            /*
+             * Alt sınır -bant: öğe tamamen nav'ın altındayken bant öğenin
+             * üstüne, görünmez bir yere çekiliyor. Daha yukarı taşınırsa
+             * bandın altındaki opak katman öğenin alt ucuna yetişemiyor ve
+             * sayfanın dibi kesiliyor.
+             */
+            root.style.setProperty("--dissolve-y", Math.max(-band, offset) + "px");
+          }
+        };
+
+        const schedule = () => {
+          if (queued) return;
+          queued = true;
+          requestAnimationFrame(update);
+        };
+
+        update();
+        addEventListener("scroll", schedule, { passive: true });
+        addEventListener("resize", schedule);
+      })();
+    </script>
+
+    {/*
       Beliren bölümleri görünür alana girdikçe aç. Gözlemci tek sefer
-      çalışıp kendini çözüyor; sayfada başka betik yok.
+      çalışıp kendini çözüyor.
     */}
     <script is:inline>
       (() => {

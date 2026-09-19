@@ -60,6 +60,16 @@ Eski sitede olmayan, şimdi olan: sayfa başına başlık/açıklama, `canonical
 `SoftwareApplication` JSON-LD, `robots.txt`, dil karşılıklarını da içeren
 `sitemap-index.xml`, kalıcı önbellek başlıkları.
 
+## Kum taneciği efekti
+
+Nav bar'ın arkasına giren içerik tanecikli bir bantla dağılıyor. `main` ve
+`footer` tek bir maske taşıyor: `feTurbulence` ile kırılmış bir geçiş bandı
+ve altındaki opak katman. Bant, `--dissolve-y` değişkeniyle nav'ın alt
+hizasına sabitleniyor; değişkeni kare başına bir kez yazan küçük bir betik
+güncelliyor (scroll dinleyicisi `passive`, iş `requestAnimationFrame`'e
+toplanıyor). Bandın yüksekliği `--dissolve-band` ile ayarlanıyor; hareket
+azaltma tercihi açıksa maske tamamen kapanıyor.
+
 ## Eksik ekran görüntüleri
 
 `public/screenshots/` içinde beş dosya bekleniyor: `hero.png`, `edge-rail.png`,

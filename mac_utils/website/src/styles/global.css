@@ -120,3 +120,45 @@ html {
     transition: none;
   }
 }
+
+
+/*
+ * Nav bar'ın arkasına giren içerik kum tanecikleri gibi dağılıyor.
+ *
+ * Maske iki katmandan oluşuyor:
+ *   1. Grenli bant — üstü saydam, altı opak bir geçiş; gürültüyle
+ *      kırıldığı için kenar düz solmuyor, tanecikli dağılıyor.
+ *   2. Bandın altındaki her şeyi kaplayan düz opak katman.
+ * İki katman toplanıyor: bandın üstü görünmez, bandın hizası tanecikli,
+ * altı normal.
+ *
+ * Bant, sayfa kaydıkça `--dissolve-y` ile nav'ın alt hizasında tutuluyor.
+ * Maske tek bir sarmalayıcıya uygulandığı için içindeki bütün öğeler —
+ * başlık, kart, görsel, metin — aynı anda etkileniyor.
+ */
+[data-dissolve-root] {
+  --dissolve-y: 0px;
+  /* Bandın yüksekliği; nav'ın altındaki geçiş bölgesi. */
+  --dissolve-band: 120px;
+
+  --dissolve-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120' preserveAspectRatio='none'%3E%3Cfilter id='g' color-interpolation-filters='sRGB' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.8' numOctaves='1' seed='11' result='n'/%3E%3CfeColorMatrix in='n' type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0' result='na'/%3E%3CfeComposite in='SourceGraphic' in2='na' operator='arithmetic' k2='1' k3='0.9' k4='-0.45'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='discrete' tableValues='0 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3ClinearGradient id='f' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23000' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='1'/%3E%3C/linearGradient%3E%3Crect width='100' height='120' fill='url(%23f)' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  -webkit-mask-image: var(--dissolve-grain), linear-gradient(#000, #000);
+  mask-image: var(--dissolve-grain), linear-gradient(#000, #000);
+
+  -webkit-mask-size: 100% var(--dissolve-band), 100% 100%;
+  mask-size: 100% var(--dissolve-band), 100% 100%;
+
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  mask-repeat: no-repeat, no-repeat;
+
+  -webkit-mask-position: 0 var(--dissolve-y), 0 calc(var(--dissolve-y) + var(--dissolve-band));
+  mask-position: 0 var(--dissolve-y), 0 calc(var(--dissolve-y) + var(--dissolve-band));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dissolve-root] {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
