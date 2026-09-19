@@ -62,13 +62,27 @@ Eski sitede olmayan, şimdi olan: sayfa başına başlık/açıklama, `canonical
 
 ## Kum taneciği efekti
 
-Nav bar'ın arkasına giren içerik tanecikli bir bantla dağılıyor. `main` ve
-`footer` tek bir maske taşıyor: `feTurbulence` ile kırılmış bir geçiş bandı
-ve altındaki opak katman. Bant, `--dissolve-y` değişkeniyle nav'ın alt
-hizasına sabitleniyor; değişkeni kare başına bir kez yazan küçük bir betik
-güncelliyor (scroll dinleyicisi `passive`, iş `requestAnimationFrame`'e
-toplanıyor). Bandın yüksekliği `--dissolve-band` ile ayarlanıyor; hareket
-azaltma tercihi açıksa maske tamamen kapanıyor.
+Nav bar'a yaklaşan yazı, harf harf kum tanelerine ayrılıyor
+(`src/scripts/sand.ts`).
+
+Maskeyle "silmek" yerine harfin kendi biçimi kullanılıyor: harf çizgiye
+değdiğinde glifi küçük bir tuvale çizilip pikselleri okunuyor, dolu her
+noktadan bir tane doğuyor. Yani dağılan şey gerçekten harfin şekli — "A"
+ile "o" farklı dağılıyor. Taneler tek bir `position: fixed` tuvale
+çiziliyor, yukarı ve yanlara savrulup sönüyor; sayfa kaydıkça onlar da
+kayıyor, havada asılı kalmıyorlar.
+
+Bütçe: harfler ancak çizgiyi kestikleri karede ölçülüyor. Tamamen altta
+kalan blok atlanıyor, tamamen üstte kalan bir kere gizlenip düşüyor.
+Sayfa durduğunda ve havada tane kalmadığında döngü kendini kapatıyor,
+kaydırma onu geri açıyor. Harf sarmalayıcıları `display: inline` ve
+yalnızca çizgiye yaklaşan blokta oluşturuluyor; yerleşim değişmiyor,
+HTML çıktısı temiz kalıyor (arama motoru bölünmüş harf görmüyor).
+
+Ayarlar dosyanın başında: `SHATTER_LINE` (dağılma çizgisi), `LIFE` (tane
+ömrü), `MAX_PARTICLES` (tavan). Metin olmayan yüzeyler — kart, görsel,
+çizgi — nav'ın altında `global.css` içindeki kısa bir geçişle sönüyor.
+`prefers-reduced-motion` açıksa ikisi de kapalı.
 
 ## Eksik ekran görüntüleri
 
