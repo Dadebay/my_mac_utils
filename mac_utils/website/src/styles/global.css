@@ -160,3 +160,18 @@ html {
   -webkit-mask-position: 0 var(--sand-cut), 0 calc(var(--sand-cut) + var(--sand-edge));
   mask-position: 0 var(--sand-cut), 0 calc(var(--sand-cut) + var(--sand-edge));
 }
+
+/* Toplanan taneler inerken harf de beliriyor. */
+@keyframes sand-return {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hızlı kaydırmada beliriş atlanıyor; içerik beklemeden görünüyor. */
+.reveal-instant [data-reveal] {
+  transition: none;
+}

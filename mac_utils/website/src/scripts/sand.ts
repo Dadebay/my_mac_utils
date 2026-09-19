@@ -35,10 +35,31 @@ const SHATTER_LINE = NAV_BOTTOM + 28;
 const LIFE = 700;
 
 /** Toplanan bir tanenin yerine oturma süresi (ms). */
-const LIFE_IN = 600;
+const LIFE_IN = 420;
 
 /** Toplanan tanelerin doğuşu kaç ms'ye yayılıyor. */
-const GATHER_STAGGER = 140;
+const GATHER_STAGGER = 100;
+
+/**
+ * Toplanma kaç piksel önceden başlıyor.
+ *
+ * Geri kaydırırken harf çizginin üstünden aşağı doğru geliyor. Toplanmayı
+ * ancak çizgiyi geçtikten sonra başlatmak, harfin çizginin altında bir
+ * süre yok görünmesine ve sonra birden belirmesine yol açıyordu. Şimdi
+ * taneler harf daha yukarıdayken toplanmaya başlıyor ve harf tam çizgiyi
+ * geçerken yerine oturmuş oluyor.
+ */
+const GATHER_LEAD = 110;
+
+/**
+ * Tek karede en çok kaç öğe rasterleştirilsin.
+ *
+ * Bir blok tümüyle çizgiyi geçtiğinde yüzlerce harf aynı anda taneye
+ * dönmek istiyor; her biri tuval boyutlandırma + `getImageData`
+ * demek. Bütçe dolunca kalanlar tane üretmeden, doğrudan gizlenip
+ * gösteriliyor — kaydırma takılmıyor.
+ */
+const RASTER_BUDGET = 48;
 
 /** Aynı anda yaşayabilecek en çok tane — hızlı kaydırmada tavan. */
 const MAX_PARTICLES = 9000;
@@ -147,7 +168,10 @@ function scatter(
   // Çok hızlı kaydırmada tane üretilmiyor: içerik beklemeden geçsin.
   if (scrollSpeed > SKIP_SPEED) return;
 
-  step = Math.max(1, Math.round(step / detail));
+  /* Hız arttıkça taneler seyreliyor, ama bir yere kadar: iri bloklar
+     kum gibi değil moloz gibi duruyor. Toplanma tarafında hiç
+     seyrelmiyor — asıl seyredilen an orası. */
+  step = Math.min(5, Math.max(1, Math.round(step / (inward ? 1 : detail))));
 
   const data = sctx.getImageData(0, 0, width, height).data;
   const size = Math.max(1, step);
@@ -159,8 +183,10 @@ function scatter(
       if (data[i + 3] < 110) continue;
       if (particles.length >= MAX_PARTICLES) return;
 
-      const px = originX + x;
-      const py = originY + y;
+      /* Örnekleme ızgarası olduğu gibi kullanılınca taneler satır satır
+         dizilmiş görünüyor; yarım tanelik kaydırma bunu bozuyor. */
+      const px = originX + x + (Math.random() - 0.5) * step;
+      const py = originY + y + (Math.random() - 0.5) * step;
       /* Toplanırken taneler yukarıdan ve dağınık gelsin — dağılmanın
          tersi bir yol izliyorlar. */
       const sx = inward ? px + (Math.random() - 0.5) * 120 : px;
@@ -272,24 +298,49 @@ function wrapChars(block: HTMLElement): CharSpan[] {
  * görünür oluyor. Bekleyen bir toplanma varken tekrar çağrılmıyor, yoksa
  * her karede yeni tane doğar.
  */
-function restoreChar(c: CharSpan, now: number) {
+function showChar(c: CharSpan) {
+  c.gone = false;
+  c.returnAt = 0;
+  c.el.style.visibility = "";
+  /* Harf birden yapışmasın: taneler inerken kendisi de beliriyor, ikisi
+     üst üste gelince "parçalar birleşti" hissi tamamlanıyor. */
+  c.el.style.animation = `sand-return ${Math.round(LIFE_IN * detail)}ms linear`;
+}
+
+/**
+ * Harfi geri getirir.
+ *
+ * `crossed` — harf çizginin altına inmiş demek: orada artık görünür
+ * olmak zorunda, yoksa çizginin altında bir süre boşluk kalıyor. O yüzden
+ * toplanma bitmemiş olsa bile gösteriliyor; taneler zaten yola çıkmış
+ * olduğu için geçiş yine de dolu görünüyor.
+ */
+function restoreChar(c: CharSpan, now: number, crossed: boolean) {
   if (!c.gone) return;
 
+  /* Taneler bir kez yola çıkıyor: `returnAt` dolu olduğu sürece yeniden
+     üretilmiyor, yoksa her karede yeni bir avuç doğardı. */
   if (!c.returnAt) {
     shatterChar(c.el, now, true);
-    // Son doğan tane de insin diye saçılma payı ekleniyor.
-    c.returnAt = now + LIFE_IN + GATHER_STAGGER;
-    return;
+    c.returnAt = now + (LIFE_IN + GATHER_STAGGER) * detail;
   }
 
-  if (now >= c.returnAt) {
-    c.gone = false;
-    c.returnAt = 0;
-    c.el.style.visibility = "";
-  }
+  /* Görünür olmanın tek koşulu çizgiyi geçmiş olmak. Toplanma bitmiş
+     olsa bile çizginin üstünde gösterilmiyor — orada her şeyin dağılmış
+     olması gerekiyor. */
+  if (crossed) showChar(c);
+}
+
+function canRaster(): boolean {
+  if (scrollSpeed > SKIP_SPEED) return false;
+  if (rasterBudget <= 0) return false;
+  rasterBudget--;
+  return true;
 }
 
 function shatterChar(span: HTMLElement, now: number, inward = false) {
+  if (!canRaster()) return;
+
   const rect = span.getBoundingClientRect();
   if (rect.width < 0.5 || rect.height < 0.5) return;
 
@@ -399,6 +450,8 @@ function roundedRectPath(target: CanvasRenderingContext2D, w: number, h: number,
  * kadar yüksek ve içerik yukarı kaydırılarak konuluyor.
  */
 function shatterStrip(el: HTMLElement, from: number, to: number, now: number, inward = false, denseStep = 0) {
+  if (!canRaster()) return;
+
   const rect = el.getBoundingClientRect();
   const width = Math.ceil(rect.width);
   const height = Math.ceil(to - from);
@@ -497,6 +550,8 @@ let pendingScan = true;
 let scrollSpeed = 0;
 /** 1 = tam ayrıntı, 0'a yaklaştıkça seyrek ve kısa ömürlü. */
 let detail = 1;
+/** Bu karede kalan rasterleştirme hakkı. */
+let rasterBudget = RASTER_BUDGET;
 
 function frame(now: number) {
   const scrollDelta = window.scrollY - lastScrollY;
@@ -515,20 +570,21 @@ function frame(now: number) {
 
   scrollSpeed = scrollSpeed * 0.6 + Math.abs(scrollDelta) * 0.4;
   detail = scrollSpeed <= CALM_SPEED ? 1 : Math.max(0.3, CALM_SPEED / scrollSpeed);
+  rasterBudget = RASTER_BUDGET;
 
   for (const block of textBlocks) {
     const rect = block.el.getBoundingClientRect();
 
-    // Tamamen çizginin altında: harflerine bakmaya gerek yok.
-    if (rect.top > SHATTER_LINE) {
+    // Tamamen çizginin altında ve öncü bölgenin de dışında: bitti.
+    if (rect.top > SHATTER_LINE + 4) {
       if (block.chars) {
-        for (const c of block.chars) restoreChar(c, now);
+        for (const c of block.chars) restoreChar(c, now, true);
       }
       continue;
     }
 
     // Tamamen çizginin üstünde: hepsini bir kerede patlat.
-    if (rect.bottom < SHATTER_LINE - 4) {
+    if (rect.bottom < SHATTER_LINE - GATHER_LEAD) {
       /* Hızlı kaydırmada bir blok, harfleri hiç sarmalanmadan çizgiyi
          tamamen geçebiliyor; o hâlde önce sarmalanıyor, yoksa metin
          nav'ın üstünde öylece duruyordu. */
@@ -538,6 +594,7 @@ function frame(now: number) {
           if (c.gone) continue;
           c.gone = true;
           c.returnAt = 0;
+          c.el.style.animation = "";
           shatterChar(c.el, now);
           c.el.style.visibility = "hidden";
         }
@@ -555,10 +612,16 @@ function frame(now: number) {
       if (!c.gone && r.top <= SHATTER_LINE) {
         c.gone = true;
         c.returnAt = 0;
+        c.el.style.animation = "";
         shatterChar(c.el, now);
         c.el.style.visibility = "hidden";
-      } else if (c.gone && r.top > SHATTER_LINE + 6) {
-        restoreChar(c, now);
+      } else if (c.gone && r.top > SHATTER_LINE) {
+        restoreChar(c, now, true);
+      } else if (c.gone && r.top > SHATTER_LINE - GATHER_LEAD) {
+        /* Öncü bölge: harf hâlâ çizginin üstünde ama aşağı doğru
+           geliyor. Taneler şimdiden toplanmaya başlıyor ki harf
+           çizgiye vardığında bütün hâline gelmiş olsun. */
+        restoreChar(c, now, false);
       }
     }
   }

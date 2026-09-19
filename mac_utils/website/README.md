@@ -83,12 +83,18 @@ gürültüyle kırılıyor (`[data-sand-cut]`, `global.css`) — bu olmadan büy
 kartlarda düz bir çizgi fark ediliyordu.
 
 Geri kaydırmada aynı taneler ters yönde doğuyor: dağınık bir noktadan
-başlayıp öğenin üzerindeki kendi yerlerine oturuyorlar, oturma bitince
-öğe geri görünüyor. Taneler inişin sonuna kadar parlak kalıyor — yolun
-sonunda sönselerdi toplanma, birleşme değil bulanıklık gibi okunurdu.
-Açılan kenarın hemen altındaki bant da ayrıca sık örnekleniyor; yavaş
-kaydırmada kare başına düşen şerit bir iki piksel kalıyor ve ortaya
-neredeyse hiç tane çıkmıyordu.
+başlayıp öğenin üzerindeki kendi yerlerine oturuyorlar. Toplanma harf
+daha çizginin üstündeyken başlıyor (`GATHER_LEAD`), böylece harf çizgiye
+vardığında taneler yolun yarısını almış oluyor; harfin kendisi de aynı
+anda beliriyor (`sand-return`). Görünür olmanın tek koşulu çizgiyi
+geçmiş olmak — toplanma bitmemiş olsa bile gösteriliyor, yoksa çizginin
+altında bir süre boşluk kalıyordu.
+
+Taneler inişin sonuna kadar parlak kalıyor; yolun sonunda sönselerdi
+toplanma, birleşme değil bulanıklık gibi okunurdu. Açılan kenarın hemen
+altındaki bant ayrıca sık örnekleniyor, çünkü yavaş kaydırmada kare
+başına düşen şerit bir iki piksel kalıyor ve ortaya neredeyse hiç tane
+çıkmıyordu.
 
 Kaydırma hızına göre ayarlanıyor: yavaş kaydırırken animasyon bütün
 ayrıntısıyla oynuyor, hızlandıkça taneler seyreliyor ve ömürleri
@@ -99,6 +105,16 @@ kimse taneleri seyretmiyor, istenen şey içeriğin gecikmeden geçmesi
 Saydam cam yüzeyler önce sayfa zeminine bindiriliyor: dolgusu %5 saydam
 olduğu için doğrudan örneklenince eşiğin altında kalıyor ve kutular hiç
 tane vermiyordu.
+
+Bir blok tümüyle çizgiyi geçtiğinde yüzlerce harf aynı anda taneye
+dönmek ister; her biri tuval boyutlandırma ve `getImageData` demek.
+`RASTER_BUDGET` kare başına kaç öğenin rasterleştirileceğini sınırlıyor,
+kalanlar tane üretmeden gizlenip gösteriliyor.
+
+Beliriş animasyonu da hıza duyarlı: bölümler ekrana girmeden 600px önce
+açılmaya başlıyor ve kaydırma bir karede 300 pikselden fazla atlarsa
+beliriş tamamen atlanıyor. Bu olmadan hızlı kaydırmada ekranlar dolusu
+içerik yarım saniye saydam kalıyordu.
 
 Bütçe: öğeler ancak çizgiyi kestikleri karede ölçülüyor; sayfa durduğunda
 ve havada tane kalmadığında döngü kendini kapatıyor, kaydırma geri açıyor.

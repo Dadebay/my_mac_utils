@@ -152,8 +152,12 @@ const structuredData = {
     </script>
 
     {/*
-      Beliren bölümleri görünür alana girdikçe aç. Gözlemci tek sefer
-      çalışıp kendini çözüyor.
+      Beliren bölümleri görünür alana girdikçe aç.
+
+      İki şey önemli: bölümler ekrana girmeden epey önce (600px) açılmaya
+      başlıyor ve hızlı kaydırmada beliriş tamamen atlanıyor. Öncesinde
+      hızlı kaydırınca ekranlar dolusu içerik yarım saniye boyunca
+      saydam kalıyor, yani "yetişemiyordu".
     */}
     <script is:inline>
       (() => {
@@ -175,11 +179,28 @@ const structuredData = {
               observer.unobserve(entry.target);
             }
           },
-          { rootMargin: "0px 0px -10% 0px" },
+          { rootMargin: "600px 0px 600px 0px" },
         );
 
         items.forEach((item) => observer.observe(item));
+
+        /* Kaydırma bir karede 300 pikselden fazla atladıysa beliriş
+           kuyruğa girmesin: kalan her şey anında açılıyor. */
+        let previous = window.scrollY;
+        addEventListener(
+          "scroll",
+          () => {
+            const jump = Math.abs(window.scrollY - previous);
+            previous = window.scrollY;
+            if (jump < 300) return;
+            document.documentElement.classList.add("reveal-instant");
+            items.forEach(reveal);
+            observer.disconnect();
+          },
+          { passive: true },
+        );
       })();
     </script>
+
   </body>
 </html>
