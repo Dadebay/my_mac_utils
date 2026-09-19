@@ -1,0 +1,37 @@
+---
+import { authorUrl, type Locale } from "../i18n/ui";
+import { content } from "../i18n/content";
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const f = content[lang].footer;
+---
+
+<footer class="border-t border-glass-border px-4 py-10">
+  <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 text-sm text-foreground-subtle sm:flex-row">
+    <div>
+      <p class="font-medium text-foreground-muted">GlassDo</p>
+      <p class="mt-1">{f.tagline}</p>
+    </div>
+
+    <nav class="flex items-center gap-5">
+      {
+        f.links.map((link) => (
+          <a href={`/${lang}${link.path}`} class="transition-colors duration-200 hover:text-foreground-muted">
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+
+  <div class="mx-auto mt-8 flex max-w-5xl flex-col items-center justify-between gap-2 text-xs text-foreground-subtle sm:flex-row">
+    <p>{f.copyright}</p>
+    <a href={authorUrl} target="_blank" rel="noreferrer" class="transition-colors duration-200 hover:text-foreground-muted">
+      {f.developedByLabel} Dadebay
+    </a>
+  </div>
+</footer>

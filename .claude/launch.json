@@ -7,10 +7,25 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": [
         "/private/tmp/claude-501/-Users-dadebay-Developer-apps-projects-macos-todo-app/489d432b-ecb8-4402-a22c-6d9c327c3b61/scratchpad/serve_site.py",
-        "website/out",
+        "mac_utils/website/out",
         "5055"
       ],
       "port": 5055
+    },
+    {
+      "//": "Yeni Astro kaynağı. Eski 'website' girdisi, karşılaştırma için kurtarılan Next.js çıktısını sunuyor.",
+      "name": "website-astro",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "mac_utils/website",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4321"
+      ],
+      "port": 4321
     }
   ]
 }

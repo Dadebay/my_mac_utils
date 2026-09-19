@@ -21,6 +21,9 @@ jobs:
         run: brew install xcodegen
 
       - name: Xcode projesini üret
+        # Proje `mac_utils/app` altında: depo üç ayrı ürüne bölündü
+        # (uygulama / website / admin), bkz. mac_utils/README.md.
+        working-directory: mac_utils/app
         run: xcodegen generate
 
       - name: Derle (imzasız)
@@ -29,6 +32,7 @@ jobs:
         # App Group'a bağlı widget senkronizasyonu bu build'de çalışmaz;
         # tam imzalı/notarize dağıtım için ayrı bir Developer ID kurulumu
         # gerekir.
+        working-directory: mac_utils/app
         run: |
           xcodebuild \
             -project GlassDo.xcodeproj \
@@ -40,7 +44,7 @@ jobs:
 
       - name: Uygulamayı zip'le
         run: |
-          cd build/Build/Products/Release
+          cd mac_utils/app/build/Build/Products/Release
           ditto -c -k --sequesterRsrc --keepParent \
             GlassDo-macOS.app "$GITHUB_WORKSPACE/GlassDo-macOS.zip"
 

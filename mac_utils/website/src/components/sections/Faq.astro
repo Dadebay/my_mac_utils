@@ -1,0 +1,43 @@
+---
+import Icon from "../Icon.astro";
+import Reveal from "../Reveal.astro";
+import { anchors } from "../../i18n/ui";
+
+interface Props {
+  faq: { title: string; items: { question: string; answer: string }[] };
+}
+const { faq } = Astro.props;
+---
+
+{/*
+  Akordeon `details/summary` ile: JavaScript yok, klavye ve ekran
+  okuyucu desteği tarayıcıdan geliyor. Daha önemlisi, **bütün cevaplar
+  HTML'de** — eski React sürümünde yalnızca açık olan cevap
+  basılıyordu, yani arama motoru diğer üçünü hiç görmüyordu.
+*/}
+<section id={anchors.faq} class="px-4 py-24">
+  <div class="mx-auto max-w-2xl">
+    <Reveal>
+      <h2 class="text-center text-3xl font-semibold tracking-tight">{faq.title}</h2>
+    </Reveal>
+
+    <div class="mt-10 space-y-3">
+      {
+        faq.items.map((item, index) => (
+          <Reveal>
+            <details class="glass-panel group overflow-hidden rounded-2xl" open={index === 0}>
+              <summary class="flex w-full cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left active:scale-[0.99] [&::-webkit-details-marker]:hidden">
+                <span class="font-medium">{item.question}</span>
+                <Icon
+                  name="chevron-down"
+                  class="h-4 w-4 shrink-0 text-foreground-subtle transition-transform duration-300 group-open:rotate-180"
+                />
+              </summary>
+              <p class="px-5 pb-4 text-sm text-foreground-muted">{item.answer}</p>
+            </details>
+          </Reveal>
+        ))
+      }
+    </div>
+  </div>
+</section>

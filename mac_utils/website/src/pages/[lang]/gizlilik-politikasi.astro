@@ -1,0 +1,46 @@
+---
+import Base from "../../layouts/Base.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import { locales, type Locale } from "../../i18n/ui";
+import { content } from "../../i18n/content";
+import { meta } from "../../i18n/meta";
+
+export function getStaticPaths() {
+  return locales.map((lang) => ({ params: { lang } }));
+}
+
+const lang = Astro.params.lang as Locale;
+const c = content[lang].privacyPolicy;
+const m = meta[lang]["gizlilik-politikasi"];
+---
+
+<Base lang={lang} title={m.title} description={m.description} path="gizlilik-politikasi">
+  <Header lang={lang} path="gizlilik-politikasi" />
+
+  <main id="main" class="flex-1 px-4 pb-24 pt-40">
+    <article class="mx-auto max-w-2xl text-foreground-muted">
+      <h1 class="text-3xl font-semibold tracking-tight text-foreground">{c.title}</h1>
+      <p class="mt-2 text-sm text-foreground-subtle">{c.lastUpdated}</p>
+
+      {
+        c.sections.map((section) => (
+          <section class="mt-8 space-y-3">
+            <h2 class="text-lg font-medium text-foreground">{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </section>
+        ))
+      }
+
+      <section class="mt-8 space-y-3">
+        <h2 class="text-lg font-medium text-foreground">{c.contact.heading}</h2>
+        {/* Tek satır: araya giren boşluklar cümleyi "sayfası ." gibi bozuyordu. */}
+        <p>{c.contact.before}<a href={`/${lang}/destek`} class="text-accent-blue underline underline-offset-4">{c.contact.linkLabel}</a>{c.contact.after}</p>
+      </section>
+    </article>
+  </main>
+
+  <Footer lang={lang} />
+</Base>

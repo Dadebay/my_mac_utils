@@ -1,0 +1,205 @@
+{
+  "meta": {
+    "title": "GlassDo — Mac'in için daha sakin bir kontrol merkezi",
+    "description": "GlassDo; görevlerini, notlarını, Edge Rail panelini ve sistem durumunu tek bir sakin arayüzde birleştiren, yalnızca macOS için tasarlanmış kişisel komuta merkezi."
+  },
+  "nav": {
+    "links": [
+      {
+        "label": "Özellikler",
+        "href": "#ozellikler"
+      },
+      {
+        "label": "Güvenlik",
+        "href": "#gizlilik"
+      },
+      {
+        "label": "SSS",
+        "href": "#sss"
+      }
+    ],
+    "cta": "Mac için indir"
+  },
+  "hero": {
+    "title": "Mac'in için daha sakin bir kontrol merkezi.",
+    "subtitle": "Görevler, notlar ve sistem durumu — ekranın kenarında, bir tık uzakta. Odaklandığın uygulamayı hiç değiştirmeden.",
+    "primaryCta": "Mac için indir",
+    "secondaryCta": "Özellikleri keşfet",
+    "note": "App Store'da değil — doğrudan indir, dakikalar içinde kur.",
+    "mockupLabel": "Ürün ekran görüntüsü: görev listesi + Edge Rail + sistem metrikleri"
+  },
+  "benefits": {
+    "title": "Üç şey iyi yapar",
+    "items": [
+      {
+        "title": "Odakta Kal",
+        "description": "Görevlerin ekranın kenarında bekler; ana uygulamanı değiştirmeden açıp kapatırsın."
+      },
+      {
+        "title": "Mac'ini Gör",
+        "description": "CPU, bellek, disk, batarya ve ağ — tüm sistem durumun tek bakışta, canlı grafiklerle."
+      },
+      {
+        "title": "Her Şeyi Hızlı Yakala",
+        "description": "Aklına gelen görevi veya notu, panelden veya menü çubuğundan saniyeler içinde ekle."
+      }
+    ]
+  },
+  "edgeRail": {
+    "title": "Edge Rail: ekranın kenarında yaşayan panel",
+    "description": "Ekranın herhangi bir kenarına yaslan, hover'da aç. Rail ile genişletilmiş görünüm arasında geçiş yap, kenara gizle (sliver) veya sabitle (pinned) — panel çerçevesi hiç oynamadan.",
+    "points": [
+      "Herhangi bir kenara yaslanabilir konum",
+      "Sliver / peek ve pinned modları",
+      "İkonlar arasında geçişte panel sabit kalır"
+    ]
+  },
+  "tasksNotes": {
+    "title": "Görevler ve notlar, tek yerde",
+    "description": "Proje ve etiketle grupla, öncelik ve bitiş tarihi ekle, çok satırlı notlar tut. Akıllı listeler — Bugün, Yaklaşan, Tümü, Tamamlanan — ile aradığını hemen bul.",
+    "points": [
+      "Proje / etiket bazlı gruplama",
+      "Akıllı listeler ve arama",
+      "Panelden koparılıp ekranda serbest duran not pencereleri"
+    ]
+  },
+  "systemMonitoring": {
+    "title": "Sistemini gerçek zamanlı izle",
+    "description": "CPU (çekirdek başına), bellek, disk, batarya ve ağ hızı — canlı kartlar ve grafiklerle. Ağ hız testi ve disk alanı analizi de cebinde.",
+    "privacyNote": "Bu veriler cihazından çıkmaz."
+  },
+  "widgetsMenuBar": {
+    "title": "Widget'lar ve menü çubuğu",
+    "description": "Masaüstü ve Notification Center widget'larında bugünün görevleri ve sistem özeti. Menü çubuğunda istediğin ölçer, istediğin biçimde: çubuk, yüzde, bayt veya grafik."
+  },
+  "privacySync": {
+    "title": "Senkronizasyon, senin kontrolünde",
+    "description": "Görevlerin ve notların isteğe bağlı olarak cihazların arasında senkronize edilir. Sistem izleme verilerin (CPU, RAM, disk, ağ) varsayılan olarak buluta hiç gitmez — yalnızca kendi Mac'inde kalır.",
+    "points": [
+      "Görev/not senkronizasyonu isteğe bağlı ve hesabınla sınırlı",
+      "Sistem metrikleri buluta yüklenmez",
+      "Anonim kullanım analitiğine yalnızca izin verirsen katkı sağlarsın"
+    ]
+  },
+  "download": {
+    "title": "Mac için indir",
+    "description": "Apple Silicon ve Intel Mac'lerde çalışır. macOS 26 veya üzeri gerektirir.",
+    "releaseNotesLabel": "Sürüm notları",
+    "requirementsLabel": "macOS 26+",
+    "architectureLabel": "Apple Silicon & Intel",
+    "trustBadge": "Uygulama Apple Developer ile imzalanmış ve notarize edilmiştir.",
+    "unsignedNotice": "Bu derleme henüz imzalanmamış/notarize edilmemiş bir geliştirme sürümüdür: ilk açılışta Gatekeeper uyarı verebilir.",
+    "privacyMicrocopy": "Uygulama sistem verilerini buluta göndermez.",
+    "errorMissingUrl": "İndirme bağlantısı şu anda mevcut değil. Lütfen daha sonra tekrar dene."
+  },
+  "installGuide": {
+    "title": "Kurulum, dört adım",
+    "steps": [
+      {
+        "title": "İndir",
+        "description": "Yukarıdaki butonla en güncel sürümü indir."
+      },
+      {
+        "title": "Aç",
+        "description": "İndirilen dosyayı Finder'da aç."
+      },
+      {
+        "title": "Applications'a taşı",
+        "description": "GlassDo'yu Applications klasörüne sürükle."
+      },
+      {
+        "title": "Başlat",
+        "description": "Applications'tan GlassDo'yu aç."
+      }
+    ],
+    "gatekeeperTitle": "İlk açılışta ne görürsün?",
+    "gatekeeperDescription": "Bu derleme henüz Apple tarafından notarize edilmedi; macOS ilk açılışta bir güvenlik uyarısı gösterebilir. Uygulamaya Finder'da sağ tıklayıp Aç'ı seçerek devam edebilirsin."
+  },
+  "faq": {
+    "title": "Sık sorulan sorular",
+    "items": [
+      {
+        "question": "Neden App Store'da değil?",
+        "answer": "GlassDo, App Store'un izin vermediği sistem düzeyinde entegrasyonlar (Edge Rail paneli, canlı sistem metrikleri, menü çubuğu ölçerleri) kullanıyor. Bu yüzden doğrudan indirme ile dağıtılıyor."
+      },
+      {
+        "question": "Verilerim nerede tutuluyor?",
+        "answer": "Görevlerin ve notların önce cihazında (yerel olarak) tutulur. Senkronizasyonu açarsan yalnızca bu veriler hesabınla ilişkili şekilde bulutta saklanır. Sistem izleme verilerin hiçbir zaman buluta gönderilmez."
+      },
+      {
+        "question": "İnternetsiz çalışır mı?",
+        "answer": "Evet. GlassDo tamamen yerel çalışacak şekilde tasarlandı; internet bağlantısı yalnızca senkronizasyon açıksa gereklidir."
+      },
+      {
+        "question": "Hangi Mac'lerde çalışır?",
+        "answer": "Apple Silicon ve Intel Mac'lerde, macOS 26 veya üzerinde çalışır."
+      }
+    ]
+  },
+  "footer": {
+    "tagline": "Mac'in için daha sakin bir kontrol merkezi.",
+    "links": [
+      {
+        "label": "Gizlilik Politikası",
+        "path": "/gizlilik-politikasi"
+      },
+      {
+        "label": "Destek",
+        "path": "/destek"
+      }
+    ],
+    "copyright": "© 2026 GlassDo. Tüm hakları saklıdır.",
+    "developedByLabel": "Geliştirici:"
+  },
+  "destek": {
+    "title": "Destek",
+    "description": "Bir sorun mu yaşıyorsun, yoksa bir öneri mi var? Aşağıdaki kanallardan bize ulaşabilirsin.",
+    "issuesCard": {
+      "title": "GitHub Issues",
+      "description": "Hata bildirimi veya özellik isteği için en hızlı yol.",
+      "linkLabel": "Issue aç →"
+    },
+    "emailCard": {
+      "title": "E-posta",
+      "description": "Doğrudan yazmak istersen buradan ulaşabilirsin."
+    }
+  },
+  "privacyPolicy": {
+    "title": "Gizlilik Politikası",
+    "lastUpdated": "Son güncelleme: Eylül 2026",
+    "sections": [
+      {
+        "heading": "Görevlerin ve notların",
+        "paragraphs": [
+          "GlassDo, görevlerini, projelerini, etiketlerini ve notlarını tamamen cihazında (yerel depolama) tutar. Bu içerikler şu anda hiçbir sunucuya gönderilmez.",
+          "Cihazlar arası senkronizasyon isteğe bağlı bir özellik olarak planlanıyor; hayata geçtiğinde yalnızca açıkça etkinleştirdiğinde ve hesabınla ilişkilendirilmiş şekilde çalışacak. Bu politika, senkronizasyon yayına girdiğinde güncellenecek."
+        ]
+      },
+      {
+        "heading": "Sistem izleme verilerin",
+        "paragraphs": [
+          "CPU, bellek, disk, batarya ve ağ ölçümlerin yalnızca cihazında işlenir ve görüntülenir. Bu veriler hiçbir zaman buluta gönderilmez."
+        ]
+      },
+      {
+        "heading": "Anonim kullanım analitiği",
+        "paragraphs": [
+          "İlk açılışta izin isteriz. Kabul edersen, kişisel içeriklerini hiç içermeyen şu anonim veriler kaydedilir: yerelde üretilen, kimseyi tanımlamayan bir cihaz kimliği, cihaz modeli, işletim sistemi ve uygulama sürümü, ülke/dil bilgisi (yalnızca sistem ayarlarından — IP adresi kullanılmaz) ve günlük açılış sayısı.",
+          "Bu izni istediğin zaman Ayarlar içinden kapatabilirsin. Analitik, uygulamanın temel işlevini hiçbir zaman etkilemez."
+        ]
+      },
+      {
+        "heading": "Ne toplamıyoruz",
+        "paragraphs": [
+          "IP adresin, adın, e-posta adresin veya konumun (GPS) hiçbir koşulda toplanmaz."
+        ]
+      }
+    ],
+    "contact": {
+      "heading": "İletişim",
+      "before": "Sorularının için ",
+      "linkLabel": "destek sayfamıza",
+      "after": " göz atabilirsin."
+    }
+  }
+}

@@ -1,0 +1,36 @@
+---
+import Icon from "../Icon.astro";
+import Reveal from "../Reveal.astro";
+import type { IconName } from "../icons";
+import { anchors } from "../../i18n/ui";
+
+interface Props {
+  benefits: { title: string; items: { title: string; description: string }[] };
+}
+const { benefits } = Astro.props;
+
+/** Üç kart, üç ikon — sıra içerikle birlikte sabit. */
+const icons: IconName[] = ["sparkles", "gauge", "zap"];
+---
+
+<section id={anchors.features} class="px-4 py-24">
+  <div class="mx-auto max-w-5xl">
+    <Reveal>
+      <h2 class="text-center text-3xl font-semibold tracking-tight sm:text-4xl">{benefits.title}</h2>
+    </Reveal>
+
+    <div class="mt-14 grid gap-6 sm:grid-cols-3">
+      {
+        benefits.items.map((item, index) => (
+          <Reveal>
+            <div class="glass-panel h-full rounded-2xl p-6">
+              <Icon name={icons[index] ?? "sparkles"} class="h-6 w-6 text-accent-violet" strokeWidth={1.5} />
+              <h3 class="mt-4 text-lg font-medium">{item.title}</h3>
+              <p class="mt-2 text-sm text-foreground-muted">{item.description}</p>
+            </div>
+          </Reveal>
+        ))
+      }
+    </div>
+  </div>
+</section>

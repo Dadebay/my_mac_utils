@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+/* Tema, kaybolan kaynaktan değil yayındaki derlenmiş CSS'ten geri
+   çıkarıldı — renkler yayındaki siteyle birebir aynı. */
+@theme {
+  --color-background: #0a0b0f;
+  --color-background-elevated: #0d0f14;
+  --color-foreground: #f2f3f7;
+  --color-foreground-muted: #a6acbb;
+  --color-foreground-subtle: #6b7180;
+
+  --color-glass-fill: #ffffff0d;
+  --color-glass-fill-strong: #ffffff14;
+  --color-glass-border: #ffffff1a;
+
+  --color-accent-violet: #7c6fff;
+  --color-accent-blue: #5b8def;
+  --color-accent-teal: #3ed9c4;
+
+  --font-sans: Gilroy, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ease-glass: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Yerel barındırılan yazı tipi: üçüncü taraf font servisine istek
+   atılmıyor — hem gizlilik hem de render'ı geciktiren ek bir bağlantı
+   olmaması için. */
+@font-face {
+  font-family: Gilroy;
+  src: url("/fonts/gilroy/Gilroy-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Gilroy;
+  src: url("/fonts/gilroy/Gilroy-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: Gilroy;
+  src: url("/fonts/gilroy/Gilroy-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: Gilroy;
+  src: url("/fonts/gilroy/Gilroy-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Arka plandaki yumuşak ışık lekeleri. Görsel değil degrade: ölçeklenince
+   bulanıklaşmıyor ve ağ üzerinden hiçbir şey indirilmiyor. */
+.glow-violet {
+  background: radial-gradient(closest-side, #7c6fff59, #0000);
+}
+.glow-blue {
+  background: radial-gradient(closest-side, #5b8def4d, #0000);
+}
+.glow-teal {
+  background: radial-gradient(closest-side, #3ed9c447, #0000);
+}
+
+.glass-panel {
+  background: var(--color-glass-fill);
+  border: 1px solid var(--color-glass-border);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 30px #00000040;
+}
+
+.glass-panel-lg {
+  background: var(--color-background-elevated);
+  border: 1px solid var(--color-glass-fill-strong);
+  box-shadow: 0 20px 60px #00000059;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+/* Hareketi azalt: yumuşak kaydırma vestibüler rahatsızlık yaratabiliyor. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/*
+ * Görünür alana girince beliren bölümler.
+ *
+ * Varsayılan: görünür. Gizleme yalnızca `<html class="js">` varken, yani
+ * betiğin çalıştığı biliniyorken uygulanıyor — böylece JavaScript
+ * yüklenmezse (ya da arama motoru botu çalıştırmazsa) sayfa boş kalmıyor.
+ * Eski sürümün hatası tam olarak buydu.
+ */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

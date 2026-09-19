@@ -1,0 +1,48 @@
+---
+import { existsSync } from "node:fs";
+import Icon from "./Icon.astro";
+import type { IconName } from "./icons";
+
+/** Ekran görüntüsü kutusu: cam yüzey + iki yumuşak ışık. */
+interface Props {
+  src?: string;
+  alt: string;
+  ratio?: "16/9" | "16/10";
+  eager?: boolean;
+  /** Görsel yerine ikon göster (eşitleme bölümü böyle). */
+  icon?: IconName;
+  label?: string;
+}
+
+const { src, alt, ratio = "16/10", eager = false, icon, label } = Astro.props;
+const aspect = ratio === "16/9" ? "aspect-[16/9]" : "aspect-[16/10]";
+
+/**
+ * Ekran görüntüleri henüz yok (yayındaki sitede de 404 veriyorlardı).
+ * Dosya `public/` altında yoksa kırık görsel yerine sade bir yer tutucu
+ * çiziliyor; PNG eklendiği anda kendiliğinden gerçek görsele dönüyor.
+ */
+const hasImage = src ? existsSync(new URL(`../../public${src}`, import.meta.url)) : false;
+---
+
+<div class:list={["glass-panel relative flex w-full items-center justify-center overflow-hidden rounded-2xl", aspect]}>
+  <div class="glow-violet absolute -left-16 -top-16 h-56 w-56 rounded-full blur-3xl"></div>
+  <div class="glow-teal absolute -bottom-16 -right-16 h-56 w-56 rounded-full blur-3xl"></div>
+
+  {
+    hasImage ? (
+      <img
+        src={src}
+        alt={alt}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+    ) : (
+      <div class="relative flex flex-col items-center gap-3 px-6 text-center text-foreground-subtle">
+        <Icon name={icon ?? "image"} class="h-10 w-10" strokeWidth={1.5} />
+        <span class="text-sm">{label ?? alt}</span>
+      </div>
+    )
+  }
+</div>

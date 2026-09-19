@@ -1,0 +1,16 @@
+---
+/**
+ * Görünür alana girince beliren sarmalayıcı.
+ *
+ * Eski sürümde bu bir animasyon kütüphanesiydi ve içerik JavaScript
+ * çalışana kadar `opacity: 0` duruyordu — betik yüklenmezse sayfa
+ * bomboş görünüyordu. Burada varsayılan görünür; gizleme yalnızca
+ * betik çalıştığında (`<html class="js">`) devreye giriyor.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<div data-reveal class={className}><slot /></div>

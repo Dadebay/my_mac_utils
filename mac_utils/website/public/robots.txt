@@ -1,0 +1,7 @@
+# Tanıtım sayfaları taranabilir; yönetim paneli değil.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-api/
+
+Sitemap: https://mac-utils.web.app/sitemap-index.xml
