@@ -7,6 +7,9 @@ import GlassDoKit
 struct PanelMemoryView: View {
     private let controller = SystemMonitorController.shared
     @State private var confirmingQuit: pid_t?
+    /// Göstergede seçili dilim: alttaki liste bunu gösteriyor. Varsayılan
+    /// "Uygulamalar" — panelin asıl sorusu genelde "hangi uygulama yiyor".
+    @State private var selection: PanelMemorySegment.Kind = .apps
     @State private var confirmResetTask: _Concurrency.Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -121,6 +124,10 @@ struct PanelMemoryView: View {
                         let fraction = Double(segment.bytes) / total
                         Capsule()
                             .fill(segment.color)
+                            // Seçili dilim tam renkte, diğerleri geri
+                            // çekiliyor: göstergeye basmak listeyi de
+                            // çubuğu da değiştiriyor.
+                            .opacity(segment.id == selection ? 1 : 0.34)
                             .frame(width: fraction > 0.002 ? max(available * fraction, 4) : 0)
                     }
                 }
@@ -128,6 +135,7 @@ struct PanelMemoryView: View {
         }
         .frame(height: 8)
         .animation(dataAnimation, value: controller.memory)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: selection)
         .accessibilityHidden(true)
     }
 
@@ -141,34 +149,78 @@ struct PanelMemoryView: View {
             spacing: 7
         ) {
             ForEach(segments) { segment in
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(segment.color)
-                        .frame(width: 7, height: 7)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(segment.label)
-                            .font(.app(size: 9.5, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-
-                        Text(Self.text(segment.bytes))
-                            .font(.app(size: 11.5, weight: .semibold))
-                            .monospacedDigit()
-                            .contentTransition(reduceMotion ? .identity : .numericText())
-                    }
-                }
-                .accessibilityElement(children: .combine)
+                legendItem(segment)
             }
         }
         .animation(dataAnimation, value: controller.memory)
     }
 
+    /// Yalnızca süreç listesi olan iki dilim seçilebiliyor: önbellek ve boş
+    /// bellek bir sürecin değil çekirdeğin muhasebesi, onlara basınca
+    /// gösterilecek liste yok.
+    private func isSelectable(_ kind: PanelMemorySegment.Kind) -> Bool {
+        kind == .apps || kind == .system
+    }
+
+    private func legendItem(_ segment: PanelMemorySegment) -> some View {
+        let isSelected = segment.id == selection
+        let selectable = isSelectable(segment.id)
+
+        return Button {
+            guard selectable else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+                selection = segment.id
+            }
+        } label: {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(segment.color)
+                    .frame(width: 7, height: 7)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(segment.label)
+                        .font(.app(size: 9.5, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+
+                    Text(Self.text(segment.bytes))
+                        .font(.app(size: 11.5, weight: .semibold))
+                        .monospacedDigit()
+                        .contentTransition(reduceMotion ? .identity : .numericText())
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isSelected ? segment.color.opacity(0.16) : .clear)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(isSelected ? segment.color.opacity(0.5) : .clear, lineWidth: 1)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(!selectable)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+    }
+
+    /// Seçili dilimin süreçleri. Panelde liste kısa: en çok yiyen on tanesi
+    /// zaten kararı verdiriyor.
+    private var visibleProcesses: [RunningAppUsage] {
+        let source = selection == .system ? controller.systemProcesses : controller.apps
+        return Array(source.prefix(10))
+    }
+
     private var appsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(L10n.runningAppsLabel)
+                Text(selection == .system ? L10n.systemProcessesLabel : L10n.runningAppsLabel)
                     .font(.app(size: 10, weight: .semibold))
                     .kerning(0.45)
                     .foregroundStyle(.tertiary)
@@ -176,7 +228,7 @@ struct PanelMemoryView: View {
 
                 Spacer()
 
-                Text("\(controller.apps.count)")
+                Text("\(visibleProcesses.count)")
                     .font(.app(size: 10, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
@@ -188,7 +240,7 @@ struct PanelMemoryView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
 
-            if controller.apps.isEmpty {
+            if visibleProcesses.isEmpty {
                 emptyState
             } else {
                 appList
@@ -199,7 +251,7 @@ struct PanelMemoryView: View {
     private var appList: some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                ForEach(controller.apps) { app in
+                ForEach(visibleProcesses) { app in
                     PanelAppUsageRow(
                         app: app,
                         fraction: fraction(of: app),
@@ -216,8 +268,11 @@ struct PanelMemoryView: View {
         .mask(scrollEdgeMask)
     }
 
+    /// Satırdaki oran çubuğu **gösterilen** listenin tepesine göre
+    /// ölçekleniyor; uygulama listesinin tepesine göre olsaydı sistem
+    /// süreçleri hep silik görünürdü.
     private func fraction(of app: RunningAppUsage) -> Double {
-        let largest = controller.largestAppMemory
+        let largest = visibleProcesses.first?.memoryBytes ?? 0
         guard largest > 0 else { return 0 }
         return Double(app.memoryBytes) / Double(largest)
     }

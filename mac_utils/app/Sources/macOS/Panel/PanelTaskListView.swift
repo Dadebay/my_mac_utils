@@ -25,8 +25,18 @@ struct PanelTaskListView: View {
 
     init(showCompleted: Bool) {
         self.showCompleted = showCompleted
-        let predicate = showCompleted ? Task.completedPredicate() : Task.activePredicate()
+        // Rail rozetiyle aynı yüzey, aynı sayım: başlık/metin/ayırıcı/boşluk
+        // blokları panele hiç girmiyor (bkz. `activeTodoPredicate`).
+        let predicate = showCompleted ? Task.completedTodoPredicate() : Task.activeTodoPredicate()
         _tasks = Query(filter: predicate, sort: [SortDescriptor(\Task.sortIndex)])
+    }
+
+    /// Not editöründe Enter'la açılan ama henüz yazılmamış satırlar gerçek
+    /// birer `.todo` kaydı — predicate onları eleyemiyor. Dar panelde içi
+    /// boş bir onay kutusundan başka bir şey göstermedikleri için metni
+    /// olmayan satır çizilmiyor.
+    private var visibleTasks: [Task] {
+        tasks.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     var body: some View {
@@ -34,13 +44,13 @@ struct PanelTaskListView: View {
             header
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(tasks) { task in
+                    ForEach(visibleTasks) { task in
                         row(task)
                             .transition(rowTransition)
                     }
-                    if tasks.isEmpty { emptyState }
+                    if visibleTasks.isEmpty { emptyState }
                 }
-                .animation(listAnimation, value: tasks.map(\.id))
+                .animation(listAnimation, value: visibleTasks.map(\.id))
             }
             .scrollPosition($scrollPosition)
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -91,7 +101,7 @@ struct PanelTaskListView: View {
 
             Spacer(minLength: 0)
 
-            Text("\(tasks.count)")
+            Text("\(visibleTasks.count)")
                 .font(.app(size: 11, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
