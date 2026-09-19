@@ -35,7 +35,10 @@ const SHATTER_LINE = NAV_BOTTOM + 28;
 const LIFE = 700;
 
 /** Toplanan bir tanenin yerine oturma süresi (ms). */
-const LIFE_IN = 520;
+const LIFE_IN = 600;
+
+/** Toplanan tanelerin doğuşu kaç ms'ye yayılıyor. */
+const GATHER_STAGGER = 140;
 
 /** Aynı anda yaşayabilecek en çok tane — hızlı kaydırmada tavan. */
 const MAX_PARTICLES = 9000;
@@ -160,8 +163,8 @@ function scatter(
       const py = originY + y;
       /* Toplanırken taneler yukarıdan ve dağınık gelsin — dağılmanın
          tersi bir yol izliyorlar. */
-      const sx = inward ? px + (Math.random() - 0.5) * 70 : px;
-      const sy = inward ? py - 30 - Math.random() * 70 : py;
+      const sx = inward ? px + (Math.random() - 0.5) * 120 : px;
+      const sy = inward ? py - 40 - Math.random() * 120 : py;
 
       particles.push({
         x: sx,
@@ -176,7 +179,7 @@ function scatter(
         ty: py,
         inward,
         size,
-        born: now + Math.random() * 90 * detail,
+        born: now + Math.random() * (inward ? GATHER_STAGGER : 90) * detail,
         life,
         color: colorOf(
           Math.min(255, data[i] * boost),
@@ -274,7 +277,8 @@ function restoreChar(c: CharSpan, now: number) {
 
   if (!c.returnAt) {
     shatterChar(c.el, now, true);
-    c.returnAt = now + LIFE_IN;
+    // Son doğan tane de insin diye saçılma payı ekleniyor.
+    c.returnAt = now + LIFE_IN + GATHER_STAGGER;
     return;
   }
 
@@ -576,11 +580,15 @@ function frame(now: number) {
       shatterStrip(box.el, Math.max(0, to - 10), to, now, false, 2);
     } else {
       /* Geri kaydırma: açılan şeridin taneleri yerine toplanıyor.
-         Şerit aynı anda görünür oluyor; üstüne oturan taneler
-         parçaların birleşmesi gibi okunuyor. */
+
+         Yavaş kaydırırken bu şerit karede bir iki piksel kalıyor ve
+         neredeyse hiç tane çıkmıyordu; bu yüzden açılan kenarın hemen
+         altındaki bant da, henüz görünür olacak alanın malzemesi
+         olarak, sık bir şekilde örnekleniyor. */
       const to = box.cut;
       const from = Math.max(wanted, to - MAX_STRIP);
       shatterStrip(box.el, from, to, now, true);
+      shatterStrip(box.el, wanted, Math.min(rect.height, wanted + 26), now, true, 3);
     }
 
     box.cut = wanted;
@@ -624,8 +632,11 @@ function frame(now: number) {
       const ease = 1 - (1 - t) * (1 - t) * (1 - t);
       p.x = p.sx + (p.tx - p.sx) * ease;
       p.y = p.sy + (p.ty - p.sy) * ease;
-      // Yolun başında beliriyor, yerine oturduğu anda öğeye karışıyor.
-      fade = Math.min(1, t * 4) * (1 - t * t);
+      /* Yolun başında beliriyor ve sonuna kadar parlak kalıyor: tane
+         tam yerine oturduğu anda kayboluyor, öğe de o anda görünür
+         oluyor. Önceden inişte sönüyordu ve toplanma bir bulanıklık
+         gibi okunuyordu. */
+      fade = Math.min(1, t * 3);
     } else {
       p.y -= scrollDelta;
       p.x += p.vx * 16;

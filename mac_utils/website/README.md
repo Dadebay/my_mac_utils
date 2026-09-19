@@ -84,7 +84,11 @@ kartlarda düz bir çizgi fark ediliyordu.
 
 Geri kaydırmada aynı taneler ters yönde doğuyor: dağınık bir noktadan
 başlayıp öğenin üzerindeki kendi yerlerine oturuyorlar, oturma bitince
-öğe geri görünüyor.
+öğe geri görünüyor. Taneler inişin sonuna kadar parlak kalıyor — yolun
+sonunda sönselerdi toplanma, birleşme değil bulanıklık gibi okunurdu.
+Açılan kenarın hemen altındaki bant da ayrıca sık örnekleniyor; yavaş
+kaydırmada kare başına düşen şerit bir iki piksel kalıyor ve ortaya
+neredeyse hiç tane çıkmıyordu.
 
 Kaydırma hızına göre ayarlanıyor: yavaş kaydırırken animasyon bütün
 ayrıntısıyla oynuyor, hızlandıkça taneler seyreliyor ve ömürleri
