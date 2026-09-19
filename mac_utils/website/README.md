@@ -86,6 +86,16 @@ Geri kaydırmada aynı taneler ters yönde doğuyor: dağınık bir noktadan
 başlayıp öğenin üzerindeki kendi yerlerine oturuyorlar, oturma bitince
 öğe geri görünüyor.
 
+Kaydırma hızına göre ayarlanıyor: yavaş kaydırırken animasyon bütün
+ayrıntısıyla oynuyor, hızlandıkça taneler seyreliyor ve ömürleri
+kısalıyor, kare başına 120 pikselin üstünde ise hiç üretilmiyor — o hızda
+kimse taneleri seyretmiyor, istenen şey içeriğin gecikmeden geçmesi
+(`CALM_SPEED`, `SKIP_SPEED`).
+
+Saydam cam yüzeyler önce sayfa zeminine bindiriliyor: dolgusu %5 saydam
+olduğu için doğrudan örneklenince eşiğin altında kalıyor ve kutular hiç
+tane vermiyordu.
+
 Bütçe: öğeler ancak çizgiyi kestikleri karede ölçülüyor; sayfa durduğunda
 ve havada tane kalmadığında döngü kendini kapatıyor, kaydırma geri açıyor.
 Harf sarmalayıcıları `display: inline` ve yalnızca çalışma anında

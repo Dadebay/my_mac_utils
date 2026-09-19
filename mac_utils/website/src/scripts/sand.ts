@@ -44,6 +44,17 @@ const MAX_PARTICLES = 9000;
 const MAX_STRIP = 240;
 
 /**
+ * Kaydırma hızına göre ayrıntı.
+ *
+ * Yavaş kaydırırken animasyon bütün ayrıntısıyla oynuyor. Hızlı
+ * kaydırırken kimse taneleri seyretmiyor; orada istenen şey içeriğin
+ * gecikmeden geçmesi. Bu yüzden hız arttıkça taneler seyreliyor ve
+ * ömürleri kısalıyor, belli bir hızın üstünde ise hiç üretilmiyor.
+ */
+const CALM_SPEED = 25;
+const SKIP_SPEED = 120;
+
+/**
  * Tane iki yönde de çalışıyor.
  *
  * `out` — aşağı kaydırırken: öğeden kopup savruluyor ve sönüyor.
@@ -94,9 +105,15 @@ const sctx = scratch.getContext("2d", { willReadFrequently: true })!;
 
 const particles: Particle[] = [];
 
+/** Saydam yüzeyleri üstüne bindirmek için sayfanın zemin rengi. */
+const pageBackground = getComputedStyle(document.body).backgroundColor || "#0a0b0f";
+
 /** `rgb(r, g, b)` dizgileri tekrar tekrar üretilmesin. */
 const colorCache = new Map<number, string>();
 function colorOf(r: number, g: number, b: number): string {
+  r |= 0;
+  g |= 0;
+  b |= 0;
   const key = (r << 16) | (g << 8) | b;
   let value = colorCache.get(key);
   if (!value) {
@@ -121,11 +138,17 @@ function scatter(
   step: number,
   now: number,
   inward = false,
+  boost = 1,
 ) {
   if (width <= 0 || height <= 0) return;
+  // Çok hızlı kaydırmada tane üretilmiyor: içerik beklemeden geçsin.
+  if (scrollSpeed > SKIP_SPEED) return;
+
+  step = Math.max(1, Math.round(step / detail));
 
   const data = sctx.getImageData(0, 0, width, height).data;
   const size = Math.max(1, step);
+  const life = (inward ? LIFE_IN : LIFE) * detail;
 
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
@@ -153,9 +176,13 @@ function scatter(
         ty: py,
         inward,
         size,
-        born: now + Math.random() * 90,
-        life: inward ? LIFE_IN : LIFE,
-        color: colorOf(data[i], data[i + 1], data[i + 2]),
+        born: now + Math.random() * 90 * detail,
+        life,
+        color: colorOf(
+          Math.min(255, data[i] * boost),
+          Math.min(255, data[i + 1] * boost),
+          Math.min(255, data[i + 2] * boost),
+        ),
       });
     }
   }
@@ -377,6 +404,7 @@ function shatterStrip(el: HTMLElement, from: number, to: number, now: number, in
   sctx.translate(0, -from);
 
   const style = getComputedStyle(el);
+  let isFlatBox = false;
 
   if (el.tagName === "IMG") {
     const img = el as HTMLImageElement;
@@ -389,28 +417,48 @@ function shatterStrip(el: HTMLElement, from: number, to: number, now: number, in
       sctx.drawImage(bitmap, 0, 0, rect.width, rect.height);
     }
   } else {
+    /*
+     * Cam yüzeylerin dolgusu %5 saydam; doğrudan boş tuvale çizilince
+     * piksellerin saydamlığı eşiğin altında kalıyor ve kutu hiç
+     * örneklenmiyordu. Önce sayfa zemini basılıp üstüne kutu çiziliyor:
+     * artık her piksel opak ve rengi kutunun ekranda göründüğü renk.
+     * Şekli korumak için çizim kutunun kendi yoluna kırpılıyor.
+     */
     const radius = parseFloat(style.borderTopLeftRadius) || 0;
+
+    sctx.save();
     roundedRectPath(sctx, rect.width, rect.height, radius);
+    sctx.clip();
+
+    sctx.fillStyle = pageBackground;
+    sctx.fillRect(0, 0, rect.width, rect.height);
 
     if (alphaOf(style.backgroundColor) > 0.03) {
       sctx.fillStyle = style.backgroundColor;
-      sctx.fill();
+      sctx.fillRect(0, 0, rect.width, rect.height);
     }
 
     const borderWidth = parseFloat(style.borderTopWidth) || 0;
     if (borderWidth > 0 && alphaOf(style.borderTopColor) > 0.03) {
-      sctx.lineWidth = Math.max(1, borderWidth);
+      roundedRectPath(sctx, rect.width, rect.height, radius);
+      sctx.lineWidth = Math.max(1, borderWidth) * 2;
       sctx.strokeStyle = style.borderTopColor;
       sctx.stroke();
     }
+
+    sctx.restore();
+    isFlatBox = true;
   }
 
   sctx.setTransform(1, 0, 0, 1, 0, 0);
 
   /* Tane sıklığı kutunun genişliğiyle biraz açılıyor: kocaman bir kart
      da ince bir buton da benzer yoğunlukta dağılıyor. */
-  const step = denseStep || Math.max(2, Math.round(Math.min(rect.width, 600) / 160));
-  scatter(width, height, rect.left, rect.top + from, step, now, inward);
+  const step = denseStep || Math.max(2, Math.round(Math.min(rect.width, 600) / 220));
+  /* Zeminin üstüne bindirilen kutular neredeyse zemin rengi çıkıyor;
+     taneler görünsün diye biraz aydınlatılıyor. Görsel ve ikonlar kendi
+     renkleriyle kalıyor. */
+  scatter(width, height, rect.left, rect.top + from, step, now, inward, isFlatBox ? 1.9 : 1);
 }
 
 /* ------------------------------------------------------------------ */
@@ -441,6 +489,11 @@ let lastScrollY = window.scrollY;
 let running = false;
 let pendingScan = true;
 
+/** Kare başına kaydırma (px), yumuşatılmış. */
+let scrollSpeed = 0;
+/** 1 = tam ayrıntı, 0'a yaklaştıkça seyrek ve kısa ömürlü. */
+let detail = 1;
+
 function frame(now: number) {
   const scrollDelta = window.scrollY - lastScrollY;
   lastScrollY = window.scrollY;
@@ -455,6 +508,9 @@ function frame(now: number) {
     return;
   }
   pendingScan = false;
+
+  scrollSpeed = scrollSpeed * 0.6 + Math.abs(scrollDelta) * 0.4;
+  detail = scrollSpeed <= CALM_SPEED ? 1 : Math.max(0.3, CALM_SPEED / scrollSpeed);
 
   for (const block of textBlocks) {
     const rect = block.el.getBoundingClientRect();
