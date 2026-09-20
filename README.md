@@ -1,85 +1,34 @@
 # GlassDo
 
-Sadece macOS için, tamamen yerel (SwiftData, sync yok) çalışan bir görev
-yöneticisi. Ana pencerenin yanında, ekranın kenarına yaslanan **Liquid Glass**
-bir panel de var — kenardan dışarı çekip görevlerini, sistem durumunu ve
-notlarını odaktaki uygulamayı hiç değiştirmeden kontrol ediyorsun.
+macOS için sakin bir kontrol merkezi: görevler, notlar, ekran kenarında
+duran Edge Rail paneli ve sistem izleme. Her şey cihazda kalıyor.
 
-macOS 26'nın `.glassEffect` / `GlassEffectContainer` API'leriyle yazıldı;
-cam efekti elle blur/opacity taklidi değil, gerçek zamanlı refraksiyon.
-
-## İndir
-
-[**Releases**](../../releases) sayfasında her `main` push'unda otomatik
-üretilen en son derleme duruyor — `.zip`'i indirip aç.
-
-> Bu derlemeler imzasız/notarize edilmemiş: ilk açılışta Gatekeeper uyarı
-> verir. Uygulamaya Finder'da sağ tık → **Aç** ile geçebilir, ya da terminalde
-> `xattr -cr GlassDo-macOS.app` çalıştırabilirsin.
-
-## Neler var
-
-**Görev yönetimi**
-- Proje/etiketle gruplama, öncelik, bitiş tarihi, çok satırlı not
-- Akıllı listeler (Bugün / Yaklaşan / Tümü / Tamamlanan), arama, sürükle-bırak sıralama
-- Tamamen yerel SwiftData store — arka planda hiçbir sunucuya konuşmuyor
-
-**Kenar paneli (Edge Rail)**
-- Ekranın herhangi bir kenarına yaslanan, hover'da açılan `NSPanel` tabanlı panel
-- Rail ↔ genişletilmiş görünüm arasında geçiş, kenara gizlenme (sliver/peek) ve
-  sabitleme (pinned) modları
-- Rail ikonları arasında geçiş yaparken panel çerçevesi hiç oynamaz — yalnızca
-  içerik ve seçim vurgusu kısa bir geçişle değişir
-
-**Sistem izleme**
-- CPU (çekirdek başına), bellek, disk, batarya, ağ hızı/günlük kullanım için
-  canlı kartlar ve grafikler
-- Aynı ölçümler menü çubuğunda da (`NSStatusItem`), istenen biçimde: çubuk,
-  yüzde, bayt, grafik — kullanıcı hangi ölçeri hangi biçimde göreceğini seçiyor
-- Ağ hız testi, disk alanı analizi, süreç bazlı ağ kullanımı
-
-**Diğer**
-- WidgetKit widget'ları (masaüstü/Notification Center) — bugünün görevleri ve
-  sistem özeti
-- Pencere değiştirici (Cmd+Tab benzeri overlay)
-- Panelden koparılıp ekranda serbest duran not pencereleri (popped notes)
-- Türkçe / İngilizce / Rusça arayüz
-
-## Teknik
-
-| | |
-|---|---|
-| Dil | Swift 6 (`SWIFT_STRICT_CONCURRENCY: complete`) |
-| UI | SwiftUI + AppKit (panel/menü çubuğu entegrasyonu için) |
-| Veri | SwiftData, tamamen yerel |
-| Minimum sürüm | macOS 26 (Liquid Glass gerektiriyor) |
-| Proje üretimi | [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`project.yml`) |
-| Test | Swift Testing (`@Test`) |
-
-### Modüller
-
-```
-Sources/
-├── GlassDoKit/     # Paylaşılan çekirdek: modeller, servisler, tasarım sistemi
-├── Shared/         # Uygulama + widget uzantısı arasında paylaşılan ölçüm kodu
-├── macOS/          # Ana uygulama: pencere, kenar paneli, menü çubuğu, ayarlar
-└── Widgets/        # WidgetKit uzantısı
-```
-
-## Kurulum ve derleme
+Kaynak `mac_utils/app` altında. Xcode projesi sürüm denetiminde durmuyor,
+`project.yml`den üretiliyor:
 
 ```bash
-brew install xcodegen   # yalnızca ilk sefer
-xcodegen generate
-xcodebuild -project GlassDo.xcodeproj -scheme GlassDo-macOS \
-  -configuration Debug build
+cd mac_utils/app && xcodegen generate && open GlassDo.xcodeproj
 ```
 
-`GlassDo.xcodeproj`, `project.yml`'den üretildiği için repoya dahil değil —
-`xcodegen generate` her `project.yml` değişikliğinden sonra tekrar çalıştırılmalı.
+Komut satırından derlemek:
 
-## Durum
+```bash
+cd mac_utils/app && xcodebuild -project GlassDo.xcodeproj -scheme GlassDo-macOS -configuration Debug build
+```
 
-Aktif geliştirme aşamasında, tek kullanıcı için (kendi ihtiyacım). Planlama ve
-teknik şartname dokümanları [`docs/`](docs/) klasöründe — okuma sırası ve
-kapsam için [docs/README.md](docs/README.md)'ye bak.
+`main`'e her push'ta GitHub Actions imzasız bir Release derleyip
+Releases'e ekliyor (bkz. `.github/workflows/release.yml`). CI runner'ında
+sertifika olmadığı için bu derleme ad-hoc imzalı; App Group'a bağlı
+widget senkronizasyonu o build'de çalışmaz.
+
+## Diğer depolar
+
+Proje üç ayrı depoya bölündü. Bu depo yalnızca macOS uygulamasını taşıyor.
+
+| Depo | Ne |
+| --- | --- |
+| [mac_utils_website](https://github.com/Dadebay/mac_utils_website) | Tanıtım sitesi — Astro, mac-utils.web.app |
+| [mac_utils_admin_panel](https://github.com/Dadebay/mac_utils_admin_panel) | Yönetim paneli ve Cloud Functions — mac-utils-admin.web.app |
+
+Firebase yapılandırması (hosting, functions, Firestore kuralları) o iki
+depoda; burada yok.
