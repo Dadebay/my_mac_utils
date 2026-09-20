@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/copy-admin.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "og": "python3 scripts/make-og.py"

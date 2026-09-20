@@ -26,6 +26,28 @@
         "4321"
       ],
       "port": 4321
+    },
+    {
+      "//": "Yonetim paneli de kurtarilan derlenmis cikti; sunucu firebase.json'daki cleanUrls davranisini taklit ediyor.",
+      "name": "admin",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "/private/tmp/claude-501/-Users-dadebay-Developer-apps-projects-macos-todo-app/489d432b-ecb8-4402-a22c-6d9c327c3b61/scratchpad/serve_admin.py",
+        "mac_utils/admin/out",
+        "5056"
+      ],
+      "port": 5056
+    },
+    {
+      "//": "Dagitilacak klasorun birebir onizlemesi: site + yonetim paneli ayni kokte.",
+      "name": "dist-onizleme",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "/private/tmp/claude-501/-Users-dadebay-Developer-apps-projects-macos-todo-app/489d432b-ecb8-4402-a22c-6d9c327c3b61/scratchpad/serve_admin.py",
+        "mac_utils/website/dist",
+        "5057"
+      ],
+      "port": 5057
     }
   ]
 }

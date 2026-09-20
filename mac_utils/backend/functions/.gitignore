@@ -4,3 +4,10 @@ lib/
 .env
 .env.*
 !.env.example
+# Proje ortamı: yalnızca gizli olmayan parametreler (origin gibi).
+# Sürüm denetiminde duruyor, yoksa deploy eden kişi aynı origin hatasına
+# düşüyor. Gerçek secret'lar hâlâ yalnızca Secret Manager'da.
+!.env.mac-utils
+
+# Emulator icin yerel secret dosyasi — asla commitlenmez.
+.secret.local
