@@ -567,9 +567,76 @@ final class WindowSwitcherController {
     /// Kart üzerindeki kırmızı düğme — pencereyi kapatmakla yetinmez,
     /// kullanıcının "o uygulamadan temelli çıkabilmesi" için tüm süreci
     /// sonlandırır. Kart, listeden de hemen kaldırılır.
+    ///
+    /// İki yol deneniyor, çünkü tek başına hiçbiri her yapılandırmada
+    /// çalışmıyor:
+    ///
+    /// 1. `terminate()` uygulamaya bir "çık" Apple Event'i gönderir. Temiz
+    ///    yol budur — uygulama kaydedilmemiş işini sorabilir. Ama sandbox
+    ///    içinde (yalnızca Release) Apple Event göndermek ayrı bir
+    ///    yetkilendirme istiyor; o olmadığı için istek sessizce düşüyordu.
+    ///    Düğmenin "hiçbir şey yapmamasının" sebebi buydu: kart listeden
+    ///    kalkıyor ama uygulama açık kalıyordu.
+    /// 2. Erişilebilirlik API'siyle uygulamanın kendi "Çık" menü öğesine
+    ///    basmak. Anahtar nokta: bu izin (Erişilebilirlik) switcher'ın
+    ///    zaten ihtiyaç duyduğu ve kullanıcının verdiği izin, yani yeni bir
+    ///    izin penceresi çıkmıyor.
     func closeWindow(_ window: SwitcherWindowInfo) {
-        NSRunningApplication(processIdentifier: window.pid)?.terminate()
+        let app = NSRunningApplication(processIdentifier: window.pid)
+
+        // `terminate()` isteği gönderemediğinde `false` dönüyor; sandbox'ta
+        // olan tam olarak bu.
+        if app?.terminate() != true {
+            pressQuitMenuItem(pid: window.pid)
+        }
+
         removeFromSwitcher(window)
+    }
+
+    /// Uygulamanın menü çubuğundaki "Çık" öğesine basar.
+    ///
+    /// Öğe adına bakmıyoruz — uygulamanın diline göre "Quit", "Çık",
+    /// "Beenden" olabilir. Bunun yerine kısayoluna bakıyoruz: Çık öğesi
+    /// her uygulamada ⌘Q'dur. `cmdModifiers == 0` "yalnızca Command"
+    /// demek, yani ⌥⌘Q gibi başka bir öğeyle karışmıyor.
+    private func pressQuitMenuItem(pid: pid_t) {
+        let appElement = AXUIElementCreateApplication(pid)
+
+        var menuBarRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(appElement, kAXMenuBarAttribute as CFString, &menuBarRef) == .success,
+              let menuBarRef else { return }
+
+        var menuBarItemsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(menuBarRef as! AXUIElement, kAXChildrenAttribute as CFString, &menuBarItemsRef) == .success,
+              let menuBarItems = menuBarItemsRef as? [AXUIElement] else { return }
+
+        for menuBarItem in menuBarItems {
+            var menuRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(menuBarItem, kAXChildrenAttribute as CFString, &menuRef) == .success,
+                  let menu = (menuRef as? [AXUIElement])?.first else { continue }
+
+            var itemsRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(menu, kAXChildrenAttribute as CFString, &itemsRef) == .success,
+                  let items = itemsRef as? [AXUIElement] else { continue }
+
+            for item in items where isQuitMenuItem(item) {
+                AXUIElementPerformAction(item, kAXPressAction as CFString)
+                return
+            }
+        }
+    }
+
+    private func isQuitMenuItem(_ item: AXUIElement) -> Bool {
+        var charRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(item, kAXMenuItemCmdCharAttribute as CFString, &charRef) == .success,
+              let char = charRef as? String,
+              char.lowercased() == "q" else { return false }
+
+        var modifiersRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(item, kAXMenuItemCmdModifiersAttribute as CFString, &modifiersRef) == .success,
+              let modifiers = modifiersRef as? Int else { return false }
+
+        return modifiers == 0
     }
 
     /// Sarı düğme — pencereyi simge durumuna küçültür.

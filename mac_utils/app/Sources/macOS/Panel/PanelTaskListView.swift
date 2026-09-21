@@ -31,12 +31,16 @@ struct PanelTaskListView: View {
         _tasks = Query(filter: predicate, sort: [SortDescriptor(\Task.sortIndex)])
     }
 
-    /// Not editöründe Enter'la açılan ama henüz yazılmamış satırlar gerçek
-    /// birer `.todo` kaydı — predicate onları eleyemiyor. Dar panelde içi
-    /// boş bir onay kutusundan başka bir şey göstermedikleri için metni
-    /// olmayan satır çizilmiyor.
+    /// Panelde yalnızca gerçekten bir şey yazan satırlar görünüyor.
+    ///
+    /// Not editöründe bırakılan boş satırlar veri tarafında başlığı boş
+    /// birer `.todo` kaydı; predicate onları eleyemiyor. Notta grupları
+    /// ayıran bir boşluk olarak anlamlılar, ama dar panelde kendi onay
+    /// kutusu olan boş bir satıra dönüşüp listeyi seyreltiyorlar.
+    /// Ayrılmış not görünümü bu süzgeci kullanmıyor; orada boşluklar
+    /// olduğu gibi duruyor.
     private var visibleTasks: [Task] {
-        tasks.filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        tasks.filter(\.title.hasVisibleContent)
     }
 
     var body: some View {
