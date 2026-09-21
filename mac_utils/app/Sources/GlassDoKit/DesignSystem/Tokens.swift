@@ -30,6 +30,17 @@ public enum Motion {
         .timingCurve(0.23, 1, 0.32, 1, duration: 0.18)
     public static let panelContentSwapOut = Animation
         .timingCurve(0.23, 1, 0.32, 1, duration: 0.12)
+    /// Liste satırları alttan yukarı, sırayla belirirken kullanılır.
+    /// Panel açıldığında içerik tek blok hâlinde "yapışıp" kalmasın,
+    /// akarak yerleşsin diye — sönümleme tam değil, satırın sonunda
+    /// minik bir yerleşme var.
+    public static let listReveal = Animation.spring(response: 0.42, dampingFraction: 0.86)
+
+    /// İki komşu satırın belirmesi arasındaki gecikme. Küçük tutuluyor:
+    /// on satırlık bir listede toplam gecikme çeyrek saniyeyi geçince
+    /// akış değil bekleme hissi veriyor.
+    public static let listRevealStagger: Double = 0.035
+
     /// Bir ölçüm değeri (CPU, bellek, ağ…) yenilendiğinde kullanılır — her
     /// sistem ölçer yüzeyinde (ana pencere, panel, menü çubuğu popover'ı)
     /// aynı his için tek yerden ayarlanabilsin diye.

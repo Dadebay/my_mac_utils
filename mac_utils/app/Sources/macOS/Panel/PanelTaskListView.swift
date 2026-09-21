@@ -54,7 +54,12 @@ struct PanelTaskListView: View {
                     }
                     if visibleTasks.isEmpty { emptyState }
                 }
+                // Kenar solması listenin en üstündeki satırı karartıyordu.
+                // Bu pay, durağan hâlde solmanın satıra değil boşluğa
+                // denk gelmesini sağlıyor.
+                .padding(.vertical, 8)
                 .animation(listAnimation, value: visibleTasks.map(\.id))
+                .background(SlimScrollers())
             }
             .scrollPosition($scrollPosition)
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -66,8 +71,13 @@ struct PanelTaskListView: View {
             }
             // Kaydırma tekerine ek olarak: listeye basılı tutup yukarı/aşağı
             // sürükleyince de kayar (dokunmatik alışkanlığı).
+            // Eşik 6 pikselken fare tıklaması sırasındaki en küçük
+            // titreme bile sürüklemeyi başlatıyor ve içerideki düğmenin
+            // basılmasını iptal ediyordu — onay kutusu "bazen çalışan" bir
+            // şeye dönüşüyordu. 14 piksel, kasıtlı sürüklemeyi hâlâ
+            // yakalıyor ama tıklamayı çalmıyor.
             .gesture(
-                DragGesture(minimumDistance: 6)
+                DragGesture(minimumDistance: 14)
                     .onChanged { value in
                         let base = dragStartScrollY ?? currentScrollY
                         if dragStartScrollY == nil { dragStartScrollY = base }
@@ -121,7 +131,9 @@ struct PanelTaskListView: View {
         let isDeparting = departingTasks.contains(task.id)
         let isHovered = hoveredTaskID == task.id
 
-        return HStack(spacing: 10) {
+        // Üstten hizalı: başlık iki satıra taştığında onay kutusu ortada
+        // asılı kalmasın, ilk satırın yanında dursun.
+        return HStack(alignment: .top, spacing: 10) {
             Button { toggle(task) } label: {
                 ZStack {
                     Circle()
@@ -140,6 +152,15 @@ struct PanelTaskListView: View {
                     }
                 }
                 .frame(width: 20, height: 20)
+                // Tıklama alanı çizilen daireden bağımsız olarak tanımlı.
+                //
+                // İşaretsiz haldeki daire yalnızca `strokeBorder` + saydam
+                // dolgu; bu şekil üzerinden isabet denemesi, kullanıcının
+                // 1.4 piksellik halkayı tam tutturmasını bekliyordu.
+                // Ayrıca 20 piksel, fare hedefi olarak küçük — görünen
+                // boyut aynı kalıyor, dokunulabilir alan büyütülüyor.
+                .frame(width: 30, height: 30)
+                .contentShape(Circle())
                 .animation(checkAnimation, value: isChecked)
             }
             .buttonStyle(.pressScale(reduceMotion ? 1 : 0.92))
@@ -148,12 +169,23 @@ struct PanelTaskListView: View {
                 .font(.app(size: 13.5, weight: .medium))
                 .strikethrough(isChecked)
                 .foregroundStyle(isChecked ? .secondary : .primary)
-                .lineLimit(1)
+                // Dar panelde tek satır çoğu başlığı ortasından kesiyordu.
+                // İki satır, satır sayısını patlatmadan başlığın anlaşılır
+                // olmasına yetiyor; daha uzunları yine üç nokta ile biter.
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                // Onay kutusunun tıklama alanı çizilen daireden büyük;
+                // metni ilk satırda daireyle aynı hizaya getiren pay.
+                .padding(.top, 6)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isChecked)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 9)
+        // İki satırlık başlıklar kendiliğinden uzuyor; alt sınır tek
+        // satırlık satırların eskisi gibi durmasını sağlıyor.
+        .padding(.vertical, 4)
         .frame(minHeight: 38)
         .background {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -211,16 +243,27 @@ struct PanelTaskListView: View {
             : .opacity.combined(with: .scale(scale: 0.98, anchor: .leading))
     }
 
+    /// Kenarlarda içeriğin belirip kaybolduğu kısa solma.
+    ///
+    /// Eskiden yüzdeyle tanımlıydı (%3): panel yükseldikçe solma da
+    /// büyüyor, uzun panelde en üstteki satırın üstünü yiyordu. Sabit
+    /// piksel her boyda aynı kalıyor.
     private var scrollEdgeMask: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .black.opacity(0), location: 0),
-                .init(color: .black, location: 0.03),
-                .init(color: .black, location: 0.97),
-                .init(color: .black.opacity(0), location: 1),
-            ],
-            startPoint: .top, endPoint: .bottom
-        )
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [.black.opacity(0), .black],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: 10)
+
+            Color.black
+
+            LinearGradient(
+                colors: [.black, .black.opacity(0)],
+                startPoint: .top, endPoint: .bottom
+            )
+            .frame(height: 10)
+        }
     }
 
     private func toggle(_ task: Task) {
@@ -263,5 +306,36 @@ struct PanelTaskListView: View {
             pendingCompletions.remove(taskID)
             departingTasks.remove(taskID)
         }
+    }
+}
+
+/// Paneldeki kaydırma çubuğunu ince, üste binen biçime zorlar.
+///
+/// macOS'ta "Kaydırma çubuklarını göster" ayarı *Her zaman* olduğunda
+/// SwiftUI'ın `ScrollView`'ı klasik kalın çubuğa düşüyor ve dar panelde
+/// içeriğin yanında koca bir şerit kaplıyor. Sistem ayarını değiştirmek
+/// kullanıcının kararı; burada yalnızca bu panelin kendi kaydırma
+/// görünümü üste binen ince biçime alınıyor.
+///
+/// SwiftUI bu ayarı doğrudan açmıyor, bu yüzden görünüm ağacındaki
+/// `NSScrollView`'a erişmek için görünmez bir köprü kullanılıyor.
+private struct SlimScrollers: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let probe = NSView(frame: .zero)
+        // Görünüm henüz bir üst görünüme eklenmemiş olabilir; bir sonraki
+        // döngüde `enclosingScrollView` çözülüyor.
+        DispatchQueue.main.async { apply(from: probe) }
+        return probe
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { apply(from: nsView) }
+    }
+
+    private func apply(from view: NSView) {
+        guard let scrollView = view.enclosingScrollView else { return }
+        scrollView.scrollerStyle = .overlay
+        scrollView.verticalScroller?.controlSize = .small
+        scrollView.autohidesScrollers = true
     }
 }

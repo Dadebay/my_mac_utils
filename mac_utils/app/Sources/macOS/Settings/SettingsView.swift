@@ -5,7 +5,7 @@ import SwiftUI
 // MARK: - Kategoriler
 
 enum SettingsCategory: String, CaseIterable, Identifiable {
-  case general, panelSize, railIcons, menuBar, widgets, network, windowSwitcher, about
+  case general, panelSize, railIcons, menuBar, widgets, network, alerts, windowSwitcher, about
   var id: String { rawValue }
 
   var title: String {
@@ -16,6 +16,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case .menuBar: L10n.s("Menü Çubuğu", "Menu Bar", "Строка меню")
     case .widgets: L10n.s("Widget'lar", "Widgets", "Виджеты")
     case .network: L10n.s("Ağ", "Network", "Сеть")
+    case .alerts: L10n.s("Uyarılar", "Alerts", "Оповещения")
     case .windowSwitcher: L10n.windowSwitcherSection
     case .about: L10n.aboutSection
     }
@@ -34,6 +35,8 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         "Рабочий стол и Центр уведомлений")
     case .network:
       L10n.s("Kullanım geçmişi", "Usage history", "История использования")
+    case .alerts:
+      L10n.s("Isınma ve çöp kutusu", "Heat and Trash", "Нагрев и корзина")
     case .windowSwitcher:
       L10n.s(
         "⌥ + Tab ile pencere değiştirme", "Switch windows with ⌥ + Tab",
@@ -50,6 +53,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case .menuBar: "menubar.rectangle"
     case .widgets: "square.grid.2x2"
     case .network: "globe"
+    case .alerts: "bell.badge"
     case .windowSwitcher: "rectangle.on.rectangle"
     case .about: "info.circle"
     }
@@ -68,6 +72,8 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
       [Color(red: 0.98, green: 0.42, blue: 0.62), Color(red: 0.82, green: 0.22, blue: 0.46)]
     case .network:
       [Color(red: 0.24, green: 0.78, blue: 0.74), Color(red: 0.10, green: 0.56, blue: 0.56)]
+    case .alerts:
+      [Color(red: 0.98, green: 0.72, blue: 0.24), Color(red: 0.86, green: 0.44, blue: 0.10)]
     case .windowSwitcher:
       [Color(red: 1.0, green: 0.62, blue: 0.24), Color(red: 0.9, green: 0.44, blue: 0.12)]
     case .about:
@@ -143,7 +149,8 @@ struct SettingsView: View {
         id: "panel", title: L10n.s("Panel", "Panel", "Панель"),
         items: [.panelSize, .railIcons, .windowSwitcher]),
       SidebarGroup(
-        id: "system", title: L10n.s("Sistem", "System", "Система"), items: [.menuBar, .widgets, .network]),
+        id: "system", title: L10n.s("Sistem", "System", "Система"),
+        items: [.menuBar, .widgets, .network, .alerts]),
       SidebarGroup(id: "app", title: L10n.s("Uygulama", "App", "Приложение"), items: [.about]),
     ]
   }
@@ -359,6 +366,7 @@ extension SettingsView {
         case .menuBar: MenuBarSettingsSection()
         case .widgets: WidgetsSettingsSection()
         case .network: NetworkSettingsSection()
+        case .alerts: AlertsSettingsSection()
         case .windowSwitcher: WindowSwitcherSettingsSection(controller: switcherController)
         case .about: AboutSettingsSection()
         }

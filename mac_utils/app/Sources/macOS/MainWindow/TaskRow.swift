@@ -71,11 +71,18 @@ struct TaskRow: View {
                     onDeleteEmpty: onDeleteEmpty
                 )
                 .frame(height: 18)
-            } else {
+            } else if task.kind == .divider {
                 Rectangle()
                     .fill(Color.white.opacity(0.16))
                     .frame(height: 1)
                     .padding(.vertical, 8)
+            } else {
+                // Boşluk satırı: `TaskKind.spacer`'ın kendi tanımı gereği
+                // "çizgisiz, işaretsiz, yalnızca dikey nefes payı".
+                // Ayırıcıyla aynı daldan geçtiği için çizgi çiziliyordu ve
+                // listeyi gruplamak isteyen her boş satır bir çizgiye
+                // dönüşüyordu.
+                Color.clear.frame(height: 1)
             }
 
             Spacer(minLength: 8)
@@ -144,6 +151,11 @@ struct TaskRow: View {
                 }
             }
             .frame(width: 19, height: 19)
+            // İşaretsiz halde ortada dolgu yok, yalnızca ince bir halka
+            // var; tıklama alanı çizimden ayrı tanımlanmazsa kullanıcının
+            // o halkayı tutturması gerekiyor.
+            .frame(width: 28, height: 28)
+            .contentShape(Circle())
             .animation(
                 reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 1.0),
                 value: task.isCompleted

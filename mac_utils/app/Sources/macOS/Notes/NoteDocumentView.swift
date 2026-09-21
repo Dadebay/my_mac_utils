@@ -111,21 +111,51 @@ struct NoteDocumentView: NSViewRepresentable {
         /// çizmesini engelliyor.
         var isApplyingEdit = false
         private var renderedSignature: [String] = []
+        /// Yalnızca blokların *yapısı* — kimlik, tür, tamamlanma. Başlık
+        /// metni dışarıda: kullanıcı yazarken belgeyi yeniden kurmamanın
+        /// ölçüsü bu (bkz. `renderIfChanged`).
+        private var renderedStructure: [String] = []
 
         init(_ parent: NoteDocumentView) {
             self.parent = parent
         }
 
+        /// Metin görünümü şu an yazılan yer mi.
+        private var isEditing: Bool {
+            guard let textView else { return false }
+            return textView.window?.firstResponder === textView
+        }
+
         /// Görev listesi gerçekten değiştiyse yeniden çiziyor.
+        ///
+        /// Kullanıcı yazarken yalnızca başlıklar değişmişse belge
+        /// olduğu gibi bırakılıyor: yazılan metin zaten ekranda ve her
+        /// yeniden kurulum imleci yerinden oynatıyor. Blok yapısı
+        /// değiştiğinde (satır eklendi/silindi, tür ya da tamamlanma
+        /// değişti) çizim şart — Enter'dan sonra onay kutusu böyle
+        /// geliyor.
         func renderIfChanged(tasks: [Task], isDark: Bool, fontScale: Double) {
             let signature = Self.signature(of: tasks, isDark: isDark, fontScale: fontScale)
             guard signature != renderedSignature else { return }
+
+            let structure = Self.structure(of: tasks, isDark: isDark, fontScale: fontScale)
+            if structure == renderedStructure, isEditing {
+                renderedSignature = signature
+                return
+            }
             render(tasks: tasks, isDark: isDark, fontScale: fontScale)
         }
 
         func render(tasks: [Task], isDark: Bool, fontScale: Double) {
             guard let textView, let storage = textView.textStorage else { return }
             let selected = textView.selectedRange()
+            // İmleç sayısal konumuyla değil, bloğunun kimliğiyle
+            // korunuyor: işaret eklenip kalktıkça konumlar kayıyor ve
+            // imleç komşu satıra düşüyordu (bkz. `CaretAnchor`).
+            let anchor = NoteDocumentBuilder.caretAnchor(in: textView)
+            // Belge baştan kurulurken kaydırma konumu korunmazsa uzun bir
+            // notta her değişiklikte sayfa başa sıçrıyor.
+            let visible = textView.enclosingScrollView?.contentView.bounds.origin
 
             storage.beginEditing()
             storage.setAttributedString(
@@ -135,15 +165,38 @@ struct NoteDocumentView: NSViewRepresentable {
 
             // İmleç belge kısaldıysa taşmasın.
             let limit = storage.length
-            textView.setSelectedRange(
-                NSRange(location: min(selected.location, limit), length: min(selected.length, limit - min(selected.location, limit)))
-            )
+            var location = min(selected.location, limit)
+            var length = min(selected.length, limit - location)
+
+            if let anchor, let restored = NoteDocumentBuilder.location(for: anchor, in: storage) {
+                location = restored
+                length = 0
+            } else if length == 0 {
+                // Çapanın bloğu silinmiş (ya da hiç yoktu): sayısal konum
+                // korunuyor, ama satır başına eklenmiş olabilecek bir
+                // işaretin soluna düşmesin diye işaretin sağına çekiliyor.
+                location = NoteDocumentBuilder.caretFloor(in: storage, at: location)
+            }
+
+            textView.setSelectedRange(NSRange(location: location, length: length))
+
+            if let visible, let clip = textView.enclosingScrollView?.contentView {
+                clip.scroll(to: visible)
+                clip.enclosingScrollView?.reflectScrolledClipView(clip)
+            }
+
             renderedSignature = Self.signature(of: tasks, isDark: isDark, fontScale: fontScale)
+            renderedStructure = Self.structure(of: tasks, isDark: isDark, fontScale: fontScale)
         }
 
         private static func signature(of tasks: [Task], isDark: Bool, fontScale: Double) -> [String] {
             ["dark:\(isDark)|scale:\(fontScale)"]
                 + tasks.map { "\($0.id)|\($0.kindRaw)|\($0.isCompleted)|\($0.title)" }
+        }
+
+        private static func structure(of tasks: [Task], isDark: Bool, fontScale: Double) -> [String] {
+            ["dark:\(isDark)|scale:\(fontScale)"]
+                + tasks.map { "\($0.id)|\($0.kindRaw)|\($0.isCompleted)" }
         }
 
         // MARK: - NSTextViewDelegate
@@ -231,6 +284,60 @@ final class NoteTextView: NSTextView {
 
 /// Satır başındaki onay kutusu. Metnin içinde tek bir karakter olarak
 /// duruyor; böylece seçim onu da kapsıyor ve satır düzeni kaymıyor.
+/// Nottaki ayırıcı satırı çizer.
+///
+/// Eskiden bu bir tire dizisiydi (`"────────"`): yazı tipine göre uzunluğu
+/// değişiyor, satırın ortasında asılı kalıyor ve seçilebilir bir metin
+/// parçası olduğu için ayırıcıdan çok "yanlışlıkla yazılmış tireler" gibi
+/// duruyordu. Gerçek bir çizgi olarak çizilince her puntoda aynı
+/// kalınlıkta kalıyor.
+///
+/// Genişlik `attachmentBounds` içinde satırın kendisinden okunuyor, yani
+/// çizgi kenardan kenara uzanıyor ve pencere yeniden boyutlanınca
+/// kendiliğinden uyuyor — belgeyi yeniden kurmaya gerek yok.
+final class NoteDividerAttachment: NSTextAttachment {
+    private static let height: CGFloat = 9
+    private static let thickness: CGFloat = 1
+
+    init(isDark: Bool) {
+        super.init(data: nil, ofType: nil)
+        image = Self.draw(isDark: isDark)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) kullanılmıyor") }
+
+    override func attachmentBounds(
+        for textContainer: NSTextContainer?,
+        proposedLineFragment lineFrag: CGRect,
+        glyphPosition position: CGPoint,
+        characterIndex charIndex: Int
+    ) -> CGRect {
+        CGRect(
+            x: 0,
+            y: -2,
+            width: max(lineFrag.width - position.x, 24),
+            height: Self.height
+        )
+    }
+
+    /// Yatayda esnetilecek, bu yüzden dar çiziliyor; çizginin kalınlığı
+    /// yükseklikten geldiği için esneme onu bozmuyor.
+    private static func draw(isDark: Bool) -> NSImage {
+        NSImage(size: NSSize(width: 64, height: height), flipped: false) { rect in
+            let line = NSRect(
+                x: 0,
+                y: (rect.height - thickness) / 2,
+                width: rect.width,
+                height: thickness
+            )
+            (isDark ? NSColor.white : NSColor.black).withAlphaComponent(0.18).setFill()
+            NSBezierPath(rect: line).fill()
+            return true
+        }
+    }
+}
+
 final class NoteCheckboxAttachment: NSTextAttachment {
     let isChecked: Bool
 

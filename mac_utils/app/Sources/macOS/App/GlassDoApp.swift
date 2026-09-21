@@ -53,6 +53,17 @@ struct GlassDoApp: App {
                 .frame(minWidth: 600, idealWidth: 660, minHeight: 560, idealHeight: 720)
         }
         .windowResizability(.contentMinSize)
+
+        // Hata bildirimi de tekil bir pencere: kullanıcı menüden iki kez
+        // seçerse yarım dolu formu ikinci bir boş pencereyle değiştirmek
+        // yazdıklarını kaybettirirdi.
+        Window(L10n.s("Hata Bildir", "Report a Bug", "Сообщить об ошибке"), id: "bug-report") {
+            BugReportView(panelController: panelController)
+        }
+        // Dialog gibi davranıyor: boyu içeriğe kilitli, kullanıcı
+        // yeniden boyutlandıramıyor. Serbest boyutlu bir pencerede
+        // dört alanlık bir form ya çok geniş ya çok dar duruyordu.
+        .windowResizability(.contentSize)
     }
 }
 
@@ -206,6 +217,10 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         // açılmasa da görünmeliler.
         MenuBarStatsController.shared.start()
 
+        // Isınma ve çöp uyarıları da pencereye bağlı değil: ikisi de
+        // kullanıcı ekrana bakmadığı anda olan şeyler.
+        SystemAlertService.shared.start()
+
         // Pano geçmişi de panel kapalıyken kopyalanan şeyi kaçırmamalı.
         ClipboardHistoryStore.shared.startMonitoring()
         ScreenshotShelfWatcher.shared.syncWithSetting()
@@ -318,6 +333,13 @@ private struct MenuBarContentView: View {
             openWindow(id: "about")
         } label: {
             Label(L10n.s("GlassDo Hakkında", "About GlassDo", "О GlassDo"), systemImage: "info.circle")
+        }
+
+        Button {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "bug-report")
+        } label: {
+            Label(L10n.s("Hata Bildir…", "Report a Bug…", "Сообщить об ошибке…"), systemImage: "ladybug")
         }
 
         Divider()

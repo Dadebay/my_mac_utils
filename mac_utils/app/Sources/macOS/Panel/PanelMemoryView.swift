@@ -11,6 +11,10 @@ struct PanelMemoryView: View {
     /// "Uygulamalar" — panelin asıl sorusu genelde "hangi uygulama yiyor".
     @State private var selection: PanelMemorySegment.Kind = .apps
     @State private var confirmResetTask: _Concurrency.Task<Void, Never>?
+    /// Liste satırlarının alttan akarak belirmesi. Panel açıldığında (ve
+    /// dilim değiştiğinde) sıfırlanıp yeniden oynatılıyor.
+    @State private var isListRevealed = false
+    @State private var revealTask: _Concurrency.Task<Void, Never>?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let confirmWindow: Duration = .seconds(3)
@@ -59,6 +63,7 @@ struct PanelMemoryView: View {
         .onDisappear {
             controller.stop()
             confirmResetTask?.cancel()
+            revealTask?.cancel()
         }
     }
 
@@ -248,10 +253,13 @@ struct PanelMemoryView: View {
         }
     }
 
+    /// Liste en çok on satır: `LazyVStack` yerine düz `VStack`, çünkü
+    /// tembel yığın ekrana girmemiş satırı hiç kurmuyor — sırayla beliren
+    /// bir listede kurulmamış satırın animasyonu da olmuyordu.
     private var appList: some View {
         ScrollView {
-            LazyVStack(spacing: 4) {
-                ForEach(visibleProcesses) { app in
+            VStack(spacing: 4) {
+                ForEach(Array(visibleProcesses.enumerated()), id: \.element.id) { index, app in
                     PanelAppUsageRow(
                         app: app,
                         fraction: fraction(of: app),
@@ -260,12 +268,45 @@ struct PanelMemoryView: View {
                         onBeginQuit: { beginConfirming(app) },
                         onConfirmQuit: { confirmQuit(app) }
                     )
+                    .modifier(RowReveal(
+                        index: index,
+                        isRevealed: isListRevealed,
+                        reduceMotion: reduceMotion
+                    ))
+                    // Ölçüm yenilenince listeye giren/çıkan satır da
+                    // aynı yönden geliyor: sıralama değişimi yerinde
+                    // kayarak, yeni satır alttan.
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: 12)),
+                        removal: .opacity
+                    ))
                 }
             }
             .padding(.horizontal, 10)
             .padding(.bottom, 12)
+            .animation(
+                reduceMotion ? nil : Motion.dataUpdate,
+                value: visibleProcesses.map(\.id)
+            )
         }
         .mask(scrollEdgeMask)
+        .onAppear(perform: replayReveal)
+        .onChange(of: selection) { _, _ in replayReveal() }
+    }
+
+    /// Satırları baştan, sırayla belirtir.
+    ///
+    /// `false → true` aynı karede yapılırsa SwiftUI ikisini tek
+    /// güncellemede birleştiriyor ve satırlar hiç hareket etmeden
+    /// görünüyor; bir kare beklenince hareket gerçekten oynuyor.
+    private func replayReveal() {
+        revealTask?.cancel()
+        isListRevealed = false
+        revealTask = _Concurrency.Task { @MainActor in
+            try? await _Concurrency.Task.sleep(for: .milliseconds(16))
+            guard !_Concurrency.Task.isCancelled else { return }
+            isListRevealed = true
+        }
     }
 
     /// Satırdaki oran çubuğu **gösterilen** listenin tepesine göre
@@ -316,6 +357,34 @@ struct PanelMemoryView: View {
             startPoint: .top,
             endPoint: .bottom
         )
+    }
+}
+
+/// Satırı alttan yukarı, sırasına göre gecikmeli olarak getirir.
+///
+/// Liste tek blok hâlinde beliriyordu: veri geldiği anda on satır aynı
+/// karede ekrana basılıyor, panelin kendi açılma hareketiyle çakışıp
+/// "yapışmış" görünüyordu. Sıra numarasına bağlı küçük bir gecikme,
+/// aynı veriyi akan bir hareket hâline getiriyor.
+private struct RowReveal: ViewModifier {
+    let index: Int
+    let isRevealed: Bool
+    let reduceMotion: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isRevealed ? 1 : 0)
+            .offset(y: isRevealed ? 0 : 16)
+            .animation(animation, value: isRevealed)
+    }
+
+    /// Yalnızca geliş animasyonlu. Sıfırlama (dilim değişince, panel
+    /// yeniden açılınca) anında olmalı: geri dönüşü de canlandırmak,
+    /// iki listenin ortasında satırların aşağı sarkıp geri gelmesi gibi
+    /// görünüyordu.
+    private var animation: Animation? {
+        guard isRevealed, !reduceMotion else { return nil }
+        return Motion.listReveal.delay(Double(index) * Motion.listRevealStagger)
     }
 }
 

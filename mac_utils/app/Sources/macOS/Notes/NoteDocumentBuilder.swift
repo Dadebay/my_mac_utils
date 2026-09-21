@@ -52,6 +52,10 @@ enum NoteDocumentBuilder {
             line.append(NSAttributedString(string: "•  "))
         } else if kind == .numbered {
             line.append(NSAttributedString(string: "\(ordinal).  "))
+        } else if kind == .divider {
+            // İşaret olarak ekleniyor ki geri okunurken görevin başlığına
+            // karışmasın; ayırıcının metni yok.
+            line.append(NSAttributedString(attachment: NoteDividerAttachment(isDark: isDark)))
         }
 
         // İşaret olarak eklenen her karakter işaretleniyor; geri okurken
@@ -72,7 +76,7 @@ enum NoteDocumentBuilder {
     /// paragraf kaplamaları gerekiyor, yoksa iki satır birleşirdi.
     private static func displayText(for task: Task) -> String {
         switch task.kind {
-        case .divider: "────────"
+        case .divider: ""
         case .spacer: ""
         default: task.title
         }
@@ -206,6 +210,55 @@ enum NoteDocumentBuilder {
         return result.string.replacingOccurrences(of: "\u{FFFC}", with: "")
     }
 
+    // MARK: - İmleç
+
+    /// Satırın metni — sonundaki paragraf ayıracı dışarıda.
+    ///
+    /// Aynı üç satır imleçle ilgili her işlevde yeniden yazılıyordu;
+    /// imleç mantığının tamamı buna dayandığı için tek bir yerden
+    /// okunuyor.
+    private static func trimmedParagraph(_ range: NSRange, in storage: NSTextStorage) -> NSRange {
+        let text = storage.string as NSString
+        var content = range
+        if content.length > 0,
+           text.substring(with: NSRange(location: NSMaxRange(content) - 1, length: 1)) == "\n" {
+            content.length -= 1
+        }
+        return content
+    }
+
+    /// Verilen konumun içinde bulunduğu satırın metin aralığı.
+    private static func contentRange(at location: Int, in storage: NSTextStorage) -> NSRange {
+        let text = storage.string as NSString
+        let caret = min(max(location, 0), text.length)
+        return trimmedParagraph(text.lineRange(for: NSRange(location: caret, length: 0)), in: storage)
+    }
+
+    /// Paragrafın kimliği. Boş satırda metin yok, kimlik paragraf
+    /// ayıracının kendisinden okunuyor.
+    private static func blockID(
+        lineRange: NSRange,
+        content: NSRange,
+        in storage: NSTextStorage
+    ) -> UUID? {
+        let source = content.length > 0 ? content.location : lineRange.location
+        guard source < storage.length else { return nil }
+        return storage.attribute(.glassDoBlockID, at: source, effectiveRange: nil) as? UUID
+    }
+
+    /// Satırda yazının başladığı yer: işaret varsa onun hemen sağı.
+    private static func textStart(of content: NSRange, in storage: NSTextStorage) -> Int {
+        guard content.length > 0 else { return content.location }
+        var markerRange = NSRange(location: content.location, length: 0)
+        guard storage.attribute(
+            .glassDoMarker,
+            at: content.location,
+            longestEffectiveRange: &markerRange,
+            in: content
+        ) != nil else { return content.location }
+        return NSMaxRange(markerRange)
+    }
+
     /// İmlecin bulunduğu blok. Backspace davranışı buna bakıyor:
     /// kimliği, metninin boş olup olmadığı, satır başında bir işaret
     /// (onay kutusu, madde, numara) taşıyıp taşımadığı ve imlecin metnin
@@ -219,29 +272,87 @@ enum NoteDocumentBuilder {
         let caret = min(textView.selectedRange().location, text.length)
 
         let lineRange = text.lineRange(for: NSRange(location: caret, length: 0))
-        var contentRange = lineRange
-        if contentRange.length > 0,
-           text.substring(with: NSRange(location: NSMaxRange(contentRange) - 1, length: 1)) == "\n" {
-            contentRange.length -= 1
+        let content = trimmedParagraph(lineRange, in: storage)
+        guard let id = blockID(lineRange: lineRange, content: content, in: storage) else { return nil }
+
+        let start = textStart(of: content, in: storage)
+        let stripped = content.length > 0 ? strippedText(storage, in: content) : ""
+        return (id, stripped.isEmpty, start > content.location, caret == start)
+    }
+
+    /// İmlecin yerini belgeden bağımsız tutan çapa.
+    ///
+    /// Belge her yeniden çizimde baştan kuruluyor, karakter sayısı ise
+    /// satır başındaki işaret eklendikçe kalktıkça kayıyor. İmleci
+    /// sayısal konumuyla korumak bu yüzden yetmiyordu: onay kutusu
+    /// kalkan bir satırda konum iki karakter sola, yani bir alttaki
+    /// satırın içine düşüyordu. Oradan atılan bir Backspace alttaki
+    /// görevin işaretini siliyor, yazılan harfler alttaki göreve
+    /// gidiyordu — kullanıcıya bir satır silinince altındaki görev onun
+    /// yerine geçmiş gibi görünüyordu.
+    ///
+    /// Çapa bloğun kimliğini ve yazının başından itibaren uzaklığı
+    /// taşıyor; ikisi de işaretin gelip gitmesinden etkilenmiyor.
+    struct CaretAnchor {
+        let id: UUID
+        /// İmlecin, satırın yazısının başından itibaren uzaklığı.
+        let offset: Int
+    }
+
+    @MainActor
+    static func caretAnchor(in textView: NSTextView) -> CaretAnchor? {
+        guard let storage = textView.textStorage, storage.length > 0 else { return nil }
+        let selection = textView.selectedRange()
+        // Aralık seçiminde iki uç iki ayrı blokta olabilir; çapa yalnızca
+        // imleç için.
+        guard selection.length == 0 else { return nil }
+
+        let text = storage.string as NSString
+        let caret = min(selection.location, text.length)
+        let lineRange = text.lineRange(for: NSRange(location: caret, length: 0))
+        let content = trimmedParagraph(lineRange, in: storage)
+        guard let id = blockID(lineRange: lineRange, content: content, in: storage) else { return nil }
+
+        return CaretAnchor(id: id, offset: max(0, caret - textStart(of: content, in: storage)))
+    }
+
+    /// Çapanın yeni belgedeki karşılığı — blok artık yoksa `nil`.
+    @MainActor
+    static func location(for anchor: CaretAnchor, in storage: NSTextStorage) -> Int? {
+        guard storage.length > 0 else { return nil }
+
+        var blockRange: NSRange?
+        storage.enumerateAttribute(
+            .glassDoBlockID,
+            in: NSRange(location: 0, length: storage.length)
+        ) { value, range, stop in
+            guard value as? UUID == anchor.id else { return }
+            blockRange = range
+            stop.pointee = true
         }
+        guard let blockRange else { return nil }
 
-        let idSource = contentRange.length > 0 ? contentRange.location : lineRange.location
-        guard idSource < storage.length,
-              let id = storage.attribute(.glassDoBlockID, at: idSource, effectiveRange: nil) as? UUID
-        else { return nil }
+        // Bloğun aralığı satır sonundaki ayıracı da kapsıyor (o da aynı
+        // kimliği taşıyor); imleç ayıracın ötesine geçmemeli.
+        let content = trimmedParagraph(blockRange, in: storage)
+        return min(textStart(of: content, in: storage) + anchor.offset, NSMaxRange(content))
+    }
 
-        var markerRange = NSRange(location: contentRange.location, length: 0)
-        let hasMarker = contentRange.length > 0
-            && storage.attribute(
-                .glassDoMarker,
-                at: contentRange.location,
-                longestEffectiveRange: &markerRange,
-                in: contentRange
-            ) != nil
-
-        let stripped = contentRange.length > 0 ? strippedText(storage, in: contentRange) : ""
-        let textStart = hasMarker ? NSMaxRange(markerRange) : contentRange.location
-        return (id, stripped.isEmpty, hasMarker, caret == textStart)
+    /// İmlecin bir satırda durabileceği en sol yer.
+    ///
+    /// Satır başındaki onay kutusu metnin parçası değil, bir ek
+    /// (attachment) — yani imleç teknik olarak onun *soluna* geçebiliyor.
+    /// Enter'a basıldığında tam bunu yaşıyorduk: yeni satır önce boş
+    /// oluşuyor, imleç oraya konuyor, sonra yeniden çizimde satırın başına
+    /// onay kutusu ekleniyor ve imleç kutunun solunda kalıyordu.
+    ///
+    /// Bu yüzden imleç konumu, satır bir işaretle başlıyorsa işaretin
+    /// sağına çekiliyor. Yazı her zaman kutunun sağından başlar.
+    @MainActor
+    static func caretFloor(in storage: NSTextStorage, at location: Int) -> Int {
+        guard storage.length > 0 else { return location }
+        let caret = min(max(location, 0), (storage.string as NSString).length)
+        return max(caret, textStart(of: contentRange(at: caret, in: storage), in: storage))
     }
 
     /// Seçimin dokunduğu bütün blokların kimlikleri.
