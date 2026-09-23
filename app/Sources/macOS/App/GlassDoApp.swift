@@ -10,7 +10,6 @@ struct GlassDoApp: App {
     private let container: ModelContainer
     @State private var panelController = EdgePanelController()
     @State private var switcherController = WindowSwitcherController()
-    @State private var noteController = PoppedNoteController()
 
     init() {
         // Her şeyden önce: bu ikinci bir kopyaysa buradan geri dönmüyor.
@@ -31,7 +30,6 @@ struct GlassDoApp: App {
             RootWindowView(
                 panelController: panelController,
                 switcherController: switcherController,
-                noteController: noteController,
                 container: container
             )
             .frame(minWidth: 780, minHeight: 480)
@@ -75,7 +73,6 @@ struct GlassDoApp: App {
 private struct RootWindowView: View {
     let panelController: EdgePanelController
     let switcherController: WindowSwitcherController
-    let noteController: PoppedNoteController
     let container: ModelContainer
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
@@ -89,7 +86,7 @@ private struct RootWindowView: View {
 
     var body: some View {
         ContentView()
-            .environment(noteController)
+            .environment(StickyNotesController.shared)
             .sheet(isPresented: $showingAnalyticsPrompt) {
                 AnalyticsConsentPromptView { granted in
                     AnalyticsConsent.setGranted(granted)
@@ -115,7 +112,7 @@ private struct RootWindowView: View {
                 if !showingAnalyticsPrompt {
                     presentWorkspaceOnboardingIfNeeded()
                 }
-                noteController.configure(container: container)
+                StickyNotesController.shared.configure(container: container)
                 panelController.openMainWindow = {
                     NSApp.activate(ignoringOtherApps: true)
                     openWindow(id: "main")

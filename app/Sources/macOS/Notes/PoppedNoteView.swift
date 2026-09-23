@@ -8,20 +8,38 @@ import GlassDoKit
 /// yürürlükteki şemayı okuyabiliyor (aynı görünümde `preferredColorScheme`
 /// ayarlayıp okumak mümkün değil).
 struct PoppedNoteView: View {
+    /// Bu pencerenin gösterdiği not. Her notun kendi içeriği, kendi rengi
+    /// ve kendi penceresi var.
+    @Bindable var note: StickyNote
     let onClose: () -> Void
 
     @AppStorage(NoteAppearance.themeKey) private var themeRaw = AppTheme.dark.rawValue
 
     var body: some View {
-        PoppedNoteContent(onClose: onClose)
+        PoppedNoteContent(note: note, onClose: onClose)
             .preferredColorScheme((AppTheme(rawValue: themeRaw) ?? .dark).colorScheme)
     }
 }
 
-/// Ekrana çıkarılmış yapışkan not: tüm görev listesi. İçerik doğrudan
-/// görevlerin kendisine bağlı — burada yapılan değişiklik ana pencerede de
-/// anında görünür.
+/// Masaüstünde duran tek bir yapışkan not.
+///
+/// İçerik notun kendi satırları — ana görev listesi değil. Fark davranışta
+/// görünüyor: nottaki bir satıra tik atmak onu listeden düşürmüyor, satır
+/// yerinde kalıp üstü çiziliyor. Eskiden not ana listenin ikinci bir
+/// görünümüydü ve tik atılan satır notun ortasından kayboluyordu.
 private struct PoppedNoteContent: View {
+    @Bindable var note: StickyNote
+
+    init(note: StickyNote, onClose: @escaping () -> Void) {
+        self.note = note
+        self.onClose = onClose
+        let id = note.id
+        _activeTasks = Query(
+            filter: #Predicate<Task> { $0.stickyNote?.id == id },
+            sort: [SortDescriptor(\Task.sortIndex)]
+        )
+    }
+
     /// Başlık şeridindeki kapatma düğmesi — pencere kenarlıksız olduğu için
     /// sistemin kapatma düğmesi yok, kapatmayı controller yapıyor.
     let onClose: () -> Void
@@ -34,23 +52,32 @@ private struct PoppedNoteContent: View {
 
     private var isDark: Bool { colorScheme == .dark }
 
-    @AppStorage(NoteTint.storageKey) private var tintRaw = NoteTint.amber.rawValue
     @AppStorage(NoteTint.opacityKey) private var noteOpacity = NoteTint.defaultOpacity
     @AppStorage(NoteAppearance.fontScaleKey) private var fontScale = NoteAppearance.defaultFontScale
     @State private var showsColorPicker = false
     @State private var isHoveringHeader = false
+    @State private var confirmingDelete = false
+    @State private var deleteResetTask: _Concurrency.Task<Void, Never>?
 
-    private var tint: NoteTint { NoteTint.current(tintRaw) }
+    /// Renk artık nota ait, uygulamaya değil: masaüstünde yan yana duran
+    /// notları birbirinden ayıran şey bu.
+    private var tint: NoteTint { NoteTint.current(note.tintRaw) }
 
-    @Query(filter: Task.activePredicate(), sort: [SortDescriptor(\Task.sortIndex)])
-    private var activeTasks: [Task]
+    /// Notun bütün satırları — tamamlananlar dahil, yerlerinde.
+    ///
+    /// İlişki dizisi (`note.blocks`) üzerinden okumak yetmiyor: yeni bir
+    /// satır eklendiğinde dizi aynı kare içinde güncellenmiyor ve not boş
+    /// görünmeye devam ediyordu. `@Query` deponun kendisini dinliyor,
+    /// değişiklik anında geliyor.
+    @Query private var activeTasks: [Task]
 
-    @Query(filter: Task.completedPredicate(), sort: [SortDescriptor(\Task.sortIndex)])
-    private var completedTasks: [Task]
+    /// Yalnızca sayaç için: tamamlanan satırlar belgeden çıkmıyor.
+    private var completedTasks: [Task] {
+        note.orderedBlocks.filter { $0.isCompleted && $0.kind.isCompletable }
+    }
 
     @State private var newTitle = ""
     @State private var newKind: TaskKind = .todo
-    @State private var showsCompleted = false
     @FocusState private var addFocused: Bool
     /// Enter'la bir satırın altına yeni satır açılınca (ya da Backspace'le
     /// bir satır silinince) odağın taşınacağı görev. `NoteTextField` AppKit
@@ -146,11 +173,35 @@ private struct PoppedNoteContent: View {
                 appearancePicker
             }
 
-            headerButton(systemName: showsCompleted ? "checkmark.circle.fill" : "checkmark.circle",
-                         help: showsCompleted
-                            ? L10n.s("Tamamlananları gizle", "Hide completed", "Скрыть завершённые")
-                            : L10n.s("Tamamlananları göster", "Show completed", "Показать завершённые")) {
-                withAnimation(.easeOut(duration: 0.16)) { showsCompleted.toggle() }
+            /* Tamamlananları göster/gizle düğmesi kalktı: tamamlanan satır
+               artık listeden düşmüyor, yerinde üstü çizili duruyor.
+               Yerine, masaüstüne ikinci bir not açan düğme geldi —
+               yapışkan notun asıl kullanımı bu. */
+            headerButton(systemName: "plus",
+                         help: L10n.s("Yeni not", "New note", "Новая заметка")) {
+                StickyNotesController.shared.createNote(near: note)
+            }
+
+            /* Silme iki adımlı: ilk tıklama düğmeyi kırmızı bir onaya
+               çeviriyor, ikincisi siliyor. Notun içeriğiyle birlikte
+               gitmesi geri alınamaz; tek tıklamayla olmamalı. Üç saniye
+               içinde onaylanmazsa düğme eski hâline dönüyor. */
+            headerButton(systemName: confirmingDelete ? "trash.fill" : "trash",
+                         help: confirmingDelete
+                            ? L10n.s("Silmek için tekrar tıkla", "Click again to delete", "Нажмите ещё раз для удаления")
+                            : L10n.s("Notu sil", "Delete note", "Удалить заметку"),
+                         tint: confirmingDelete ? .red : nil) {
+                if confirmingDelete {
+                    StickyNotesController.shared.delete(note)
+                } else {
+                    withAnimation(Motion.toggle) { confirmingDelete = true }
+                    deleteResetTask?.cancel()
+                    deleteResetTask = _Concurrency.Task { @MainActor in
+                        try? await _Concurrency.Task.sleep(for: .seconds(3))
+                        guard !_Concurrency.Task.isCancelled else { return }
+                        withAnimation(Motion.toggle) { confirmingDelete = false }
+                    }
+                }
             }
 
             Spacer(minLength: 0)
@@ -197,11 +248,18 @@ private struct PoppedNoteContent: View {
 
     /// Şerit üzerinde okunaklı olsun diye tonun parlaklığına göre koyu ya
     /// da açık çizilen düğme (bkz. `NoteTint.foreground`).
-    private func headerButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {
+    /// `tint` verilirse düğme o renkte çizilir — yalnızca silme onayı
+    /// kullanıyor; şeridin geri kalanı tonun kendi ön plan rengini alıyor.
+    private func headerButton(
+        systemName: String,
+        help: String,
+        tint accent: Color? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(tint.foreground)
+                .foregroundStyle(accent ?? tint.foreground)
                 .frame(width: 19, height: 19)
                 .contentShape(Rectangle())
         }
@@ -301,9 +359,10 @@ private struct PoppedNoteContent: View {
     }
 
     private func swatch(_ option: NoteTint) -> some View {
-        let isSelected = option == tint
+        let isSelected = option.rawValue == note.tintRaw
         return Button {
-            tintRaw = option.rawValue
+            note.tintRaw = option.rawValue
+            try? context.save()
         } label: {
             Circle()
                 .fill(option.gradient)
@@ -355,34 +414,7 @@ private struct PoppedNoteContent: View {
                 emptyState
             }
 
-            if showsCompleted, !completedTasks.isEmpty {
-                completedSection
-            }
         }
-    }
-
-    private var completedSection: some View {
-        ScrollView {
-            LazyVStack(spacing: 1) {
-                sectionLabel(L10n.completedTasks)
-                ForEach(completedTasks) { task in
-                    NoteRow(
-                        task: task,
-                        ordinal: 1,
-                        focusedID: $focusedTaskID,
-                        isSelected: false,
-                        onSelect: { _ in },
-                        onDelete: { delete(task) },
-                        onCreateNext: {},
-                        onDeleteEmpty: {}
-                    )
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.bottom, 8)
-        }
-        .frame(maxHeight: 160)
-        .scrollContentBackground(.hidden)
     }
 
     private func sectionLabel(_ text: String) -> some View {
@@ -570,6 +602,7 @@ private struct PoppedNoteContent: View {
             let kind = resolved.hasText ? resolved : .todo
             let created = Task(title: paragraph.text, kind: kind)
             created.sortIndex = order
+            created.stickyNote = note
             context.insert(created)
             if kind.hasText { inheritedKind = kind }
         }
@@ -677,6 +710,8 @@ private struct PoppedNoteContent: View {
     private func addBlock(kind: TaskKind, title: String) {
         let task = Task(title: title, kind: kind)
         task.sortIndex = (activeTasks.map(\.sortIndex).max() ?? -1) + 1
+        // Satır ana listeye değil bu nota ait (bkz. `StickyNote`).
+        task.stickyNote = note
         context.insert(task)
         try? context.save()
     }
@@ -690,6 +725,7 @@ private struct PoppedNoteContent: View {
         }
         let newTask = Task(title: "", kind: task.kind)
         newTask.sortIndex = task.sortIndex + 1
+        newTask.stickyNote = note
         context.insert(newTask)
         try? context.save()
         focusedTaskID = newTask.id

@@ -6,7 +6,7 @@ struct TaskListView: View {
     let selection: SmartList
 
     @Environment(\.modelContext) private var context
-    @Environment(PoppedNoteController.self) private var notes
+    @Environment(StickyNotesController.self) private var notes
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var tasks: [Task]
     @State private var searchText = ""

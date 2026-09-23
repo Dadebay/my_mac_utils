@@ -30,6 +30,11 @@ public final class Task {
     @Relationship(deleteRule: .cascade, inverse: \TaskAttachment.task)
     public var attachments: [TaskAttachment]? = []
 
+    /// Dolu ise bu satır ana listeye değil, bir yapışkan nota ait
+    /// (bkz. `StickyNote`). Ana listenin sorguları bu satırları dışarıda
+    /// bırakıyor: not içeriği görev listesine sızmamalı.
+    public var stickyNote: StickyNote?
+
     public init(title: String = "", kind: TaskKind = .todo) {
         self.title = title
         self.kindRaw = kind.rawValue
@@ -65,11 +70,11 @@ public extension Task {
     /// üst görevi olmayan (`parentTask == nil`) kayıtlar aktif/tamamlanan
     /// listelerinde görünür.
     static func activePredicate() -> Predicate<Task> {
-        #Predicate<Task> { task in !task.isCompleted && task.parentTask == nil }
+        #Predicate<Task> { task in !task.isCompleted && task.parentTask == nil && task.stickyNote == nil }
     }
 
     static func completedPredicate() -> Predicate<Task> {
-        #Predicate<Task> { task in task.isCompleted && task.parentTask == nil }
+        #Predicate<Task> { task in task.isCompleted && task.parentTask == nil && task.stickyNote == nil }
     }
 
     /// Yalnızca gerçek görevler (`.todo`) — Panel'in kompakt kontrol
@@ -81,14 +86,14 @@ public extension Task {
     static func activeTodoPredicate() -> Predicate<Task> {
         let todoKind = TaskKind.todo.rawValue
         return #Predicate<Task> { task in
-            !task.isCompleted && task.parentTask == nil && task.kindRaw == todoKind
+            !task.isCompleted && task.parentTask == nil && task.stickyNote == nil && task.kindRaw == todoKind
         }
     }
 
     static func completedTodoPredicate() -> Predicate<Task> {
         let todoKind = TaskKind.todo.rawValue
         return #Predicate<Task> { task in
-            task.isCompleted && task.parentTask == nil && task.kindRaw == todoKind
+            task.isCompleted && task.parentTask == nil && task.stickyNote == nil && task.kindRaw == todoKind
         }
     }
 }

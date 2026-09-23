@@ -8,7 +8,7 @@ public enum AppStore {
     public static func makeContainer(inMemory: Bool = false) throws -> ModelContainer {
         let schema = Schema([
             Task.self, Tag.self, FolderBookmark.self, TaskAttachment.self,
-            FocusSession.self, AppContextRule.self,
+            FocusSession.self, AppContextRule.self, StickyNote.self,
         ])
 
         let config: ModelConfiguration = if inMemory {
