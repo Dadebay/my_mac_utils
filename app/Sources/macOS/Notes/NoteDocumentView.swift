@@ -67,6 +67,11 @@ struct NoteDocumentView: NSViewRepresentable {
         textView.drawsBackground = false
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
+        /* Dikeyde serbestçe uzayabilmesi için üst sınırın açık olması
+           gerekiyor; varsayılan sınır ilk çerçeveden geliyor ve uzun bir
+           notta düzen o yükseklikte takılıp kalıyor. */
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         textView.autoresizingMask = [.width]
         textView.textContainerInset = NSSize(width: 14, height: 10)
         textView.textContainer?.widthTracksTextView = true
@@ -211,6 +216,22 @@ struct NoteDocumentView: NSViewRepresentable {
                 clip.scroll(to: visible)
                 clip.enclosingScrollView?.reflectScrolledClipView(clip)
             }
+
+            /*
+             * Belge baştan kuruldu ve görünüm elle kaydırıldı: ikisi de
+             * AppKit'in kendi çizim döngüsünün dışında oldu. Görünümün
+             * tazelenmesini ayrıca istemezsek, kısalan bir belgede eski
+             * satırların pikselleri altta asılı kalıyor — notun dibinde
+             * son satırın yarım bir kopyası görünüyordu.
+             *
+             * Düzen de zorlanıyor: ek (onay kutusu, ayırıcı) taşıyan
+             * satırların yüksekliği yeniden ölçülmeden çizim istenirse
+             * eski yükseklik kullanılıyor.
+             */
+            if let container = textView.textContainer, let layout = textView.layoutManager {
+                layout.ensureLayout(for: container)
+            }
+            textView.needsDisplay = true
 
             renderedSignature = Self.signature(of: tasks, isDark: isDark, fontScale: fontScale)
             renderedStructure = Self.structure(of: tasks, isDark: isDark, fontScale: fontScale)
