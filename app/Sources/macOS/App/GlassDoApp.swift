@@ -13,6 +13,11 @@ struct GlassDoApp: App {
     @State private var noteController = PoppedNoteController()
 
     init() {
+        // Her şeyden önce: bu ikinci bir kopyaysa buradan geri dönmüyor.
+        // Veri deposu bir satır sonra açılıyor; ikinci kopyanın ona
+        // dokunmaması gerekiyor (bkz. `SingleInstanceGuard`).
+        SingleInstanceGuard.enforce()
+
         FirebaseApp.configure()
         do {
             container = try AppStore.makeContainer()
