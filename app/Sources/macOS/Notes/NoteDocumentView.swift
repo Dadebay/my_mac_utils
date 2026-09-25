@@ -32,6 +32,35 @@ struct NoteParagraph: Equatable {
     var text: String
 }
 
+/// SwiftUI tarafındaki denetimlerin metin görünümüne ulaşmasını sağlayan
+/// ince köprü.
+///
+/// Seçim çubuğundaki çöp kutusu gibi denetimler AppKit'in seçimini
+/// kullanmak zorunda: "seçili metni sil" komutunun karşılığı yalnızca
+/// metin görünümünde var. Köprü olmadan SwiftUI'dan oraya ulaşmanın yolu
+/// pencereyi ve ilk yanıtlayıcıyı elle aramaktan geçiyordu.
+@MainActor
+final class NoteEditorBridge {
+    weak var textView: NSTextView?
+
+    /// Seçili metni siler. Silme `textDidChange`'i tetikliyor, model de
+    /// oradan eşitleniyor.
+    func deleteSelectedText() {
+        guard let textView, textView.selectedRange().length > 0 else { return }
+        textView.delete(nil)
+    }
+}
+
+/// Metin görünümündeki seçimin, çağıranın ihtiyacı olan özeti.
+struct NoteSelection: Equatable {
+    /// Seçimin dokunduğu bloklar.
+    var blockIDs: [UUID] = []
+    /// Gerçek bir aralık mı, yoksa yalnızca imleç mi.
+    var isRange: Bool = false
+    /// Seçim, dokunduğu blokların tamamını kapsıyor mu.
+    var coversWholeBlocks: Bool = false
+}
+
 /// Notun tamamını **tek bir metin belgesi** olarak çizen editör.
 ///
 /// Önceki sürümde her satır ayrı bir `NSTextField`'dı. macOS'ta her metin
@@ -53,8 +82,10 @@ struct NoteDocumentView: NSViewRepresentable {
     var onClearMarker: (UUID) -> Void
     /// Metnin tam başında Backspace: işaret kalkıyor, metin kalıyor.
     var onRemoveMarker: (UUID) -> Void
+    /// Metin görünümüne komut göndermek için (bkz. `NoteEditorBridge`).
+    var bridge: NoteEditorBridge
     /// Seçimin kapsadığı görevler — biçim çubuğu bunu okuyor.
-    var onSelectionChange: ([UUID], Bool) -> Void
+    var onSelectionChange: (NoteSelection) -> Void
 
     func makeNSView(context: Context) -> NSScrollView {
         let textView = NoteTextView()
@@ -63,7 +94,10 @@ struct NoteDocumentView: NSViewRepresentable {
         textView.onClearMarker = onClearMarker
         textView.onRemoveMarker = onRemoveMarker
         textView.isRichText = false
-        textView.allowsUndo = true
+        /* Metin görünümünün kendi geri alması kapalı: geri alma artık
+           modelin yöneticisinde (bkz. `AppStore.makeContainer`). Açık
+           kalsaydı iki yığın aynı ⌘Z için yarışırdı. */
+        textView.allowsUndo = false
         textView.drawsBackground = false
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
@@ -93,6 +127,7 @@ struct NoteDocumentView: NSViewRepresentable {
         scrollView.documentView = textView
 
         context.coordinator.textView = textView
+        bridge.textView = textView
         context.coordinator.render(tasks: tasks, isDark: isDark, fontScale: fontScale)
         return scrollView
     }
@@ -100,6 +135,7 @@ struct NoteDocumentView: NSViewRepresentable {
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         context.coordinator.parent = self
         guard let textView = nsView.documentView as? NoteTextView else { return }
+        bridge.textView = textView
         textView.onToggle = onToggle
         textView.onClearMarker = onClearMarker
         textView.onRemoveMarker = onRemoveMarker
@@ -125,8 +161,28 @@ struct NoteDocumentView: NSViewRepresentable {
         /// ölçüsü bu (bkz. `renderIfChanged`).
         private var renderedStructure: [String] = []
 
+        /// Geri alma sonrası bir sonraki çizim zorunlu.
+        private var forceNextRender = false
+        /* `deinit` ana aktörün dışında çalışıyor ve yalnızca bu diziyi
+           okuyor; dizi de yalnızca `init` içinde yazılıyor. */
+        nonisolated(unsafe) private var undoObservers: [NSObjectProtocol] = []
+
         init(_ parent: NoteDocumentView) {
             self.parent = parent
+            super.init()
+
+            for name in [Notification.Name.NSUndoManagerDidUndoChange, .NSUndoManagerDidRedoChange] {
+                let token = NotificationCenter.default.addObserver(
+                    forName: name, object: nil, queue: .main
+                ) { [weak self] _ in
+                    MainActor.assumeIsolated { self?.forceNextRender = true }
+                }
+                undoObservers.append(token)
+            }
+        }
+
+        deinit {
+            for token in undoObservers { NotificationCenter.default.removeObserver(token) }
         }
 
         /// Metin görünümü şu an yazılan yer mi.
@@ -145,10 +201,18 @@ struct NoteDocumentView: NSViewRepresentable {
         /// geliyor.
         func renderIfChanged(tasks: [Task], isDark: Bool, fontScale: Double) {
             let signature = Self.signature(of: tasks, isDark: isDark, fontScale: fontScale)
-            guard signature != renderedSignature else { return }
+
+            /* Geri alma/yineleme modelden geldi: belgedeki metin artık
+               modelinkiyle uyuşmuyor. Yazarken yeniden çizimi atlayan
+               kural burada geçerli değil — atlanırsa ⌘Z hiçbir şey
+               yapmamış gibi görünüyor. */
+            let forced = forceNextRender
+            forceNextRender = false
+
+            guard forced || signature != renderedSignature else { return }
 
             let structure = Self.structure(of: tasks, isDark: isDark, fontScale: fontScale)
-            if structure == renderedStructure, isEditing {
+            if !forced, structure == renderedStructure, isEditing {
                 renderedSignature = signature
                 return
             }
@@ -173,19 +237,6 @@ struct NoteDocumentView: NSViewRepresentable {
             )
             storage.endEditing()
 
-            // Belge geri alma yöneticisinin arkasından değiştirildi: elde
-            // kalan adımlar artık var olmayan bir metnin aralıklarını
-            // gösteriyor. Satır başındaki işaret iki karakter olduğu için
-            // bu aralıklar kayıyor ve ⌘Z yanlış yerden siliyordu. Metin
-            // gerçekten değiştiyse yığın boşaltılıyor — yazma geri
-            // alınabilir kalıyor, yapıdan sonra ⌘Z bir şey yapmıyor ama
-            // hiçbir zaman yanlış şey yapmıyor.
-            //
-            // Görünüm değişikliklerinde (punto, tema) metin aynı kalıyor,
-            // orada yığına dokunulmuyor.
-            if storage.string != previousText {
-                textView.undoManager?.removeAllActions()
-            }
 
             // İmleç belge kısaldıysa taşmasın.
             let limit = storage.length
@@ -261,11 +312,29 @@ struct NoteDocumentView: NSViewRepresentable {
             }
         }
 
+        /// İmleç satır başındaki işaretin soluna geçemiyor (bkz.
+        /// `NoteDocumentBuilder.clampedCaret`). Aralık seçimleri serbest:
+        /// bir satırı baştan sona seçip silmek satırı tümüyle siliyor.
+        func textView(
+            _ textView: NSTextView,
+            willChangeSelectionFromCharacterRange oldRange: NSRange,
+            toCharacterRange newRange: NSRange
+        ) -> NSRange {
+            guard newRange.length == 0, let storage = textView.textStorage else { return newRange }
+            let location = NoteDocumentBuilder.clampedCaret(
+                in: storage, from: oldRange.location, to: newRange.location
+            )
+            return NSRange(location: location, length: 0)
+        }
+
         func textViewDidChangeSelection(_ notification: Notification) {
             guard let textView else { return }
             parent.onSelectionChange(
-                NoteDocumentBuilder.selectedBlockIDs(in: textView),
-                textView.selectedRange().length > 0
+                NoteSelection(
+                    blockIDs: NoteDocumentBuilder.selectedBlockIDs(in: textView),
+                    isRange: textView.selectedRange().length > 0,
+                    coversWholeBlocks: NoteDocumentBuilder.selectionCoversWholeBlocks(in: textView)
+                )
             )
         }
     }

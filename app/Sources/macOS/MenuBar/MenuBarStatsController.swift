@@ -390,7 +390,7 @@ private final class StatusItemHost: NSObject {
     }
 
     @objc private func quit() {
-        NSApp.terminate(nil)
+        AppQuit.terminate()
     }
 }
 

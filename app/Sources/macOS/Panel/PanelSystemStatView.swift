@@ -117,12 +117,7 @@ struct PanelProcessorView: View {
                 coreActivity
             }
 
-            StatStackedBarChart(
-                samples: cpu.layeredHistory,
-                colors: [SystemPalette.accent, SystemPalette.secondary],
-                height: 58,
-                capacity: 34
-            )
+            PanelCPUProcessList(reduceMotion: reduceMotion)
 
             Divider().opacity(0.25)
 

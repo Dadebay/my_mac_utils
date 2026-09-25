@@ -91,25 +91,13 @@ enum TopProcessSampler {
     }
 
     private static func allPIDs() -> [Int32] {
-        let count = proc_listallpids(nil, 0)
-        guard count > 0 else { return [] }
-        // Sayı ile dizinin doldurulması arasında yeni işlem doğabilir;
-        // fazladan pay bırakılıyor ki taşan kısım sessizce kesilmesin.
-        var pids = [Int32](repeating: 0, count: Int(count) + 64)
-        let byteCount = proc_listallpids(&pids, Int32(pids.count * MemoryLayout<Int32>.size))
-        guard byteCount > 0 else { return [] }
-        return Array(pids.prefix(Int(byteCount) / MemoryLayout<Int32>.size)).filter { $0 > 0 }
+        ProcessMetrics.allProcessIDs()
     }
 
+    /// Sandbox'ta `proc_pid_rusage` başka süreçler için izin vermiyor;
+    /// bkz. `ProcessMetrics`.
     private static func cpuTime(of pid: Int32) -> UInt64? {
-        var info = rusage_info_v4()
-        let status = withUnsafeMutablePointer(to: &info) { pointer in
-            pointer.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { rebound in
-                proc_pid_rusage(pid, RUSAGE_INFO_V4, rebound)
-            }
-        }
-        guard status == 0 else { return nil }
-        return info.ri_user_time &+ info.ri_system_time
+        ProcessMetrics.cpuTime(pid: pid)
     }
 
     private static func name(of pid: Int32) -> String {

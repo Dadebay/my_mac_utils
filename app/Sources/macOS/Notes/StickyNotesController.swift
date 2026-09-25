@@ -144,6 +144,15 @@ final class StickyNotesController: NSObject, NSWindowDelegate {
 
     // MARK: - NSWindowDelegate
 
+    /// Notun ⌘Z'si modelin geri alma yöneticisine gidiyor.
+    ///
+    /// AppKit, `undo:` eylemini pencerenin yöneticisine yönlendiriyor;
+    /// burada onu modelinkiyle değiştirince nottaki her şey — yazılan
+    /// metin, açılan satır, atılan tik — aynı yığında toplanıyor.
+    func windowWillReturnUndoManager(_ window: NSWindow) -> UndoManager? {
+        container?.mainContext.undoManager
+    }
+
     /// Pencere kapandığında açık not listesi **yazılmıyor**.
     ///
     /// Uygulama kapanırken bütün pencereler kapanıyor ve bu yol işlese

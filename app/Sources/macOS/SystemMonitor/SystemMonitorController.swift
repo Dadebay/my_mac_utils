@@ -138,8 +138,15 @@ final class SystemMonitorController {
 
     func quit(_ app: RunningAppUsage) {
         actionMessage = nil
-        let running = NSRunningApplication(processIdentifier: app.id)
-        guard running?.terminate() == true else {
+        // java, dart gibi çalışma zamanları Dock uygulaması değil:
+        // `NSRunningApplication` onlar için `nil` dönüyor ve panel "sinyal
+        // gönderilemedi" diyordu, oysa süreç kullanıcınındı ve kapatılabilirdi.
+        // Onlar doğrudan sinyal yolundan gidiyor.
+        guard let running = NSRunningApplication(processIdentifier: app.id) else {
+            terminate(app)
+            return
+        }
+        guard running.terminate() else {
             actionMessage = L10n.processQuitDenied(app.name)
             return
         }
@@ -172,8 +179,11 @@ final class SystemMonitorController {
     /// temizliğini yapıp çıkabilsin — açık dosyaları olan bir çalışma
     /// zamanını sertçe öldürmek veri kaybettirebilir.
     func terminate(_ process: RunningAppUsage) {
-        guard process.isTerminable else { return }
         actionMessage = nil
+        guard process.isTerminable else {
+            actionMessage = L10n.processQuitDenied(process.name)
+            return
+        }
 
         guard kill(process.id, SIGTERM) == 0 else {
             // EPERM: sürecin sahibi başka bir kullanıcı (çoğu kez root) ya
@@ -188,33 +198,16 @@ final class SystemMonitorController {
 
     // MARK: - Ölçüm
 
-    /// Etkinlik İzleyicisi'nin "Bellek" sütunuyla aynı ölçüm —
-    /// `ri_resident_size` (klasik RSS) yerine `ri_phys_footprint` kullanılır
-    /// çünkü paylaşılan sayfaları tekrar saymaz, gerçek kullanıma daha yakın.
     /// `nil` = ölçülemedi (çağıranın o sürece erişim izni yok). Sıfır bayt
-    /// ile karıştırılmaması gerekiyor; bkz. `refresh`.
+    /// ile karıştırılmaması gerekiyor; bkz. `refresh` ve `ProcessMetrics`.
     private static func physicalFootprint(pid: pid_t) -> UInt64? {
-        var info = rusage_info_v4()
-        let result: Int32 = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) {
-                proc_pid_rusage(pid, RUSAGE_INFO_V4, $0)
-            }
-        }
-        return result == 0 ? info.ri_phys_footprint : nil
+        ProcessMetrics.memory(pid: pid)
     }
 
-    /// Makinedeki bütün süreçlerin kimlikleri. İlk çağrı yalnızca sayıyı
-    /// sorup arabelleği ona göre ayırıyor; süreç sayısı iki çağrı arasında
-    /// artabileceği için pay bırakılıyor.
+    /// Makinedeki bütün süreçlerin kimlikleri — sandbox'ta da (bkz.
+    /// `ProcessMetrics`).
     private static func allProcessIDs() -> [pid_t] {
-        let count = proc_listallpids(nil, 0)
-        guard count > 0 else { return [] }
-        var buffer = [pid_t](repeating: 0, count: Int(count) * 2)
-        let written = proc_listallpids(
-            &buffer, Int32(buffer.count * MemoryLayout<pid_t>.size)
-        )
-        guard written > 0 else { return [] }
-        return Array(buffer.prefix(Int(written))).filter { $0 > 0 }
+        ProcessMetrics.allProcessIDs()
     }
 
     private static func processName(_ pid: pid_t) -> String {

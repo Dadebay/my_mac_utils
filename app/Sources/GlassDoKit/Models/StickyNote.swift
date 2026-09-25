@@ -3,16 +3,12 @@ import SwiftData
 
 /// Masaüstünde serbestçe duran tek bir yapışkan not.
 ///
-/// Notun içeriği görev listesinin kendisi değil, kendi satırları. Eskiden
-/// not, ana listenin ikinci bir görünümüydü: nottaki bir satıra tik atmak
-/// onu "tamamlandı" yapıp listeden düşürüyordu ve satır notun ortasından
-/// kayboluyordu. Yapışkan bir notta beklenen şey bu değil — tik atılan
-/// satır yerinde, üstü çizili olarak durur.
-///
-/// Satırlar yine `Task`: blok türleri (görev, başlık, madde, ayırıcı)
-/// zaten orada tanımlı ve not editörü onların üzerine kurulu. Fark, bu
-/// satırların `stickyNote` alanının dolu olması — ana listenin
-/// sorguları onları dışarıda bırakıyor.
+/// Notun içeriği ana görev listesinin kendisi; not yalnızca rengini ve
+/// ekrandaki yerini taşıyor. Bir süre her notun kendi satırları vardı
+/// (`blocks`), ama not ile ana pencere birbirinden ayrışıyordu ve
+/// kullanıcı notun ana listenin kopyası olmasını istedi. O dönemden kalan
+/// satırlar açılışta ana listeye taşınıyor (bkz. `StickyNoteMerge`);
+/// `blocks` ilişkisi şema uyumu için duruyor, yeni satır almıyor.
 @Model
 public final class StickyNote {
     public var id: UUID = UUID()
@@ -27,8 +23,7 @@ public final class StickyNote {
 
     public var createdAt: Date = Date()
 
-    /// Notun satırları. Not silinince satırları da gidiyor — ana listede
-    /// sahipsiz satır olarak kalmazlar.
+    /// Ayrı not döneminden kalma satırlar — artık hep boş.
     @Relationship(deleteRule: .cascade, inverse: \Task.stickyNote)
     public var blocks: [Task]? = []
 

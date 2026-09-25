@@ -1,3 +1,4 @@
+import Foundation
 import SwiftData
 
 public enum AppStore {
@@ -18,6 +19,22 @@ public enum AppStore {
         }
 
         let container = try ModelContainer(for: schema, configurations: [config])
+
+        /*
+         * Geri alma veri katmanında.
+         *
+         * Metin görünümünün kendi geri alma yığını bu uygulamada
+         * çalışmıyordu: nottaki her tuş vuruşu bir model değişikliği
+         * yaratıyor, model değişince belge baştan kuruluyor ve kurulan
+         * belgenin yığını eski aralıkları gösterdiği için temizlenmek
+         * zorundaydı. Sonuç, sürekli boşalan bir yığın ve çalışmayan
+         * bir ⌘Z.
+         *
+         * Modelin kendi yöneticisi bu sorunu yaşamıyor: satır eklemek,
+         * silmek, tik atmak, metni değiştirmek — hepsi aynı yerde
+         * kaydediliyor.
+         */
+        container.mainContext.undoManager = UndoManager()
         if !inMemory {
             SeedData.populateIfNeeded(container: container)
         }

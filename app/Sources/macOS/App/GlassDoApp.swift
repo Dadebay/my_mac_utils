@@ -23,6 +23,9 @@ struct GlassDoApp: App {
         } catch {
             fatalError("ModelContainer oluşturulamadı: \(error)")
         }
+        // Yapışkan notlar artık ana listenin kopyası; ayrı not döneminde
+        // notlara yazılmış satırlar bir kez ana listeye taşınıyor.
+        StickyNoteMerge.runIfNeeded(in: container.mainContext)
     }
 
     var body: some Scene {
@@ -87,6 +90,7 @@ private struct RootWindowView: View {
     var body: some View {
         ContentView()
             .environment(StickyNotesController.shared)
+            .environment(panelController)
             .sheet(isPresented: $showingAnalyticsPrompt) {
                 AnalyticsConsentPromptView { granted in
                     AnalyticsConsent.setGranted(granted)
@@ -208,10 +212,29 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
+    /// Dock'taki "Çık" ve ⌘Q uygulamayı kapatmıyor, arka plana alıyor —
+    /// menü çubuğu ölçerleri ve widget'lar yaşamaya devam etsin diye
+    /// (bkz. `AppQuit`).
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if AppQuit.shouldTerminate() { return .terminateNow }
+        AppQuit.moveToBackground()
+        return .terminateCancel
+    }
+
+    /// Arka plandayken Dock simgesi yok; ana pencere menü çubuğundan
+    /// açıldığında simge geri geliyor.
+    private var windowObserver: NSObjectProtocol?
+
     /// Ağ geçmişi görünüme değil uygulamanın ömrüne bağlı — panel kapalıyken
     /// de sayılmazsa "Bugün" yalnızca kullanıcının ekrana baktığı süreyi
     /// gösterirdi.
     func applicationDidFinishLaunching(_ notification: Notification) {
+        windowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main
+        ) { notification in
+            guard let window = notification.object as? NSWindow else { return }
+            MainActor.assumeIsolated { AppQuit.restoreDockIconIfNeeded(for: window) }
+        }
 
         NetworkHistoryStore.shared.startSampling()
 
@@ -347,7 +370,7 @@ private struct MenuBarContentView: View {
         Divider()
 
         Button {
-            NSApp.terminate(nil)
+            AppQuit.terminate()
         } label: {
             Label(L10n.quit, systemImage: "power")
         }

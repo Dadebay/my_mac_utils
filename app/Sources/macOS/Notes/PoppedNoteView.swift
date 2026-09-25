@@ -23,19 +23,17 @@ struct PoppedNoteView: View {
 
 /// Masaüstünde duran tek bir yapışkan not.
 ///
-/// İçerik notun kendi satırları — ana görev listesi değil. Fark davranışta
-/// görünüyor: nottaki bir satıra tik atmak onu listeden düşürmüyor, satır
-/// yerinde kalıp üstü çiziliyor. Eskiden not ana listenin ikinci bir
-/// görünümüydü ve tik atılan satır notun ortasından kayboluyordu.
+/// İçerik ana görev listesinin kendisi (bkz. `mainListTasks`). Notun
+/// kendine ait olan yalnızca rengi ve ekrandaki yeri. Tik atılan satır
+/// ana listede tamamlanıyor ve nottan da düşüyor.
 private struct PoppedNoteContent: View {
     @Bindable var note: StickyNote
 
     init(note: StickyNote, onClose: @escaping () -> Void) {
         self.note = note
         self.onClose = onClose
-        let id = note.id
-        _activeTasks = Query(
-            filter: #Predicate<Task> { $0.stickyNote?.id == id },
+        _mainListTasks = Query(
+            filter: #Predicate<Task> { $0.stickyNote == nil && $0.parentTask == nil },
             sort: [SortDescriptor(\Task.sortIndex)]
         )
     }
@@ -63,17 +61,30 @@ private struct PoppedNoteContent: View {
     /// notları birbirinden ayıran şey bu.
     private var tint: NoteTint { NoteTint.current(note.tintRaw) }
 
-    /// Notun bütün satırları — tamamlananlar dahil, yerlerinde.
+    /// Ana görev listesinin tamamı — not onun birebir kopyası.
     ///
-    /// İlişki dizisi (`note.blocks`) üzerinden okumak yetmiyor: yeni bir
-    /// satır eklendiğinde dizi aynı kare içinde güncellenmiyor ve not boş
-    /// görünmeye devam ediyordu. `@Query` deponun kendisini dinliyor,
-    /// değişiklik anında geliyor.
-    @Query private var activeTasks: [Task]
+    /// Not bir süre kendi satırlarını taşıyan ayrı bir kâğıttı; kullanıcı
+    /// notla ana pencerenin birbirinden ayrıştığını görünce istemedi: not,
+    /// ana listenin masaüstündeki hâli olmalı. Burada yazılan, silinen,
+    /// tik atılan her şey doğrudan ana listedeki görevlere gidiyor.
+    @Query private var mainListTasks: [Task]
 
-    /// Yalnızca sayaç için: tamamlanan satırlar belgeden çıkmıyor.
+    /// Notta görünen satırlar: yalnızca açık görevler.
+    ///
+    /// Tik atılan görev ana listedeki gibi nottan da düşüyor ve
+    /// Completed'a gidiyor. Bir süre gün boyu üstü çizili yerinde
+    /// kalıyordu; kullanıcı tik atınca kaybolmasını istedi.
+    private var activeTasks: [Task] {
+        mainListTasks.filter { !$0.isCompleted }
+    }
+
+    /// Yalnızca sayaç için: bugün tamamlananlar. Belgede görünmüyorlar,
+    /// ama "3 / 13 tamam" günün ilerlemesini göstermeye devam ediyor.
     private var completedTasks: [Task] {
-        note.orderedBlocks.filter { $0.isCompleted && $0.kind.isCompletable }
+        let startOfDay = Calendar.current.startOfDay(for: .now)
+        return mainListTasks.filter {
+            $0.isCompleted && $0.kind.isCompletable && ($0.completedAt ?? .distantPast) >= startOfDay
+        }
     }
 
     @State private var newTitle = ""
@@ -88,6 +99,9 @@ private struct PoppedNoteContent: View {
     /// Metin seçiminin dokunduğu bloklar. Seçimin kendisi metin
     /// görünümünün işi (sürükleme, ⇧+ok, ⌘A, ⌘C hepsi sistemin); burada
     /// yalnızca biçim çubuğunun hangi bloklara uygulanacağı tutuluyor.
+    @State private var selection = NoteSelection()
+    /// Metin görünümüne komut göndermek için.
+    @State private var editor = NoteEditorBridge()
     @State private var selectedBlockIDs: [UUID] = []
     /// İmleç mi yoksa gerçek bir aralık mı seçili — çubuk yalnızca aralıkta
     /// çıkıyor.
@@ -95,7 +109,7 @@ private struct PoppedNoteContent: View {
 
     /// İlerleme yalnızca gerçek görevleri sayar — başlık, metin ve ayırıcı
     /// blokları "yapılacak iş" değil.
-    private var openTodoCount: Int { activeTasks.filter { $0.kind.isCompletable }.count }
+    private var openTodoCount: Int { activeTasks.filter { !$0.isCompleted && $0.kind.isCompletable }.count }
     private var total: Int { openTodoCount + completedTasks.count }
     private var progress: Double {
         total == 0 ? 0 : Double(completedTasks.count) / Double(total)
@@ -183,9 +197,10 @@ private struct PoppedNoteContent: View {
             }
 
             /* Silme iki adımlı: ilk tıklama düğmeyi kırmızı bir onaya
-               çeviriyor, ikincisi siliyor. Notun içeriğiyle birlikte
-               gitmesi geri alınamaz; tek tıklamayla olmamalı. Üç saniye
-               içinde onaylanmazsa düğme eski hâline dönüyor. */
+               çeviriyor, ikincisi siliyor. Görevler ana listeye ait
+               olduğu için yalnızca not (rengi, yeri) gidiyor; yine de
+               tek tıklamayla kaybolmamalı. Üç saniye içinde onaylanmazsa
+               düğme eski hâline dönüyor. */
             headerButton(systemName: confirmingDelete ? "trash.fill" : "trash",
                          help: confirmingDelete
                             ? L10n.s("Silmek için tekrar tıkla", "Click again to delete", "Нажмите ещё раз для удаления")
@@ -396,9 +411,11 @@ private struct PoppedNoteContent: View {
                 onToggle: toggleCompletion,
                 onClearMarker: clearMarker,
                 onRemoveMarker: removeMarker,
-                onSelectionChange: { ids, isRange in
-                    selectedBlockIDs = ids
-                    hasRangeSelection = isRange
+                bridge: editor,
+                onSelectionChange: { next in
+                    selection = next
+                    selectedBlockIDs = next.blockIDs
+                    hasRangeSelection = next.isRange
                 }
             )
             .overlay(alignment: .top) {
@@ -473,7 +490,11 @@ private struct PoppedNoteContent: View {
 
             Divider().frame(height: 14).opacity(0.4)
 
-            Text(L10n.noteSelectedCount(selectedBlockIDs.count))
+            /* Etiket de moda göre değişiyor: "1 satır seçildi" yazarken
+               çöp kutusunun metni silmesi kafa karıştırıyordu. */
+            Text(selection.coversWholeBlocks
+                 ? L10n.noteSelectedCount(selectedBlockIDs.count)
+                 : L10n.s("Seçili metin", "Selected text", "Выделенный текст"))
                 .font(.app(size: 10.5))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
@@ -481,7 +502,13 @@ private struct PoppedNoteContent: View {
             Divider().frame(height: 14).opacity(0.4)
 
             barButton("checkmark.circle", help: L10n.completedTasks) { completeSelection() }
-            barButton("trash", help: L10n.delete, isDestructive: true) { deleteSelection() }
+            barButton(
+                "trash",
+                help: selection.coversWholeBlocks
+                    ? L10n.s("Satırı sil", "Delete line", "Удалить строку")
+                    : L10n.s("Seçili metni sil", "Delete selected text", "Удалить выделенный текст"),
+                isDestructive: true
+            ) { deleteSelection() }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
@@ -524,7 +551,19 @@ private struct PoppedNoteContent: View {
         try? context.save()
     }
 
+    /// Çöp kutusu, seçimin ne olduğuna göre iki farklı şey yapıyor.
+    ///
+    /// Satırın içinden birkaç kelime seçildiyse silinen o kelimeler.
+    /// Satır(lar) baştan sona seçildiyse silinen satırın kendisi — onay
+    /// kutusuyla, türüyle birlikte.
+    ///
+    /// Eskiden ikisi de satırı siliyordu: kullanıcı iki kelime seçip
+    /// siliyor, koca satır gidiyordu.
     private func deleteSelection() {
+        guard selection.coversWholeBlocks else {
+            editor.deleteSelectedText()
+            return
+        }
         for task in selectedTasks { context.delete(task) }
         try? context.save()
     }
@@ -561,9 +600,16 @@ private struct PoppedNoteContent: View {
     /// hiç olmayan paragraf yeni yazılmış bir satır. Belgede artık
     /// görünmeyen görevler siliniyor — kullanıcı o satırları silmiştir.
     private func applyEdit(_ paragraphs: [NoteParagraph]) {
+        // Kullanıcı notta yazıyor: alttaki "yeni görev" alanı odağı geri
+        // istemesin. Önce oraya tıklanmışsa `@FocusState` açık kalıyor ve
+        // notta Enter'a basınca (satır eklenip görünüm yenilenince) imleç
+        // alttaki alana sıçrıyordu.
+        if addFocused { addFocused = false }
+
         var byID: [UUID: Task] = [:]
         for task in activeTasks { byID[task.id] = task }
 
+        let owners = Self.owners(of: paragraphs, tasks: byID)
         var matched: Set<UUID> = []
         // Yeni bir satır, üstündeki satırın türünü sürdürüyor: onay
         // kutuları arasında Enter'a basınca yeni satır da onay kutusu
@@ -579,7 +625,7 @@ private struct PoppedNoteContent: View {
         var inheritedKind: TaskKind = .todo
 
         for (order, paragraph) in paragraphs.enumerated() {
-            if let id = paragraph.id, let task = byID[id], !matched.contains(id) {
+            if let id = paragraph.id, let task = byID[id], owners[id] == order {
                 matched.insert(id)
                 if task.kind.hasText, task.title != paragraph.text {
                     task.title = paragraph.text
@@ -602,7 +648,6 @@ private struct PoppedNoteContent: View {
             let kind = resolved.hasText ? resolved : .todo
             let created = Task(title: paragraph.text, kind: kind)
             created.sortIndex = order
-            created.stickyNote = note
             context.insert(created)
             if kind.hasText { inheritedKind = kind }
         }
@@ -612,6 +657,43 @@ private struct PoppedNoteContent: View {
         }
 
         try? context.save()
+    }
+
+    /// Aynı kimliği taşıyan birden çok paragraf (Enter'la bölünmüş satır)
+    /// varsa görevin hangisinde kalacağı.
+    ///
+    /// Önceden hep ilki alıyordu. Satırın **başında** Enter'a basınca bu
+    /// yanlıştı: ilk parça boş kalıyor, görev boş satıra yapışıyor, yazı
+    /// ise yeni bir göreve taşınıyordu — ekleri, etiketleri, alt görevleri
+    /// artık görünmeyen boş satırın üstünde kalıyordu. Kural:
+    ///
+    /// 1. Yazısı görevin başlığıyla aynı olan parça (başta Enter: yazı
+    ///    olduğu gibi aşağı indi).
+    /// 2. Yoksa ilk parça boşsa, ilk dolu parça.
+    /// 3. Yoksa ilk parça (ortadan bölme: baştaki kısım görevde kalır).
+    private static func owners(of paragraphs: [NoteParagraph], tasks: [UUID: Task]) -> [UUID: Int] {
+        var indices: [UUID: [Int]] = [:]
+        for (order, paragraph) in paragraphs.enumerated() {
+            guard let id = paragraph.id, tasks[id] != nil else { continue }
+            indices[id, default: []].append(order)
+        }
+
+        var owners: [UUID: Int] = [:]
+        for (id, orders) in indices {
+            guard orders.count > 1, let task = tasks[id], let first = orders.first else {
+                owners[id] = orders.first
+                continue
+            }
+            let isBlank = { (i: Int) in paragraphs[i].text.trimmingCharacters(in: .whitespaces).isEmpty }
+            if let exact = orders.first(where: { paragraphs[$0].text == task.title }) {
+                owners[id] = exact
+            } else if isBlank(first), let filled = orders.first(where: { !isBlank($0) }) {
+                owners[id] = filled
+            } else {
+                owners[id] = first
+            }
+        }
+        return owners
     }
 
     // MARK: - Alt bölüm (ilerleme + hızlı ekleme)
@@ -710,8 +792,7 @@ private struct PoppedNoteContent: View {
     private func addBlock(kind: TaskKind, title: String) {
         let task = Task(title: title, kind: kind)
         task.sortIndex = (activeTasks.map(\.sortIndex).max() ?? -1) + 1
-        // Satır ana listeye değil bu nota ait (bkz. `StickyNote`).
-        task.stickyNote = note
+        // Not ana listenin kopyası: satır doğrudan ana listeye ekleniyor.
         context.insert(task)
         try? context.save()
     }
@@ -725,7 +806,6 @@ private struct PoppedNoteContent: View {
         }
         let newTask = Task(title: "", kind: task.kind)
         newTask.sortIndex = task.sortIndex + 1
-        newTask.stickyNote = note
         context.insert(newTask)
         try? context.save()
         focusedTaskID = newTask.id

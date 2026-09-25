@@ -181,10 +181,7 @@ enum NoteDocumentBuilder {
                 contentRange.length -= 1
             }
 
-            let idSource = contentRange.length > 0 ? contentRange.location : lineRange.location
-            let id = idSource < storage.length
-                ? storage.attribute(.glassDoBlockID, at: idSource, effectiveRange: nil) as? UUID
-                : nil
+            let id = blockID(lineRange: lineRange, content: contentRange, in: storage)
 
             result.append(NoteParagraph(id: id, text: strippedText(storage, in: contentRange)))
 
@@ -250,11 +247,28 @@ enum NoteDocumentBuilder {
 
     /// Paragrafın kimliği. Boş satırda metin yok, kimlik paragraf
     /// ayıracının kendisinden okunuyor.
+    ///
+    /// Satırda bizim çizdiğimiz bir işaret (onay kutusu, madde) varsa kimlik
+    /// **ondan** okunuyor, satırın ilk karakterinden değil. İlk karakter
+    /// güvenilir değildi: imleç kutunun soluna geçebiliyordu (⌘←, Home,
+    /// kutunun soluna tıklama) ve oraya yapıştırılan ya da yazılan metnin
+    /// kimliği yok. Satır "yeni" sayılıyor, görev silinip aynı yazıyla
+    /// yeniden oluşuyordu — ekleri, etiketleri ve alt görevleriyle birlikte
+    /// (kullanıcı bildirdi: kopyala-yapıştırdan sonra görev siliniyordu).
     private static func blockID(
         lineRange: NSRange,
         content: NSRange,
         in storage: NSTextStorage
     ) -> UUID? {
+        if content.length > 0 {
+            var markerID: UUID?
+            storage.enumerateAttribute(.glassDoMarker, in: content) { value, range, stop in
+                guard value != nil else { return }
+                markerID = storage.attribute(.glassDoBlockID, at: range.location, effectiveRange: nil) as? UUID
+                stop.pointee = true
+            }
+            if let markerID { return markerID }
+        }
         let source = content.length > 0 ? content.location : lineRange.location
         guard source < storage.length else { return nil }
         return storage.attribute(.glassDoBlockID, at: source, effectiveRange: nil) as? UUID
@@ -449,6 +463,57 @@ enum NoteDocumentBuilder {
         guard storage.length > 0 else { return location }
         let caret = min(max(location, 0), (storage.string as NSString).length)
         return max(caret, textStart(of: contentRange(at: caret, in: storage), in: storage))
+    }
+
+    /// İmlecin gitmek üzere olduğu yer, işaretin soluna düşüyorsa düzeltilmiş
+    /// hâli.
+    ///
+    /// İmleç kutunun soluna geçince yazılan ya da yapıştırılan her şey
+    /// kutunun önüne giriyordu. Oradan sola ok ise önceki satırın sonuna
+    /// atlıyor — yoksa imleç yazının başında takılıp kalırdı.
+    @MainActor
+    static func clampedCaret(in storage: NSTextStorage, from old: Int, to proposed: Int) -> Int {
+        guard storage.length > 0 else { return proposed }
+        let text = storage.string as NSString
+        let caret = min(max(proposed, 0), text.length)
+        let content = contentRange(at: caret, in: storage)
+        let start = textStart(of: content, in: storage)
+        guard caret < start else { return proposed }
+
+        // Yalnızca tek karakterlik sola ok; ⌘← yazının başında kalmalı.
+        let steppingLeft = old == start && proposed == old - 1
+        if steppingLeft, content.location > 0 { return content.location - 1 }
+        return start
+    }
+
+    /// Seçim, dokunduğu blokların tamamını mı kapsıyor?
+    ///
+    /// Çöp kutusu buna bakıyor: satırın içinden birkaç kelime seçilmişse
+    /// silinmesi gereken o kelimeler, satırın kendisi değil. Eskiden her
+    /// iki durumda da blok siliniyordu — kullanıcı iki kelime seçip
+    /// siliyor, koca satır (ve önündeki onay kutusu) gidiyordu.
+    ///
+    /// "Tamamını kapsıyor" derken işaretler sayılmıyor: kullanıcı satırın
+    /// yazısını baştan sona seçtiyse, onay kutusunu da seçmiş sayılıyor —
+    /// kutu zaten metnin değil satırın parçası.
+    @MainActor
+    static func selectionCoversWholeBlocks(in textView: NSTextView) -> Bool {
+        guard let storage = textView.textStorage, storage.length > 0 else { return false }
+        let selection = textView.selectedRange()
+        guard selection.length > 0 else { return false }
+
+        let text = storage.string as NSString
+        let firstLine = text.lineRange(for: NSRange(location: selection.location, length: 0))
+        let lastLine = text.lineRange(
+            for: NSRange(location: min(NSMaxRange(selection), text.length), length: 0)
+        )
+
+        let firstContent = trimmedParagraph(firstLine, in: storage)
+        let lastContent = trimmedParagraph(lastLine, in: storage)
+
+        let startsAtTop = selection.location <= textStart(of: firstContent, in: storage)
+        let endsAtBottom = NSMaxRange(selection) >= NSMaxRange(lastContent)
+        return startsAtTop && endsAtBottom
     }
 
     /// Seçimin dokunduğu bütün blokların kimlikleri.

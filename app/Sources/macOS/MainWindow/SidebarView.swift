@@ -29,6 +29,7 @@ struct SidebarView: View {
     @Query(filter: Task.completedPredicate()) private var completedTasks: [Task]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(EdgePanelController.self) private var panelController
 
     private var tiers: ChromeTextTiers { .resolve(colorScheme) }
 
@@ -206,6 +207,28 @@ struct SidebarView: View {
             }
     }
 
+    /// Kenar panelini açıp kapatan düğme.
+    ///
+    /// Tek yol menü çubuğundaki menüydü; menü çubuğu simgesi görünmediğinde
+    /// (çentiğin arkasına düşmüş, ya da çok simgeli bir çubukta gizlenmiş)
+    /// kapatılan panel bir daha açılamıyordu.
+    private var panelToggle: some View {
+        let isVisible = panelController.isPanelVisible
+        return Button {
+            panelController.togglePanelVisibility()
+            if !isVisible { UsageStore.track(.panelVisibility, source: .mainWindow) }
+        } label: {
+            Image(systemName: isVisible ? "sidebar.right" : "rectangle.righthalf.inset.filled")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(isVisible ? tiers.secondary : tiers.primary)
+                .frame(width: 22, height: 18)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isVisible ? L10n.hideWidget : L10n.showWidget)
+        .accessibilityLabel(isVisible ? L10n.hideWidget : L10n.showWidget)
+    }
+
     /// Kenar çubuğunun dibindeki durum alanı. Kendi kartı yok: ince bir
     /// ayraçla ayrılıp aynı ışığın üstünde duruyor — ayrı bir kutu, listeyi
     /// kesip alta yapıştırılmış gibi görünüyordu.
@@ -229,6 +252,8 @@ struct SidebarView: View {
                     .foregroundStyle(tiers.secondary)
 
                 Spacer(minLength: 0)
+
+                panelToggle
             }
 
             Text(L10n.progressSummary(completedTasks.count, total))

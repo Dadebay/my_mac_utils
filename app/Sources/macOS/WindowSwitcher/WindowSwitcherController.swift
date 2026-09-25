@@ -582,12 +582,22 @@ final class WindowSwitcherController {
     ///    zaten ihtiyaç duyduğu ve kullanıcının verdiği izin, yani yeni bir
     ///    izin penceresi çıkmıyor.
     func closeWindow(_ window: SwitcherWindowInfo) {
-        let app = NSRunningApplication(processIdentifier: window.pid)
+        let pid = window.pid
+        let app = NSRunningApplication(processIdentifier: pid)
 
-        // `terminate()` isteği gönderemediğinde `false` dönüyor; sandbox'ta
-        // olan tam olarak bu.
+        // `terminate()`in dönüş değerine güvenilmiyor: sandbox'ta istek
+        // sessizce düşse de `true` dönebiliyor ve yedek yol hiç
+        // denenmiyordu — kart kalkıyor, uygulama açık kalıyordu (export
+        // edilen sürümde kullanıcı bildirdi). Onun yerine sonuca
+        // bakılıyor: kısa bir süre sonra süreç hâlâ ayaktaysa menü yolu.
         if app?.terminate() != true {
-            pressQuitMenuItem(pid: window.pid)
+            pressQuitMenuItem(pid: pid)
+        } else {
+            _Concurrency.Task { @MainActor [weak self] in
+                try? await _Concurrency.Task.sleep(for: .milliseconds(800))
+                guard let app, !app.isTerminated else { return }
+                self?.pressQuitMenuItem(pid: pid)
+            }
         }
 
         removeFromSwitcher(window)
