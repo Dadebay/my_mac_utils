@@ -23,6 +23,10 @@ enum SidebarSelection: Hashable {
     case folders
     /// Odak oturumları geçmişi.
     case focusHistory
+    /// Ayar sayfaları. Eskiden ayrı bir pencereydiler ve kendi kenar
+    /// çubukları vardı; iki ayrı gezinme listesi bir ayarı ararken
+    /// nereye bakılacağını belirsizleştiriyordu.
+    case settings(SettingsCategory)
 }
 
 // MARK: - Sayfa kimliği
@@ -49,6 +53,13 @@ extension SidebarSelection {
                 title: list.title,
                 symbolName: list.symbolName,
                 colors: list.tint
+            )
+        case .settings(let category):
+            SidebarEntry(
+                selection: self,
+                title: category.title,
+                symbolName: category.symbolName,
+                colors: category.tint
             )
         default:
             // Sistem girdileri tek bir listede tanımlı; oradan okunuyor.

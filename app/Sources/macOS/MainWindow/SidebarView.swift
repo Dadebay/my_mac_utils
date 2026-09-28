@@ -18,6 +18,9 @@ private extension SidebarSelection {
         case .folders: .folders
         // Odak geçmişi bir ölçer sayfası değil; kullanım sayacı yok.
         case .focusHistory: nil
+        // Ayar sayfaları da bir özellik kullanımı sayılmıyor: kullanıcı
+        // ayarı değiştirdiğinde ilgili özelliğin sayacı zaten artıyor.
+        case .settings: nil
         }
     }
 }
@@ -60,6 +63,24 @@ struct SidebarView: View {
 
                     VStack(spacing: 3) {
                         ForEach(SidebarEntry.systemEntries, id: \.selection) { entry in
+                            systemRow(
+                                entry.selection,
+                                title: entry.title,
+                                symbolName: entry.symbolName,
+                                colors: entry.colors
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 10)
+
+                    /* Ayarlar da burada: ayrı bir pencerede ayrı bir
+                       gezinme listesi olması, bir ayarı ararken önce
+                       "hangi pencerede?" sorusunu doğuruyordu. */
+                    sectionHeader(L10n.s("AYARLAR", "SETTINGS", "НАСТРОЙКИ"), topPadding: 20)
+
+                    VStack(spacing: 3) {
+                        ForEach(SettingsCategory.allCases) { category in
+                            let entry = SidebarSelection.settings(category).entry
                             systemRow(
                                 entry.selection,
                                 title: entry.title,

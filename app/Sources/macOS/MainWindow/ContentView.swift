@@ -13,6 +13,8 @@ struct ContentView: View {
     /// Açık sayfanın üst şeritte gösterilen ikinci satırı; sayfanın
     /// kendisinden geliyor (bkz. `pageSubtitle(_:)`).
     @State private var pageSubtitle: String?
+    /// Pencere değiştirici ayar sayfası denetleyicisini istiyor.
+    @Environment(WindowSwitcherController.self) private var switcherController
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -57,6 +59,8 @@ struct ContentView: View {
                             .padding(20)
                     }
                     .navigationTitle(L10n.focusHistoryTitle)
+                case .settings(let category):
+                    SettingsDetailView(category: category, switcherController: switcherController)
                 case nil:
                     ContentUnavailableView(L10n.selectAList, systemImage: "sidebar.left")
                 }

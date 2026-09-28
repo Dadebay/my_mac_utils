@@ -273,7 +273,7 @@ private struct SidebarGroup: Identifiable {
 /// Kategori rozeti. Kenar çubuğu satırı ile sayfa başlığı aynı rozeti
 /// kullanıyor — seçilen satırla açılan sayfa arasındaki bağ görsel olarak
 /// kurulsun diye (aynı nesne, iki yerde).
-private struct SettingsCategoryIcon: View {
+struct SettingsCategoryIcon: View {
   let category: SettingsCategory
   var size: CGFloat = 26
   var radius: CGFloat = 7
@@ -437,7 +437,7 @@ extension SettingsView {
 
 // MARK: - Genel
 
-private struct GeneralSettingsSection: View {
+struct GeneralSettingsSection: View {
   @AppStorage(AppTheme.storageKey) private var themeRaw = AppTheme.system.rawValue
   @State private var language = LocalizationManager.shared.language
 
@@ -463,7 +463,7 @@ private struct GeneralSettingsSection: View {
 
 // MARK: - Panel boyutu
 
-private struct PanelSizeSettingsSection: View {
+struct PanelSizeSettingsSection: View {
   @AppStorage(PanelSettings.iconScaleKey) private var iconScale = PanelSettings.defaultIconScale
   @AppStorage(PanelSettings.panelWidthKey) private var panelWidth = PanelSettings.defaultPanelWidth
   @AppStorage(PanelSettings.panelHeightKey) private var panelHeight = PanelSettings
@@ -536,7 +536,7 @@ private struct PanelSizeSettingsSection: View {
 
 // MARK: - Ray ikonları
 
-private struct RailIconsSettingsSection: View {
+struct RailIconsSettingsSection: View {
   @AppStorage(PanelSettings.showTasksIconKey) private var showTasks = true
   @AppStorage(PanelSettings.showAddIconKey) private var showAdd = true
   @AppStorage(PanelSettings.showCompletedIconKey) private var showCompleted = true
@@ -616,7 +616,7 @@ private struct RailIconsSettingsSection: View {
 
 // MARK: - Ağ
 
-private struct NetworkSettingsSection: View {
+struct NetworkSettingsSection: View {
   @State private var isConfirmingReset = false
   @State private var agent = NetworkAgentController.shared
 
@@ -812,7 +812,7 @@ private struct NetworkSettingsSection: View {
 
 // MARK: - Pencere değiştirici
 
-private struct WindowSwitcherSettingsSection: View {
+struct WindowSwitcherSettingsSection: View {
   let controller: WindowSwitcherController
 
   /// İzinler sistem ayarlarından değiştiği anda otomatik güncellenmez —
@@ -1112,7 +1112,7 @@ private struct WindowSwitcherSettingsSection: View {
 
 // MARK: - Hakkında
 
-private struct AboutSettingsSection: View {
+struct AboutSettingsSection: View {
   /// Ayarlardaki "Hakkında" ile ayrı pencerede açılan "GlassDo Hakkında"
   /// aynı içerik: sürüm, bağlantılar ve kullanım istatistikleri. İki ayrı
   /// görünüm yazılsaydı biri güncellenip öteki geride kalırdı.
