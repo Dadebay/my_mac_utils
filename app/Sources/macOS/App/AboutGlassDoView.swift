@@ -30,8 +30,6 @@ struct AboutGlassDoView: View {
     var isEmbedded = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
 
     @State private var period: UsagePeriod = .last7Days
     @State private var periodSnapshot: UsageSnapshot = .empty
@@ -183,7 +181,7 @@ struct AboutGlassDoView: View {
                     AppLinkRow(link: link)
                 }
             }
-            .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+            .aboutCard()
         }
     }
 
@@ -377,7 +375,7 @@ struct AboutGlassDoView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
-        .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+        .aboutCard()
         .accessibilityElement(children: .combine)
     }
 
@@ -462,7 +460,7 @@ struct AboutGlassDoView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
-        .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+        .aboutCard()
     }
 
     /// Çubuk yüksekliğinin tavanı. Kartın içinde sabit: sütun sayısı
@@ -548,7 +546,7 @@ struct AboutGlassDoView: View {
                     )
                 }
             }
-            .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+            .aboutCard()
         }
     }
 
@@ -573,7 +571,7 @@ struct AboutGlassDoView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 34)
-        .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+        .aboutCard()
     }
 
     private var resetFooter: some View {
@@ -762,41 +760,11 @@ private struct UsageBarRow: View {
 // MARK: - Kart zemini
 
 private extension View {
-    func aboutCard(reduceTransparency: Bool, contrast: ColorSchemeContrast) -> some View {
-        modifier(AboutCardBackground(reduceTransparency: reduceTransparency, contrast: contrast))
-    }
-}
-
-private struct AboutCardBackground: ViewModifier {
-    let reduceTransparency: Bool
-    let contrast: ColorSchemeContrast
-
-    private var fillOpacity: Double { reduceTransparency ? 0.09 : 0.045 }
-    private var borderOpacity: Double { contrast == .increased ? 0.22 : 0.08 }
-
-    /// Malzemenin üst kenarı hafifçe daha parlak: ışığın camın üstüne
-    /// vurduğu izlenimi veriyor. Increase Contrast'ta düz, tek renkli
-    /// kenarlığa dönüyor — okunabilirlik incelikten önce gelir.
-    private var borderGradient: LinearGradient {
-        contrast == .increased
-            ? LinearGradient(colors: [Color.primary.opacity(borderOpacity)], startPoint: .top, endPoint: .bottom)
-            : LinearGradient(
-                colors: [Color.primary.opacity(borderOpacity * 1.8), Color.primary.opacity(borderOpacity * 0.5)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .background {
-                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
-                    .fill(Color.primary.opacity(fillOpacity))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
-                            .strokeBorder(borderGradient, lineWidth: contrast == .increased ? 1 : 0.75)
-                    }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous))
+    /// İşlemci panosunun kartlarıyla aynı cam yüzey. Bu sayfanın eskiden
+    /// kendi, daha düz bir kart zemini vardı; ayar sayfaları panonun
+    /// diline geçince kullanım kartları tek başına farklı kalıyordu.
+    /// Kontrast ve saydamlık tercihlerini yüzey ortamdan kendisi okuyor.
+    func aboutCard() -> some View {
+        modifier(DashboardCardSurface())
     }
 }

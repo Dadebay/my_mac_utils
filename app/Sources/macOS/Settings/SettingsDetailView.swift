@@ -15,15 +15,6 @@ struct SettingsDetailView: View {
     let category: SettingsCategory
     let switcherController: WindowSwitcherController
 
-    /// Ayar sayfaları metin sütunu genişliğinde duruyor; kullanım sayfası
-    /// pano olduğu için daha geniş (bkz. `SettingsMetrics`).
-    private var contentMaxWidth: CGFloat {
-        switch category {
-        case .about: SettingsMetrics.wideContentMaxWidth
-        default: SettingsMetrics.contentMaxWidth
-        }
-    }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SettingsMetrics.sectionSpacing) {
@@ -47,7 +38,10 @@ struct SettingsDetailView: View {
             .padding(.horizontal, SettingsMetrics.contentHorizontalInset)
             .padding(.top, SettingsMetrics.contentTopInset)
             .padding(.bottom, SettingsMetrics.contentBottomInset)
-            .frame(maxWidth: contentMaxWidth, alignment: .leading)
+            // Genişlik sınırı yok, panoyla aynı: kartlar pencereyle birlikte
+            // büyüyor, geniş pencerede iki sütuna açılıyor (bkz.
+            // `SettingsColumns`). Satırların okunur genişliğini kartın
+            // kendisi tutuyor.
             .frame(maxWidth: .infinity, alignment: .leading)
             // Bölüm değişince içerik baştan kuruluyor: eski satırların
             // (özellikle segmentli seçicilerin) yanlış ölçülmüş boyutlarını

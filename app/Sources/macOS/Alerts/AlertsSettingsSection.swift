@@ -17,7 +17,9 @@ struct AlertsSettingsSection: View {
     private let processesVisible = TopProcessSampler.canEnumerate
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        // İki uyarı iki kart, yan yana — ikisi de aynı biçimde: anahtar,
+        // eşik, açıklama.
+        SettingsColumns {
             SettingsCard(title: L10n.s("Isınma", "Heat", "Нагрев")) {
                 VStack(alignment: .leading, spacing: 4) {
                     IconToggleRow(
@@ -60,7 +62,7 @@ struct AlertsSettingsSection: View {
                     }
                 }
             }
-
+        } trailing: {
             SettingsCard(title: L10n.s("Çöp Kutusu", "Trash", "Корзина")) {
                 VStack(alignment: .leading, spacing: 4) {
                     IconToggleRow(

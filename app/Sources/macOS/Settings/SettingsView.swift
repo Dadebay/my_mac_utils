@@ -157,12 +157,14 @@ struct PanelSizeSettingsSection: View {
     .defaultSelectedIconPadding
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    // Önizleme solda, onu değiştiren kaydırıcılar sağda: geniş pencerede
+    // kaydırıcıyı sürüklerken önizleme aynı ekranda, hemen yanında.
+    SettingsColumns {
       SettingsCard(title: L10n.previewGroup, subtitle: L10n.previewHint) {
         RailPreview()
           .padding(.vertical, 8)
       }
-
+    } trailing: {
       SettingsCard(
         title: L10n.railGroup,
         trailing: AnyView(ResetButton { PanelSettings.resetSizeDefaults() })
@@ -249,7 +251,9 @@ struct RailIconsSettingsSection: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    // Sütun boyları çok farklı (kısa bir önizleme, on dört satırlık bir
+    // liste): hizalanırsa önizleme kartı yarısı boş bir kutuya dönüyor.
+    SettingsColumns(alignsHeights: false) {
       // Köşe kaydırıcısı önizlemenin hemen altında. Eskiden sayfanın en
       // dibinde, on dört satırlık listenin altındaydı: kaydırıcıyı
       // sürüklerken etkilediği ikon ekranın dışında kalıyordu, yani
@@ -266,7 +270,7 @@ struct RailIconsSettingsSection: View {
           format: { "\(Int($0.rounded())) pt" }
         )
       }
-
+    } trailing: {
       // Liste rayın kendisini aynalıyor: aynı sıra, aynı üç bölüm.
       // Düz on dört satır, hangi ikonun rayda nerede durduğunu
       // söylemiyordu; "görevler — ölçerler — eylemler" ayrımı rayı
@@ -351,7 +355,7 @@ struct NetworkSettingsSection: View {
   }
 
   private var content: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    SettingsColumns {
       SettingsCard(
         title: L10n.s("Kullanım Geçmişi", "Usage History", "История использования")
       ) {
@@ -413,7 +417,7 @@ struct NetworkSettingsSection: View {
         }
         .padding(.vertical, 2)
       }
-
+    } trailing: {
       SettingsCard(
         title: L10n.s("Sıfırla", "Reset", "Сброс")
       ) {
@@ -557,7 +561,8 @@ struct WindowSwitcherSettingsSection: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 18) {
+    // Kısayol solda (sayfanın asıl kararı), animasyon ve izinler sağda.
+    SettingsColumns {
       SettingsCard(
         title: L10n.s("Kısayol", "Shortcut", "Комбинация клавиш"),
         subtitle: L10n.s(
@@ -634,7 +639,7 @@ struct WindowSwitcherSettingsSection: View {
         }
         .padding(.vertical, 8)
       }
-
+    } trailing: {
       SettingsCard(
         title: L10n.s("Animasyonlar", "Animations", "Анимации"),
         trailing: AnyView(ResetButton { resetAnimationDefaults() })

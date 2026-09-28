@@ -24,7 +24,7 @@ struct MenuBarSettingsSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: SettingsMetrics.sectionSpacing) {
             SettingsCard(
                 title: L10n.s("Menü çubuğu", "Menu bar", "Строка меню"),
                 subtitle: L10n.s(
@@ -37,8 +37,15 @@ struct MenuBarSettingsSection: View {
                 selectionPreview
             }
 
-            ForEach(MenuBarCategory.allCases) { category in
-                categorySection(category)
+            // Kategoriler panodaki gibi ikişerli satırlarda, her satırda iki
+            // kart aynı boyda. Tek sütunda altı kart alt alta dizildiğinde
+            // sayfa uzuyor ve geniş pencerenin sağ yarısı boş kalıyordu.
+            ForEach(Self.categoryPairs) { pair in
+                SettingsColumns {
+                    categorySection(pair.leading)
+                } trailing: {
+                    if let trailing = pair.trailing { categorySection(trailing) }
+                }
             }
         }
         .task { controller.start() }
@@ -86,46 +93,44 @@ struct MenuBarSettingsSection: View {
         }
     }
 
+    /// Bir satırdaki iki kategori.
+    private struct CategoryPair: Identifiable {
+        let leading: MenuBarCategory
+        let trailing: MenuBarCategory?
+        var id: String { leading.id }
+    }
+
+    /// Kategoriler bildirim sırasında, ikişer ikişer.
+    private static var categoryPairs: [CategoryPair] {
+        let all = MenuBarCategory.allCases
+        return stride(from: 0, to: all.count, by: 2).map { index in
+            CategoryPair(
+                leading: all[index],
+                trailing: index + 1 < all.count ? all[index + 1] : nil
+            )
+        }
+    }
+
     /// Ölçüm adının sütunu. Sabit: bütün satırlarda karolar aynı dikey
     /// çizgide başlasın, göz satırdan satıra aynı yere insin.
-    private static let readingLabelWidth: CGFloat = 116
+    private static let readingLabelWidth: CGFloat = 100
     /// Karonun genişliği. Sabit: "392,71 GB" gibi en uzun değer de sığıyor,
     /// ve yan yana duran karolar aynı boyda olunca biçim farkı (çubuk mu
-    /// yüzde mi) tek fark olarak kalıyor.
-    private static let tileWidth: CGFloat = 112
+    /// yüzde mi) tek fark olarak kalıyor. İki sütunlu düzende bir kartın
+    /// içine ad ve üç karo yan yana sığacak kadar dar.
+    private static let tileWidth: CGFloat = 104
 
-    /// Bir kategori: başlık ve altında tek bir kart içinde ölçüm satırları.
-    ///
-    /// Bir önceki denemede her ölçümün adı karolarının üstünde ayrı bir
-    /// satırdaydı. Gruplama doğruydu ama sayfa iki katına uzadı ve tek
-    /// karolu ölçümler (Çekirdekler, Takas, Baskı) koca bir satırda tek
-    /// başına durup sayfanın sağ yarısını boş bıraktı. Ad artık karoların
-    /// solunda: her ölçüm tek satır, Sistem Ayarları'ndaki satırlar gibi.
+    /// Bir kategori: panodaki kartlarla aynı kart, içinde ölçüm satırları.
+    /// Her ölçüm tek satır — ad solda, sunumları sağında yan yana.
     private func categorySection(_ category: MenuBarCategory) -> some View {
         let readings = MenuBarItemKind.readings(in: category)
 
-        return VStack(alignment: .leading, spacing: 8) {
-            Label(category.title, systemImage: category.symbolName)
-                .font(.app(.headline, weight: .semibold))
-                .labelStyle(.titleAndIcon)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 2)
-
-            VStack(spacing: 0) {
-                ForEach(Array(readings.enumerated()), id: \.element.id) { index, reading in
-                    if index > 0 {
-                        Divider().overlay(Color.primary.opacity(0.06))
-                    }
-                    readingRow(reading)
+        return SettingsCard(title: category.title) {
+            ForEach(Array(readings.enumerated()), id: \.element.id) { index, reading in
+                if index > 0 {
+                    SettingsRowDivider()
                 }
-            }
-            .background {
-                RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
-                    .fill(Color.primary.opacity(0.03))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
-                    }
+                readingRow(reading)
             }
         }
     }
@@ -164,7 +169,6 @@ struct MenuBarSettingsSection: View {
                 }
             }
         }
-        .padding(.horizontal, 12)
         .padding(.vertical, 9)
     }
 
