@@ -136,9 +136,9 @@ private struct PoppedNoteContent: View {
         }
         .background(background)
         .background { fontScaleShortcuts }
-        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
         }
         .opacity(noteOpacity)
@@ -909,12 +909,12 @@ private struct NoteRow: View {
         .padding(.top, kind == .heading ? 10 : 5)
         .padding(.bottom, 5)
         .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(selectionFill)
         }
         .overlay {
             if isSelected {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                     .strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1)
             }
         }

@@ -131,7 +131,7 @@ struct PanelFolderShelfView: View {
                 .foregroundStyle(Color.accentColor)
                 .frame(width: 24, height: 24)
                 .background {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(Color.accentColor.opacity(0.14))
                 }
 
@@ -269,7 +269,7 @@ struct PanelFolderShelfView: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 7)
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(0.06))
         }
     }
@@ -298,7 +298,7 @@ struct PanelFolderShelfView: View {
         }
         .padding(8)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.warning.opacity(0.12))
         }
         .transition(.opacity)
@@ -462,7 +462,7 @@ private struct FolderRow: View {
                     .foregroundStyle(folder.isManagedStorage ? Color.accentColor : .secondary)
                     .frame(width: 26, height: 26)
                     .background {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                             .fill(Color.primary.opacity(0.06))
                     }
 

@@ -183,7 +183,7 @@ struct PanelFolderBrowserView: View {
         }
         .padding(8)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.warning.opacity(0.12))
         }
         .transition(rowTransition)
@@ -525,7 +525,7 @@ private struct FilePreviewOverlay: View {
             }
             .padding(12)
             .background {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                     .fill(.ultraThinMaterial)
             }
             .padding(14)
@@ -543,7 +543,7 @@ private struct FilePreviewOverlay: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 260)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
             } else {
                 ProgressView().controlSize(.small).frame(height: 120)
             }
@@ -552,7 +552,7 @@ private struct FilePreviewOverlay: View {
             if let player {
                 VideoPlayer(player: player)
                     .frame(height: item.kind == .audio ? 90 : 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
             } else {
                 ProgressView().controlSize(.small).frame(height: 90)
             }

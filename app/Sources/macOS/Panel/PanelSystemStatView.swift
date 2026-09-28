@@ -869,7 +869,7 @@ private func panelHeader(
             .foregroundStyle(tint)
             .frame(width: 28, height: 28)
             .background {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(tint.opacity(0.14))
             }
 
@@ -936,10 +936,10 @@ private struct CompactBatteryGauge: View {
         HStack(spacing: 3) {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .stroke(Color.secondary.opacity(0.55), lineWidth: 2)
 
-                    RoundedRectangle(cornerRadius: 5.5, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(isCharging ? SystemPalette.positive : SystemPalette.accent)
                         .frame(
                             width: max((geometry.size.width - 8) * CGFloat(min(max(fraction, 0), 1)), 4),
@@ -1063,7 +1063,7 @@ struct PanelNetworkView: View {
                 .foregroundStyle(SystemPalette.secondary)
                 .frame(width: 28, height: 28)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(SystemPalette.secondary.opacity(0.14))
                 )
 
@@ -1179,7 +1179,7 @@ struct PanelNetworkView: View {
         .padding(.top, 8)
         .padding(.bottom, 6)
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(0.055))
         }
     }

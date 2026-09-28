@@ -52,7 +52,7 @@ struct ShelfAttachmentPickerView: View {
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 6)
-                                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.primary.opacity(0.04)))
+                                .background(RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous).fill(Color.primary.opacity(0.04)))
                             }
                             .buttonStyle(.plain)
                         }
@@ -118,7 +118,7 @@ struct ClipboardAttachmentPickerView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 6)
-                                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Color.primary.opacity(0.04)))
+                                    .background(RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous).fill(Color.primary.opacity(0.04)))
                             }
                             .buttonStyle(.plain)
                         }

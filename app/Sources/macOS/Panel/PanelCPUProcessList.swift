@@ -53,7 +53,7 @@ struct PanelCPUProcessList: View {
                 }
                 .padding(8)
                 .background(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(SystemPalette.warning.opacity(0.12))
                 )
             }
@@ -212,7 +212,7 @@ private struct CPUProcessRow: View {
                 .interpolation(.high)
                 .frame(width: 22, height: 22)
         } else {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.07))
                 .frame(width: 22, height: 22)
                 .overlay {

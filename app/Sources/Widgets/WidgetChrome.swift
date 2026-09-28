@@ -14,6 +14,19 @@ enum WidgetPalette {
     static let chartSurface = Color.primary.opacity(0.06)
 }
 
+/// Köşe yarıçapı — ana penceredeki `Layout.Radius` ölçeğinin aynısı.
+/// `WidgetPalette` ile aynı gerekçe: uzantı GlassDoKit'i derlemiyor, o
+/// yüzden ölçek burada bir kez daha yazılıyor. Ölçek değişirse iki yer
+/// birlikte değişmeli — widget kartı ana penceredeki kartla aynı
+/// yuvarlanmazsa aynı uygulamadan çıkmamış gibi durur.
+///
+/// Ölçer çubuklarının uçları (0.5, 1, 1.5) orada olduğu gibi burada da
+/// ölçeğin dışında: yükseklikleriyle orantılılar.
+enum WidgetRadius {
+    static let small: CGFloat = 6
+    static let card: CGFloat = 16
+}
+
 /// Uzantı, uygulamanın `L10n`'ini (GlassDoKit) derlemiyor. Widget'ta
 /// gösterilen metin bir avuç etiketten ibaret olduğu için dil, anlık
 /// görüntüyle taşınan tercihten seçiliyor.
@@ -140,7 +153,7 @@ struct WidgetBarChart: View {
             .frame(height: proxy.size.height, alignment: .bottom)
         }
         .background {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: WidgetRadius.small, style: .continuous)
                 .fill(WidgetPalette.chartSurface)
                 .padding(-4)
         }
@@ -277,7 +290,7 @@ struct WidgetPerCoreChart: View {
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .bottomLeading)
         }
         .background {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: WidgetRadius.small, style: .continuous)
                 .fill(WidgetPalette.chartSurface)
                 .padding(-4)
         }

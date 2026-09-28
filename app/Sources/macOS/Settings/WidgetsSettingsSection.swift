@@ -75,7 +75,7 @@ struct WidgetsSettingsSection: View {
 
   private var setupHint: some View {
     HStack(alignment: .top, spacing: 12) {
-      RoundedRectangle(cornerRadius: 10, style: .continuous)
+      RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
         .fill(Color.primary.opacity(0.07))
         .frame(width: 36, height: 36)
         .overlay {
@@ -198,10 +198,10 @@ struct WidgetsSettingsSection: View {
     .padding(16)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background {
-      RoundedRectangle(cornerRadius: 18, style: .continuous)
+      RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
         .fill(Color.primary.opacity(reduceTransparency ? 0.065 : 0.03))
         .overlay {
-          RoundedRectangle(cornerRadius: 18, style: .continuous)
+          RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
             .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
         }
     }

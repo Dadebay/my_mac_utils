@@ -36,10 +36,10 @@ struct PanelQuickAddView: View {
         .padding(.horizontal, 8)
         .frame(minHeight: 39)
         .background {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                 .fill(Color.primary.opacity(0.05))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.055), lineWidth: 0.5)
                 }
         }

@@ -5,7 +5,12 @@ struct EdgeShellView: View {
   @Environment(EdgePanelController.self) private var controller
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @Namespace private var glassNS
-  @AppStorage(PanelSettings.cornerRadiusKey) private var cornerRadius = 22.0
+  // Varsayılan burada elle 22 yazılıydı; `PanelSettings` ise 12 diyor ve
+  // ilk açılışta anahtara onu yazıyor. Ayarlardaki ray önizlemesi
+  // `defaultCornerRadius` okuduğu için ikisi aynı ayarı iki farklı
+  // köşeyle gösterebiliyordu.
+  @AppStorage(PanelSettings.cornerRadiusKey)
+  private var cornerRadius = PanelSettings.defaultCornerRadius
   @AppStorage(PanelSettings.railWidthKey) private var railWidth = Double(EdgeTokens.railWidth)
 
   /// Kabuk yatay olarak açılırken içerik yalnızca kısa bir fade ile gelir.

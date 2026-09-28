@@ -107,7 +107,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
 struct SettingsCategoryIcon: View {
   let category: SettingsCategory
   var size: CGFloat = 26
-  var radius: CGFloat = 7
+  var radius: CGFloat = Layout.Radius.small
   var isSelected = false
 
   private var accent: Color {

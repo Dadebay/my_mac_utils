@@ -167,11 +167,11 @@ struct SystemOverviewWidgetView: View {
                     capacity: 18
                 )
                 .frame(height: 32)
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: WidgetRadius.small, style: .continuous))
             } else {
                 WidgetPerCoreChart(usages: snapshot.cpu.perCoreUsage)
                     .frame(height: 32)
-                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: WidgetRadius.small, style: .continuous))
             }
         }
     }
@@ -253,15 +253,15 @@ struct SystemOverviewWidgetView: View {
         .padding(8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: WidgetRadius.card, style: .continuous)
                 .fill(Color.primary.opacity(0.055))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: WidgetRadius.card, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.5)
                 }
         }
         // İçerik hücre dışına taşarsa da görünür kalmasın.
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: WidgetRadius.card, style: .continuous))
     }
 
     private func overviewDetail(_ label: String, _ value: String) -> some View {

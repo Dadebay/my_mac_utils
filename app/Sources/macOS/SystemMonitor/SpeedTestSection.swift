@@ -381,7 +381,7 @@ struct SpeedTestSection: View {
         .padding(.horizontal, 9)
         .padding(.vertical, 7)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(0.05))
         }
     }

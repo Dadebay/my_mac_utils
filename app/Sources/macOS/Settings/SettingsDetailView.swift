@@ -51,7 +51,7 @@ struct SettingsDetailView: View {
 
     private var header: some View {
         HStack(spacing: 14) {
-            SettingsCategoryIcon(category: category, size: 48, radius: 11)
+            SettingsCategoryIcon(category: category, size: 48, radius: Layout.Radius.large)
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(category.title)

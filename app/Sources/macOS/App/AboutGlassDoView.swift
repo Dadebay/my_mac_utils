@@ -544,7 +544,7 @@ private struct UsageBarRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(usage.feature.tint.opacity(isUnused ? 0.07 : 0.16))
                 .frame(width: 28, height: 28)
                 .overlay {
@@ -645,13 +645,13 @@ private struct AboutCardBackground: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                     .fill(Color.primary.opacity(fillOpacity))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                             .strokeBorder(borderGradient, lineWidth: contrast == .increased ? 1 : 0.75)
                     }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous))
     }
 }

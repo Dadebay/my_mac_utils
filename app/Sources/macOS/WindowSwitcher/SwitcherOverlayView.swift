@@ -83,12 +83,12 @@ struct SwitcherOverlayView: View {
         // yarışıyordu — tıklama bazen kartı seçmek yerine bindirimi
         // kapatmakla sonuçlanıyordu.
         .background {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.panel, style: .continuous)
                 .fill(Color.black.opacity(0.001))
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onDismiss)
         }
-        .glassEffect(.regular, in: .rect(cornerRadius: 20, style: .continuous))
+        .glassEffect(.regular, in: .rect(cornerRadius: Layout.Radius.panel, style: .continuous))
         .preferredColorScheme(.dark)
     }
 
@@ -140,7 +140,7 @@ struct SwitcherOverlayView: View {
 
         @ViewBuilder
         private var cardFill: some View {
-            let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+            let shape = RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
             if isSelected {
                 shape.fill(
                     LinearGradient(
@@ -240,14 +240,14 @@ struct SwitcherOverlayView: View {
             .padding(8)
             .background { cardFill }
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                     .strokeBorder(cardBorderColor, lineWidth: isSelected ? 1.5 : 1)
             }
             .overlay {
                 // İç parlama yalnızca üst kenarda: ışık yukarıdan geliyor,
                 // çerçevenin tamamı parlarsa cam değil neon olur.
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                         .strokeBorder(
                             LinearGradient(
                                 colors: [.white.opacity(0.18), .clear],

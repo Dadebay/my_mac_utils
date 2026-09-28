@@ -103,7 +103,7 @@ struct PanelTaskListView: View {
                 .foregroundStyle(showCompleted ? SystemPalette.positive : Color.accentColor)
                 .frame(width: 28, height: 28)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(
                             (showCompleted ? SystemPalette.positive : Color.accentColor)
                                 .opacity(0.14)
@@ -188,18 +188,18 @@ struct PanelTaskListView: View {
         .padding(.vertical, 4)
         .frame(minHeight: 38)
         .background {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(
                     Color.primary.opacity(
                         isHovered ? 0.075 : (isChecked ? 0.025 : 0.042)
                     )
                 )
                 .overlay {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .strokeBorder(Color.white.opacity(isHovered ? 0.07 : 0.035), lineWidth: 0.5)
                 }
         }
-        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         .onHover { inside in
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) {
                 hoveredTaskID = inside ? task.id : nil

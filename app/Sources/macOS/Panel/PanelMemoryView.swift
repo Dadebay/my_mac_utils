@@ -200,14 +200,14 @@ struct PanelMemoryView: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .background {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                     .fill(isSelected ? segment.color.opacity(0.16) : .clear)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                     .strokeBorder(isSelected ? segment.color.opacity(0.5) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!selectable)
@@ -271,7 +271,7 @@ struct PanelMemoryView: View {
                 }
                 .padding(8)
                 .background {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(SystemPalette.warning.opacity(0.12))
                 }
                 .padding(.horizontal, 16)
@@ -480,7 +480,7 @@ private struct PanelAppUsageRow: View {
                 .frame(width: 22, height: 22)
                 .accessibilityHidden(true)
         } else {
-            RoundedRectangle(cornerRadius: 5, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.secondary.opacity(0.15))
                 .frame(width: 22, height: 22)
                 .accessibilityHidden(true)
@@ -517,7 +517,7 @@ private struct PanelAppUsageRow: View {
     private var rowBackground: some View {
         GeometryReader { geo in
             ZStack(alignment: .bottomLeading) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(Color.white.opacity(isHovering ? 0.075 : 0.025))
 
                 Capsule()

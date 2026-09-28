@@ -224,14 +224,14 @@ struct SystemMonitorView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .background {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(isSelected ? segment.color.opacity(0.14) : .clear)
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .strokeBorder(isSelected ? segment.color.opacity(0.45) : .clear, lineWidth: 1)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!selectable)

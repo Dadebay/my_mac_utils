@@ -17,7 +17,7 @@ struct PageToolbarBadge: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(LinearGradient(colors: entry.colors, startPoint: .top, endPoint: .bottom))
                 .frame(width: 26, height: 26)
                 .overlay {
@@ -27,7 +27,7 @@ struct PageToolbarBadge: View {
                         .padding(.bottom, 1)
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(.white.opacity(0.22), lineWidth: 0.5)
                 }
                 // Karo kendi renginin tonunda ince bir gölge bırakıyor:

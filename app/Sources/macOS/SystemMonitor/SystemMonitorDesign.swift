@@ -180,7 +180,7 @@ struct StatPill: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.07))
         }
     }
@@ -406,10 +406,10 @@ struct StatBarChart: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.chartSurface)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -453,10 +453,10 @@ struct StatStackedBarChart: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.chartSurface)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -589,10 +589,10 @@ struct StatDualBarChart: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.chartSurface)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -769,10 +769,10 @@ struct PerCoreLoadChart: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.chartSurface)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         // Otuz sütunu tek tek dinletmenin kimseye faydası yok; grafiğin
         // taşıdığı bilgi "hangi çekirdek en yüklü".
         .accessibilityElement(children: .ignore)

@@ -157,10 +157,10 @@ struct TaskListView: View {
         .padding(.horizontal, 9)
         .frame(minHeight: 42)
         .background {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                 .fill(.regularMaterial)
                 .overlay {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                         .strokeBorder(
                             quickAddFocused ? Color.accentColor.opacity(0.48) : Color.primary.opacity(0.09),
                             lineWidth: 0.75

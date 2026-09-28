@@ -211,10 +211,10 @@ struct BugReportView: View {
         }
         .padding(3)
         .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.045))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.75)
                 }
         }
@@ -398,7 +398,7 @@ struct BugReportView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(9)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.orange.opacity(0.12))
         }
     }

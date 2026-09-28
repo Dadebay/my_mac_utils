@@ -141,7 +141,7 @@ struct IconToggleRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.black.opacity(0.5))
                 .frame(width: 28, height: 28)
                 .overlay {
@@ -150,7 +150,7 @@ struct IconToggleRow: View {
                         .foregroundStyle(isOn ? .white : .white.opacity(0.3))
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(Color.white.opacity(isOn ? 0.14 : 0.06), lineWidth: 1)
                 }
 

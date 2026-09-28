@@ -211,7 +211,7 @@ struct PanelShelfView: View {
 
     private var titleBlock: some View {
         HStack(spacing: 9) {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(LinearGradient(colors: Self.iconColors, startPoint: .top, endPoint: .bottom))
                 .frame(width: 26, height: 26)
                 .overlay {
@@ -219,7 +219,7 @@ struct PanelShelfView: View {
                         .foregroundStyle(.white)
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(.white.opacity(0.22), lineWidth: 0.5)
                 }
                 .shadow(color: (Self.iconColors.last ?? .black).opacity(0.35), radius: 3, y: 1)
@@ -266,10 +266,10 @@ struct PanelShelfView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.06))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(
                             searchFocused ? Color.accentColor.opacity(0.55) : Color.primary.opacity(0.07),
                             lineWidth: searchFocused ? 1 : 0.5
@@ -293,7 +293,7 @@ struct PanelShelfView: View {
         }
         .padding(2)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(0.05))
         }
     }
@@ -416,7 +416,7 @@ struct PanelShelfView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(SystemPalette.danger.opacity(0.12))
         }
         .padding(.horizontal, metrics.gutter)
@@ -519,7 +519,7 @@ struct PanelShelfView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background {
-                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                             .fill(Color.primary.opacity(0.08))
                     }
             }
@@ -1205,7 +1205,7 @@ private struct ShelfListRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(0.16) : (isHovering ? palette.card : .clear))
         }
         .onHover { isHovering = $0 }
