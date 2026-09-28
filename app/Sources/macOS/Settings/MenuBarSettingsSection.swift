@@ -86,45 +86,94 @@ struct MenuBarSettingsSection: View {
         }
     }
 
+    /// Ölçüm adının sütunu. Sabit: bütün satırlarda karolar aynı dikey
+    /// çizgide başlasın, göz satırdan satıra aynı yere insin.
+    private static let readingLabelWidth: CGFloat = 116
+    /// Karonun genişliği. Sabit: "392,71 GB" gibi en uzun değer de sığıyor,
+    /// ve yan yana duran karolar aynı boyda olunca biçim farkı (çubuk mu
+    /// yüzde mi) tek fark olarak kalıyor.
+    private static let tileWidth: CGFloat = 112
+
+    /// Bir kategori: başlık ve altında tek bir kart içinde ölçüm satırları.
+    ///
+    /// Bir önceki denemede her ölçümün adı karolarının üstünde ayrı bir
+    /// satırdaydı. Gruplama doğruydu ama sayfa iki katına uzadı ve tek
+    /// karolu ölçümler (Çekirdekler, Takas, Baskı) koca bir satırda tek
+    /// başına durup sayfanın sağ yarısını boş bıraktı. Ad artık karoların
+    /// solunda: her ölçüm tek satır, Sistem Ayarları'ndaki satırlar gibi.
     private func categorySection(_ category: MenuBarCategory) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let readings = MenuBarItemKind.readings(in: category)
+
+        return VStack(alignment: .leading, spacing: 8) {
             Label(category.title, systemImage: category.symbolName)
                 .font(.app(.headline, weight: .semibold))
                 .labelStyle(.titleAndIcon)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 2)
 
-            // Ölçümler kendi satırlarında, sunumları yan yana. Tek bir
-            // ızgaraya dizildiklerinde aynı ölçümün üç sunumu satır
-            // sonunda bölünebiliyor ve üçünün altında da aynı ad
-            // yazdığı için ("Toplam yük", "Toplam yük", "Toplam yük")
-            // neyin neden tekrarlandığı anlaşılmıyordu.
-            VStack(alignment: .leading, spacing: 14) {
-                ForEach(MenuBarItemKind.readings(in: category)) { reading in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(reading.title)
-                            .font(.app(.caption, weight: .medium))
-                            .foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                ForEach(Array(readings.enumerated()), id: \.element.id) { index, reading in
+                    if index > 0 {
+                        Divider().overlay(Color.primary.opacity(0.06))
+                    }
+                    readingRow(reading)
+                }
+            }
+            .background {
+                RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
+                    .fill(Color.primary.opacity(0.03))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
+                    }
+            }
+        }
+    }
 
-                        // Uyarlanır ızgara: dar pencerede karolar alt
-                        // satıra kendiliğinden sarıyor, sabit bir sütun
-                        // sayısı taşmaya yol açardı.
-                        LazyVGrid(
-                            columns: [GridItem(
-                                .adaptive(minimum: 124, maximum: 164),
-                                spacing: 8,
-                                alignment: .leading
-                            )],
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
-                            ForEach(reading.kinds) { kind in
-                                tile(kind)
-                            }
-                        }
+    private func readingRow(_ reading: MenuBarReading) -> some View {
+        // Yan yana sığmıyorsa (dar pencere, dört sunumlu bir ölçüm) ad
+        // üste çıkıyor ve karolar sarıyor. Karolar ve ad sütunu sabit
+        // genişlikte olduğu için ilk düzenin ne kadar yer istediği
+        // ölçülebiliyor — `ViewThatFits` ancak öyle doğru karar veriyor.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                readingTitle(reading)
+                    .frame(width: Self.readingLabelWidth, alignment: .leading)
+                HStack(spacing: 8) {
+                    ForEach(reading.kinds) { kind in
+                        tile(kind)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                readingTitle(reading)
+                LazyVGrid(
+                    columns: [GridItem(
+                        .adaptive(minimum: Self.tileWidth, maximum: Self.tileWidth),
+                        spacing: 8,
+                        alignment: .leading
+                    )],
+                    alignment: .leading,
+                    spacing: 8
+                ) {
+                    ForEach(reading.kinds) { kind in
+                        tile(kind)
                     }
                 }
             }
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+    }
+
+    private func readingTitle(_ reading: MenuBarReading) -> some View {
+        Text(reading.title)
+            .font(.app(.bodyLarge, weight: .medium))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
     }
 
     private func tile(_ kind: MenuBarItemKind) -> some View {
@@ -134,9 +183,9 @@ struct MenuBarSettingsSection: View {
             MenuBarSettings.toggle(kind)
             enabled = MenuBarSettings.enabledItems
         } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 MenuBarItemView(kind: kind, snapshot: snapshot)
-                    .frame(height: 30)
+                    .frame(height: 26)
                     .frame(maxWidth: .infinity)
 
                 // Seçili işareti adın yanında: karonun köşesinde duran bir
@@ -153,8 +202,9 @@ struct MenuBarSettingsSection: View {
                 .font(.app(.micro, weight: .medium))
                 .foregroundStyle(isOn ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 6)
+            .frame(width: Self.tileWidth)
             .background {
                 RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(isOn ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.045))
