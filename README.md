@@ -10,7 +10,17 @@ Kaynak `mac_utils/app` altında. Xcode projesi sürüm denetiminde durmuyor,
 cd mac_utils/app && xcodegen generate && open GlassDo.xcodeproj
 ```
 
-Komut satırından derlemek:
+Xcode açmadan derleyip çalıştırmak:
+
+```bash
+cd mac_utils/app && scripts/run.sh
+```
+
+Betik gerekirse projeyi yeniden üretiyor, Debug derliyor, çalışan eski
+kopyayı kapatıyor (⌘Q uygulamayı kapatmıyor, arka plana alıyor) ve yenisini
+açıyor. `--log` çıktıyı terminale basar, `--build` yalnızca derler.
+
+Yalın hâli:
 
 ```bash
 cd mac_utils/app && xcodebuild -project GlassDo.xcodeproj -scheme GlassDo-macOS -configuration Debug build
