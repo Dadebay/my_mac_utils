@@ -141,7 +141,7 @@ actor UsageStore {
         }
 
         let totalUses = totals.values.reduce(0, +)
-        let mostUsed = totals
+        let mostUsed: UsageFeature? = totals
             .compactMap { key, count -> (UsageFeature, Int)? in
                 guard let feature = UsageFeature(rawValue: key) else { return nil }
                 return (feature, count)
@@ -178,17 +178,38 @@ actor UsageStore {
             period: period,
             totalUses: totalUses,
             mostUsed: mostUsed,
+            mostUsedCount: mostUsed.map { totals[$0.rawValue] ?? 0 } ?? 0,
             activeDays: activeDays,
             features: features,
-            dailyTotals: recentDailyTotals(calendar: calendar, today: today),
+            dailyTotals: recentDailyTotals(
+                calendar: calendar, today: today, days: Self.trendWindow(for: period)
+            ),
             lastUsedFeature: payload.lastUsedFeature.flatMap(UsageFeature.init(rawValue:)),
             lastUsedDate: payload.lastUsedDate
         )
     }
 
-    /// Dönemden bağımsız, her zaman son 7 günü gösteren mini grafiğin verisi.
-    private func recentDailyTotals(calendar: Calendar, today: Date) -> [DayCount] {
-        (0..<7).reversed().compactMap { offset -> DayCount? in
+    /// Eğilim grafiğinin kaç gün gösterdiği.
+    ///
+    /// Grafik eskiden dönem seçiminden bağımsızdı: kullanıcı "Son 30 Gün"e
+    /// geçtiğinde üstteki üç kart değişiyor, altındaki grafik yedi günde
+    /// kalıyordu. Aynı sayfadaki bir süzgecin bazı kartlara işleyip
+    /// bazılarına işlememesi, grafiği sessizce yanlış okutuyordu.
+    ///
+    /// Yıl ve tüm zamanlar için otuz günde duruluyor: üç yüz altmış beş
+    /// çubuk bu genişlikte okunmuyor, üstelik günlük kovalar dört yüz günde
+    /// budandığı için "tüm zamanlar" zaten tam bir zaman serisi veremiyor.
+    /// Kart başlığı kaç gün gösterdiğini yazıyor, yani grafik ne olduğunu
+    /// kendisi söylüyor.
+    private static func trendWindow(for period: UsagePeriod) -> Int {
+        switch period {
+        case .last7Days: 7
+        case .last30Days, .lastYear, .allTime: 30
+        }
+    }
+
+    private func recentDailyTotals(calendar: Calendar, today: Date, days: Int) -> [DayCount] {
+        (0..<days).reversed().compactMap { offset -> DayCount? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
             let key = Self.dayFormatter.string(from: date)
             return DayCount(day: date, total: payload.days[key]?.total ?? 0)

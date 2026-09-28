@@ -208,8 +208,8 @@ struct AboutGlassDoView: View {
                 emptyUsageState
                     .transition(.opacity)
             } else {
-                // En az bir kez kullanılmış: liste her zaman sekiz widget'ı
-                // birden gösteriyor — hiç dokunulmamış olanlar da sıfırla
+                // En az bir kez kullanılmış: liste her widget'ı gösteriyor
+                // — hiç dokunulmamışlar da soluk bir satır ve "—" ile
                 // orada duruyor. Yalnızca "bu dönemde" boşsa (ör. son 7 gün)
                 // küçük bir not düşülüyor, koca bir boş ekrana geçilmiyor —
                 // kullanıcı zaten geçmişte bir şey yaptığını biliyor.
@@ -218,7 +218,7 @@ struct AboutGlassDoView: View {
                     if periodSnapshot.isEmpty {
                         noActivityInPeriodNote
                     } else if hasRecentActivity {
-                        miniChart
+                        trendCard
                     }
                     widgetList
                 }
@@ -251,53 +251,30 @@ struct AboutGlassDoView: View {
         .foregroundStyle(.tertiary)
     }
 
+    /// Başlık şeridi.
+    ///
+    /// Burada eskiden tüm zamanların toplamı ve en çok kullanılanı da
+    /// yazıyordu. Hemen altındaki üç kart aynı iki sayıyı dönem için
+    /// gösterdiğinden, "Son 7 Gün" seçiliyken ekranda birebir aynı iki
+    /// değer iki kez çıkıyordu — üstelik üsttekinin tüm zamanlar olduğunu
+    /// hiçbir şey söylemiyordu. Sayılar kartlara bırakıldı.
+    ///
+    /// Gizlilik notu da buradan kaldırıldı: sıfırlama düğmesinin yanında
+    /// zaten aynısı yazıyor ve oraya, "veriyi silme" eyleminin yanına ait.
     private var usageHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L10n.s("Kullanım", "Usage", "Использование"))
-                    .font(.app(size: 19, weight: .semibold))
-                    .kerning(-0.2)
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(L10n.s("Kullanım", "Usage", "Использование"))
+                .font(.app(size: 19, weight: .semibold))
+                .kerning(-0.2)
 
-                Spacer(minLength: 12)
+            Spacer(minLength: 8)
 
-                if let last = allTimeSnapshot.lastUsedDate, let feature = allTimeSnapshot.lastUsedFeature {
-                    Text(lastUsedSummary(feature: feature, date: last))
-                        .font(.app(.body))
-                        .foregroundStyle(.tertiary)
-                }
+            if let last = allTimeSnapshot.lastUsedDate, let feature = allTimeSnapshot.lastUsedFeature {
+                Text(lastUsedSummary(feature: feature, date: last))
+                    .font(.app(.body))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
-
-            HStack(spacing: 14) {
-                Label(
-                    L10n.s(
-                        "\(allTimeSnapshot.totalUses) toplam kullanım",
-                        "\(allTimeSnapshot.totalUses) total uses",
-                        "Всего использований: \(allTimeSnapshot.totalUses)"
-                    ),
-                    systemImage: "chart.bar.fill"
-                )
-                if let mostUsed = allTimeSnapshot.mostUsed {
-                    Label(
-                        L10n.s(
-                            "En çok: \(mostUsed.title)",
-                            "Most used: \(mostUsed.title)",
-                            "Чаще всего: \(mostUsed.title)"
-                        ),
-                        systemImage: mostUsed.symbolName
-                    )
-                }
-            }
-            .font(.app(.body))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-
-            Text(L10n.s(
-                "İstatistikler yalnızca bu Mac'te tutulur.",
-                "Statistics are kept only on this Mac.",
-                "Статистика хранится только на этом Mac."
-            ))
-            .font(.app(.caption))
-            .foregroundStyle(.tertiary)
         }
         .accessibilityElement(children: .combine)
     }
@@ -321,6 +298,14 @@ struct AboutGlassDoView: View {
         periodSnapshot.dailyTotals.contains { $0.total > 0 }
     }
 
+    /// Üç özet kartı.
+    ///
+    /// "En Çok Kullanılan" kartı değer olarak widget'ın adını yazıyordu:
+    /// yanındaki iki kart 26 puntoluk rakam gösterirken bu 16 puntoluk bir
+    /// metindi, üç kartın değer satırı farklı boylardaydı ve hizayı tutmak
+    /// için satıra sabit bir yükseklik verilmişti. Artık üçü de sayı
+    /// gösteriyor — en çok kullanılanın kaç kez kullanıldığı — ve adı,
+    /// kendi rengindeki simgesiyle birlikte alt satıra iniyor.
     private var summaryCards: some View {
         HStack(spacing: 12) {
             summaryCard(
@@ -329,74 +314,186 @@ struct AboutGlassDoView: View {
             )
             summaryCard(
                 title: L10n.s("En Çok Kullanılan", "Most Used", "Чаще всего"),
-                value: periodSnapshot.mostUsed?.title ?? "—",
-                isNumeric: false
+                value: periodSnapshot.mostUsed == nil ? "—" : "\(periodSnapshot.mostUsedCount)",
+                detail: periodSnapshot.mostUsed?.title,
+                detailSymbol: periodSnapshot.mostUsed?.symbolName,
+                detailTint: periodSnapshot.mostUsed?.tint
             )
             summaryCard(
                 title: L10n.s("Aktif Gün", "Active Days", "Активные дни"),
-                value: "\(periodSnapshot.activeDays)"
+                value: "\(periodSnapshot.activeDays)",
+                detail: activeDaysDetail
             )
         }
     }
 
-    private func summaryCard(title: String, value: String, isNumeric: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+    /// "6" tek başına bir şey söylemiyordu — altı gün neyin içinde? Dönemin
+    /// uzunluğu paydayı veriyor. Tüm zamanlarda payda yok, o yüzden yalnızca
+    /// "gün" yazıyor.
+    private var activeDaysDetail: String {
+        if let window = periodSnapshot.period.dayWindow {
+            return L10n.s("\(window) günün içinde", "of \(window) days", "из \(window) дней")
+        }
+        return L10n.s("gün", "days", "дней")
+    }
+
+    private func summaryCard(
+        title: String,
+        value: String,
+        detail: String? = nil,
+        detailSymbol: String? = nil,
+        detailTint: Color? = nil
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
             Text(title)
                 .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+
             Text(value)
-                .font(.app(size: isNumeric ? 26 : 16, weight: .semibold))
-                .monospacedDigit()
+                // Eşit genişlikli basamak burada yok: hizalanacak bir sütun
+                // olmadığında iri puntoda "197" gereksiz gevşek duruyor.
+                // Satır sayaçlarında (alt alta dizildikleri yerde) duruyor.
+                .font(.app(size: 26, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .contentTransition(reduceMotion ? .identity : .numericText())
-                // "Most Used" büyük bir sayı değil, adı yazılan bir widget —
-                // 16pt'lik metni 26pt'lik rakamların yanına koyunca satır
-                // yüksekliği farkı üç kartı eşitsiz boyluyordu. Değer
-                // satırına sabit bir yükseklik ayırmak, hangi font boyutu
-                // kullanılırsa kullanılsın üçünü aynı hizada tutuyor.
-                .frame(height: 31, alignment: .bottomLeading)
+
+            HStack(spacing: 4) {
+                if let detailSymbol {
+                    Image(systemName: detailSymbol)
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(detailTint ?? Color.secondary)
+                }
+                Text(detail ?? "")
+                    .font(.app(.caption))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            // Alt satırı olmayan kart da aynı boyda kalsın.
+            .frame(height: 14, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
         .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+        .accessibilityElement(children: .combine)
     }
 
-    private var miniChart: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(L10n.s("Son 7 Gün", "Last 7 Days", "Последние 7 дней"))
+    /// Günlük eğilim.
+    ///
+    /// Üç şey değişti. Sıfır günler eskiden dört puntoluk soluk bir
+    /// çubukla çiziliyordu — hiç kullanım olmayan gün, az kullanım olmuş
+    /// gibi okunuyordu. Artık her günün arkasında aynı boyda boş bir yuva
+    /// var; çubuk yalnızca gerçekten sayı varsa çiziliyor, sıfır gün boş
+    /// yuva olarak kalıyor.
+    ///
+    /// Çubuklar toplama değil en yüksek güne göre ölçekleniyor, yani en
+    /// yoğun gün yuvayı dolduruyor ve günler arasındaki fark görünür hâle
+    /// geliyor.
+    ///
+    /// Hiçbir çubuğun üstünde sayı yok: yedi (ya da otuz) sayı kartı
+    /// okunmaz hâle getirirdi. Onun yerine tek bir değer, en yüksek gün,
+    /// başlığın yanında yazıyor.
+    private var trendCard: some View {
+        let columns = periodSnapshot.dailyTotals
+        let peak = columns.map(\.total).max() ?? 0
+        let showsWeekdays = columns.count <= 7
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(L10n.s(
+                    "Son \(columns.count) gün",
+                    "Last \(columns.count) days",
+                    "Последние \(columns.count) дн."
+                ))
                 .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
 
-            let maxTotal = max(periodSnapshot.dailyTotals.map(\.total).max() ?? 0, 1)
-            HStack(alignment: .bottom, spacing: 6) {
-                ForEach(periodSnapshot.dailyTotals) { day in
-                    VStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 3, style: .continuous)
-                            .fill(Color.accentColor.opacity(day.total > 0 ? 0.75 : 0.12))
-                            .frame(height: max(4, 44 * CGFloat(day.total) / CGFloat(maxTotal)))
-                        Text(Self.weekdayFormatter.string(from: day.day))
-                            .font(.app(size: 8.5, weight: .medium))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(
-                        L10n.s(
-                            "\(Self.weekdayFormatter.string(from: day.day)): \(day.total) kullanım",
-                            "\(Self.weekdayFormatter.string(from: day.day)): \(day.total) uses",
-                            "\(Self.weekdayFormatter.string(from: day.day)): использований \(day.total)"
-                        )
+                Spacer(minLength: 8)
+
+                if peak > 0 {
+                    Text(L10n.s("en yüksek \(peak)", "peak \(peak)", "пик \(peak)"))
+                        .font(.app(.caption))
+                        .monospacedDigit()
+                        .foregroundStyle(.tertiary)
+                }
+            }
+
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(columns) { day in
+                    trendColumn(
+                        day: day,
+                        peak: peak,
+                        isToday: day.id == columns.last?.id,
+                        showsWeekday: showsWeekdays
                     )
                 }
             }
-            .frame(height: 60, alignment: .bottom)
+
+            // Otuz günde her sütuna harf sığmıyor; iki uç tarih grafiğin
+            // hangi aralığı kapsadığını söylemeye yetiyor.
+            if !showsWeekdays, let first = columns.first {
+                HStack(spacing: 0) {
+                    Text(Self.shortDateFormatter.string(from: first.day))
+                    Spacer(minLength: 8)
+                    Text(L10n.s("bugün", "today", "сегодня"))
+                }
+                .font(.app(.micro, weight: .medium))
+                .foregroundStyle(.tertiary)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
         .aboutCard(reduceTransparency: reduceTransparency, contrast: contrast)
+    }
+
+    /// Çubuk yüksekliğinin tavanı. Kartın içinde sabit: sütun sayısı
+    /// değişse de (yedi ↔ otuz) kartın boyu oynamasın.
+    private static let trendBarHeight: CGFloat = 52
+
+    private func trendColumn(day: DayCount, peak: Int, isToday: Bool, showsWeekday: Bool) -> some View {
+        let weekday = Self.weekdayFormatter.string(from: day.day)
+
+        return VStack(spacing: 6) {
+            ZStack(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(Color.primary.opacity(0.05))
+
+                if day.total > 0 {
+                    // Yalnızca üst köşeler yuvarlak: çubuk tabana oturuyor,
+                    // alt köşeleri de yuvarlatmak onu zeminden koparıyordu.
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 2, topTrailingRadius: 2, style: .continuous
+                    )
+                    .fill(isToday ? Color.accentColor : Color.accentColor.opacity(0.6))
+                    .frame(
+                        height: max(3, Self.trendBarHeight * CGFloat(day.total) / CGFloat(max(peak, 1)))
+                    )
+                }
+            }
+            .frame(height: Self.trendBarHeight)
+
+            if showsWeekday {
+                Text(weekday)
+                    .font(.app(.micro, weight: isToday ? .semibold : .medium))
+                    .foregroundStyle(isToday ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 1.0),
+            value: day.total
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            L10n.s(
+                "\(weekday): \(day.total) kullanım",
+                "\(weekday): \(day.total) uses",
+                "\(weekday): использований \(day.total)"
+            )
+        )
     }
 
     private static let weekdayFormatter: DateFormatter = {
@@ -405,19 +502,40 @@ struct AboutGlassDoView: View {
         return formatter
     }()
 
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("d MMM")
+        return formatter
+    }()
+
+    /// Widget kullanım sıralaması.
+    ///
+    /// Bölüm başlığı "En çok kullanılan" kartıyla çelişebiliyor: o kart
+    /// bütün eylemleri sayıyor (pencere değiştirici, sabitleme…), bu liste
+    /// ise yalnızca widget'ları. Başlık bunu söylüyor, yoksa listede
+    /// görünmeyen bir şeyin "en çok kullanılan" çıkması soru işareti
+    /// bırakıyordu.
     private var widgetList: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionEyebrow(L10n.s("Widget'lar", "Widgets", "Виджеты"))
+        let peak = periodSnapshot.features.map(\.count).max() ?? 0
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                sectionEyebrow(L10n.s("Widget'lar", "Widgets", "Виджеты"))
+                Spacer(minLength: 8)
+                Text(L10n.s("kullanım sayısı", "uses", "использований"))
+                    .font(.app(.caption))
+                    .foregroundStyle(.tertiary)
+            }
 
             VStack(spacing: 0) {
                 ForEach(Array(periodSnapshot.features.enumerated()), id: \.element.id) { index, usage in
                     if index > 0 {
-                        Divider().overlay(Color.primary.opacity(0.08))
+                        Divider().overlay(Color.primary.opacity(0.06))
                     }
                     UsageBarRow(
                         usage: usage,
                         period: periodSnapshot.period,
-                        isTopUsed: usage.count > 0 && index == 0,
+                        peak: peak,
                         reduceMotion: reduceMotion
                     )
                 }
@@ -527,76 +645,86 @@ private struct AppLinkRow: View {
 /// Kullanıcı "Battery kaç defa?" diye sorduğunda cevap "0" da olsa görünür
 /// olmalı; satırın kaybolması "hiç ölçülmedi" ile "hiç kullanılmadı"yı
 /// birbirine karıştırır.
+/// Sıralamadaki tek satır.
+///
+/// Eskiden iki satırlıktı: üstte ad + sayı + yüzde, altta tam genişlikte
+/// bir çubuk. Üç şey aynı sayıyı anlatıyordu (sayı, yüzde, çubuk) ve on
+/// satır ekranı dolduruyordu.
+///
+/// Şimdi tek satır: kimliği simge ve ad taşıyor, büyüklüğü çubuk, kesin
+/// değeri sayı. Yüzde kalktı — çubuk zaten oranı gösteriyor, kesin sayı
+/// sağda duruyor ve yüzde ikisinin arasında üçüncü bir okuma olarak
+/// yer kaplıyordu. Erişilebilirlik etiketinde duruyor.
 private struct UsageBarRow: View {
     let usage: FeatureUsage
     let period: UsagePeriod
-    /// Bu dönemde en çok kullanılan widget mı — küçük bir yıldız rozetiyle
-    /// işaretleniyor. Eşitlikte (birden fazla "birinci") rozet yalnızca
-    /// listedeki ilk satırda görünür, karışıklık olmasın diye.
-    let isTopUsed: Bool
+    /// Listedeki en yüksek sayı. Çubuklar toplama değil buna göre
+    /// ölçekleniyor: `fraction` toplamın payı olduğu için en çok
+    /// kullanılan widget bile çubuğun beşte birini dolduruyordu ve on
+    /// satır birbirine benzeyen kısa güdükler hâlinde duruyordu.
+    let peak: Int
     let reduceMotion: Bool
+
+    /// Çubuk sütununun genişliği. Sabit: satırlar arası karşılaştırma
+    /// ancak bütün çubuklar aynı ölçekte çizilince yapılabiliyor, oysa
+    /// esnek bir sütun ada göre satırdan satıra kayardı.
+    private static let barWidth: CGFloat = 118
 
     private var isUnused: Bool { usage.count == 0 }
 
-    private var percentText: String {
-        isUnused ? "—" : "\(Int((usage.fraction * 100).rounded()))%"
+    private var barLength: CGFloat {
+        guard peak > 0, usage.count > 0 else { return 0 }
+        // En küçük sayı da görünür kalsın: yüzde birlik bir pay yuvarlanıp
+        // kaybolmasın diye taban dört punto.
+        return max(Self.barWidth * CGFloat(usage.count) / CGFloat(peak), 4)
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(usage.feature.tint.opacity(isUnused ? 0.07 : 0.16))
-                .frame(width: 28, height: 28)
+                .frame(width: 24, height: 24)
                 .overlay {
                     Image(systemName: usage.feature.symbolName)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(isUnused ? AnyShapeStyle(.tertiary) : AnyShapeStyle(usage.feature.tint))
                 }
 
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 5) {
-                    Text(usage.feature.title)
-                        .font(.app(.bodyLarge))
-                        .foregroundStyle(isUnused ? .secondary : .primary)
+            Text(usage.feature.title)
+                .font(.app(.bodyLarge))
+                .foregroundStyle(isUnused ? .secondary : .primary)
+                .lineLimit(1)
+                .truncationMode(.tail)
 
-                    if isTopUsed {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 8.5))
-                            .foregroundStyle(.yellow)
-                            .accessibilityLabel(L10n.s("en çok kullanılan", "most used", "самый используемый"))
-                    }
+            Spacer(minLength: 8)
 
-                    Spacer(minLength: 8)
-
-                    Text("\(usage.count)")
-                        .font(.app(.bodyLarge, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(isUnused ? .tertiary : .secondary)
-                        .contentTransition(reduceMotion ? .identity : .numericText())
-                    Text(percentText)
-                        .font(.app(.caption, weight: .medium))
-                        .monospacedDigit()
-                        .foregroundStyle(.tertiary)
-                        .frame(width: 34, alignment: .trailing)
+            // Çubukların hepsi tek renk. Uzunluk karşılaştırması rengin
+            // işi değil; kimlik zaten solda, kendi renginde duruyor. On
+            // ayrı renkte on çubuk, hangisinin daha uzun olduğunu
+            // okumayı zorlaştırıyordu.
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.07))
+                if barLength > 0 {
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(width: barLength)
                 }
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.primary.opacity(0.08))
-                        Capsule()
-                            .fill(usage.feature.tint)
-                            .frame(width: max(geo.size.width * usage.fraction, usage.fraction > 0 ? 3 : 0))
-                    }
-                }
-                .frame(height: 7)
-                .animation(
-                    reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 1.0),
-                    value: usage.fraction
-                )
             }
+            .frame(width: Self.barWidth, height: 6)
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 1.0),
+                value: barLength
+            )
+
+            Text(isUnused ? "—" : "\(usage.count)")
+                .font(.app(.bodyLarge, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(isUnused ? .tertiary : .primary)
+                .contentTransition(reduceMotion ? .identity : .numericText())
+                .frame(width: 30, alignment: .trailing)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
             isUnused
@@ -606,9 +734,9 @@ private struct UsageBarRow: View {
                     "\(usage.feature.title), не использовалось за период «\(period.title)»"
                 )
                 : L10n.s(
-                    "\(usage.feature.title)\(isTopUsed ? ", en çok kullanılan" : ""), \(period.title.lowercased()) içinde \(usage.count) kullanım, yüzde \(Int((usage.fraction * 100).rounded()))",
-                    "\(usage.feature.title)\(isTopUsed ? ", most used" : ""), \(usage.count) uses in the \(period.title.lowercased()), \(Int((usage.fraction * 100).rounded())) percent",
-                    "\(usage.feature.title)\(isTopUsed ? ", самый используемый" : ""), \(usage.count) использований за период «\(period.title)», \(Int((usage.fraction * 100).rounded())) процентов"
+                    "\(usage.feature.title), \(period.title.lowercased()) içinde \(usage.count) kullanım, yüzde \(Int((usage.fraction * 100).rounded()))",
+                    "\(usage.feature.title), \(usage.count) uses in the \(period.title.lowercased()), \(Int((usage.fraction * 100).rounded())) percent",
+                    "\(usage.feature.title), \(usage.count) использований за период «\(period.title)», \(Int((usage.fraction * 100).rounded())) процентов"
                 )
         )
     }

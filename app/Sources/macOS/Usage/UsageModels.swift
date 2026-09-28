@@ -147,13 +147,18 @@ struct UsageSnapshot: Sendable {
     let period: UsagePeriod
     let totalUses: Int
     let mostUsed: UsageFeature?
+    /// `mostUsed`'ın dönem içindeki sayısı. Kart adı değil sayıyı büyük
+    /// gösteriyor: üç özet kartının üçü de sayı gösterdiğinde aynı
+    /// tipografiyi paylaşabiliyorlar.
+    let mostUsedCount: Int
     /// Dönem içinde en az bir kullanım olan gün sayısı.
     let activeDays: Int
     /// Yalnızca `isWidget` özellikler, en çok kullanılan başta, sıfır
     /// kullanımı olanlar dışarıda. Eşitlikte `UsageFeature.allCases`
     /// sırası bozan deterministic bir ikincil anahtar.
     let features: [FeatureUsage]
-    /// Son 7 günün toplamları, en eskisi başta.
+    /// Eğilim grafiğinin günlük toplamları, en eskisi başta. Kaç gün
+    /// olduğu seçili döneme bağlı (bkz. `UsageStore.trendWindow`).
     let dailyTotals: [DayCount]
     let lastUsedFeature: UsageFeature?
     let lastUsedDate: Date?
@@ -161,7 +166,7 @@ struct UsageSnapshot: Sendable {
     var isEmpty: Bool { totalUses == 0 }
 
     static let empty = UsageSnapshot(
-        period: .allTime, totalUses: 0, mostUsed: nil, activeDays: 0,
+        period: .allTime, totalUses: 0, mostUsed: nil, mostUsedCount: 0, activeDays: 0,
         features: [], dailyTotals: [], lastUsedFeature: nil, lastUsedDate: nil
     )
 }
