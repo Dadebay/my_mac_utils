@@ -68,9 +68,9 @@ struct SettingsCard<Content: View>: View {
 
 /// İki sütunlu sayfa düzeni — işlemci panosuyla aynı kural.
 ///
-/// Genişlik yetiyorsa kartlar iki sütunda, yetmiyorsa alt alta. Eşik de
-/// panoyla aynı (720): iki sütunu korumak için kartları ezmek, tek
-/// sütunda ferah durmaktan kötü.
+/// Genişlik 720 pt'yi geçiyorsa kartlar iki sütunda, geçmiyorsa alt alta.
+/// Eşik panoyla aynı: iki sütunu korumak için kartları ezmek, tek sütunda
+/// ferah durmaktan kötü.
 ///
 /// `alignsHeights` açıkken iki sütunun dipleri hizalanıyor, kısa sütunun
 /// kartları uzuyor — panodaki satırlar gibi. Sütunlardan biri
@@ -91,15 +91,37 @@ struct SettingsColumns<Leading: View, Trailing: View>: View {
         self.trailing = trailing()
     }
 
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            columns
-                .frame(minWidth: 720)
+    /// İki sütunun açıldığı genişlik — panoyla aynı eşik.
+    private static var twoColumnMinWidth: CGFloat { 720 }
 
-            VStack(alignment: .leading, spacing: 16) {
-                leading
-                trailing
+    /// Sayfanın gerçekte aldığı genişlik.
+    ///
+    /// İlk sürüm kararı `ViewThatFits`'e bırakıyordu ve iki sütun hiç
+    /// açılmadı: `ViewThatFits` bir düzenin sığıp sığmadığını ideal
+    /// boyutuyla ölçüyor, bir paragrafın ideal genişliği ise tek satıra
+    /// yayılmış hâli. Açıklama metni olan her kart (eşik açıklaması,
+    /// sıfırlama notu) bin puntoyu aşan bir istek bildiriyordu; iki sütun
+    /// hiçbir pencerede "sığmıyor", sayfa hep alt alta kalıyordu. Panoda
+    /// aynı sorun yok çünkü kartlarında uzun paragraf yok. Burada karar
+    /// ölçülen genişlikten veriliyor.
+    @State private var availableWidth: CGFloat = 0
+
+    var body: some View {
+        Group {
+            if availableWidth >= Self.twoColumnMinWidth {
+                columns
+            } else {
+                VStack(alignment: .leading, spacing: 16) {
+                    leading
+                    trailing
+                }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width in
+            availableWidth = width
         }
     }
 

@@ -360,10 +360,11 @@ struct NetworkSettingsSection: View {
         title: L10n.s("Kullanım Geçmişi", "Usage History", "История использования")
       ) {
         VStack(alignment: .leading, spacing: 10) {
-          Toggle(isOn: Binding(
-            get: { agent.isEnabled },
-            set: { agent.setEnabled($0) }
-          )) {
+          // Anahtar satırın sağ kenarında, uygulamadaki öteki bütün
+          // satırlarda olduğu gibi. `Toggle`'ın kendi etiketiyle kurulunca
+          // macOS anahtarı yazının hemen bitişiğine koyuyordu; geniş
+          // kartta anahtar satırın ortasında asılı kalıyordu.
+          HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
               Text(L10n.s(
                 "GlassDo kapalıyken de ölç",
@@ -371,14 +372,31 @@ struct NetworkSettingsSection: View {
                 "Измерять, даже когда GlassDo закрыт"
               ))
               .font(.app(.bodyLarge, weight: .medium))
+              .fixedSize(horizontal: false, vertical: true)
 
               Text(agentStatusText)
                 .font(.app(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             }
+
+            Spacer(minLength: 8)
+
+            Toggle(
+              L10n.s(
+                "GlassDo kapalıyken de ölç",
+                "Keep measuring while GlassDo is closed",
+                "Измерять, даже когда GlassDo закрыт"
+              ),
+              isOn: Binding(
+                get: { agent.isEnabled },
+                set: { agent.setEnabled($0) }
+              )
+            )
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .labelsHidden()
           }
-          .toggleStyle(.switch)
 
           if agent.status == .requiresApproval {
             Button(L10n.s(
