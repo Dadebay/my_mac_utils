@@ -390,7 +390,7 @@ struct NetworkSettingsSection: View {
             }
             .buttonStyle(.plain)
             .font(.app(.body, weight: .semibold))
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(Color.appAccent)
           }
 
           if let error = agent.lastError {
@@ -613,7 +613,7 @@ struct WindowSwitcherSettingsSection: View {
             .padding(.vertical, 6)
             .background(
               Capsule().fill(
-                controller.isVisible ? Color.red.opacity(0.85) : Color.accentColor.opacity(0.85))
+                controller.isVisible ? Color.red.opacity(0.85) : Color.appAccent.opacity(0.85))
             )
             .foregroundStyle(.white)
           }
@@ -714,7 +714,7 @@ struct WindowSwitcherSettingsSection: View {
               .font(.app(.bodyLarge, weight: .medium))
           }
           .buttonStyle(.plain)
-          .foregroundStyle(Color.accentColor)
+          .foregroundStyle(Color.appAccent)
 
           Button {
             controller.openAccessibilitySettings()
@@ -729,7 +729,7 @@ struct WindowSwitcherSettingsSection: View {
             .font(.app(.bodyLarge, weight: .medium))
           }
           .buttonStyle(.plain)
-          .foregroundStyle(Color.accentColor)
+          .foregroundStyle(Color.appAccent)
 
           Spacer(minLength: 0)
         }

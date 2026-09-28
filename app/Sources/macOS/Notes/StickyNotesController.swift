@@ -91,6 +91,7 @@ final class StickyNotesController: NSObject, NSWindowDelegate {
         panel.contentView = NSHostingView(
             rootView: PoppedNoteView(note: note, onClose: { [weak self] in self?.close(id) })
                 .modelContainer(container)
+                .tint(Color.appAccent)
         )
 
         panels[note.id] = panel

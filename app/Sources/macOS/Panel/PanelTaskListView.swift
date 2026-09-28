@@ -100,12 +100,12 @@ struct PanelTaskListView: View {
         HStack(spacing: 10) {
             Image(systemName: showCompleted ? "checkmark.circle.fill" : "checklist")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(showCompleted ? SystemPalette.positive : Color.accentColor)
+                .foregroundStyle(showCompleted ? SystemPalette.positive : Color.appAccent)
                 .frame(width: 28, height: 28)
                 .background {
                     RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(
-                            (showCompleted ? SystemPalette.positive : Color.accentColor)
+                            (showCompleted ? SystemPalette.positive : Color.appAccent)
                                 .opacity(0.14)
                         )
                 }

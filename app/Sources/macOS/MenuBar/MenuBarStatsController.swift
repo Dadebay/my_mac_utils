@@ -256,6 +256,7 @@ final class MenuBarStatsController {
                     self?.openMainWindow?()
                 }
             )
+            .tint(Color.appAccent)
         )
         hostingController.sizingOptions = [.preferredContentSize]
         popover.contentViewController = hostingController

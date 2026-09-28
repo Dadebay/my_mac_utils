@@ -94,7 +94,7 @@ struct PanelFolderShelfView: View {
         .background {
             if isTargeted {
                 RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .strokeBorder(Color.appAccent, lineWidth: 2)
             }
         }
         .onDrop(of: [.fileURL], isTargeted: $isTargeted.animation(motion), perform: handleDrop)
@@ -128,11 +128,11 @@ struct PanelFolderShelfView: View {
         HStack(spacing: 9) {
             Image(systemName: "folder.fill")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 24, height: 24)
                 .background {
                     RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
-                        .fill(Color.accentColor.opacity(0.14))
+                        .fill(Color.appAccent.opacity(0.14))
                 }
 
             Text(L10n.shelfTitle)
@@ -235,7 +235,7 @@ struct PanelFolderShelfView: View {
         HStack(spacing: 7) {
             Image(systemName: "folder.badge.plus")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
 
             TextField(L10n.folderNameLabel, text: $draftName)
                 .textFieldStyle(.plain)
@@ -250,7 +250,7 @@ struct PanelFolderShelfView: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.accentColor))
+                    .background(Capsule().fill(Color.appAccent))
             }
             .buttonStyle(.pressScale)
             .disabled(draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -459,7 +459,7 @@ private struct FolderRow: View {
             HStack(spacing: 9) {
                 Image(systemName: folder.isManagedStorage ? "folder.fill" : "folder")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(folder.isManagedStorage ? Color.accentColor : .secondary)
+                    .foregroundStyle(folder.isManagedStorage ? Color.appAccent : .secondary)
                     .frame(width: 26, height: 26)
                     .background {
                         RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)

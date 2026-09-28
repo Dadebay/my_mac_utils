@@ -7,7 +7,7 @@ import GlassDoKit
 /// turkuaz üçüncül — üç seri bir arada gösterildiğinde (bellek dökümü gibi)
 /// birbirinden ayrılsın diye ton değil renk ayrımı kullanılıyor.
 enum SystemPalette {
-    static let accent = Color(red: 0.42, green: 0.36, blue: 0.92)
+    static let accent = Color.appAccent
     static let secondary = Color(red: 0.29, green: 0.62, blue: 1.0)
     static let tertiary = Color(red: 0.31, green: 0.80, blue: 0.74)
     static let warning = Color(red: 1.0, green: 0.72, blue: 0.22)

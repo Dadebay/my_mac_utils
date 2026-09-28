@@ -176,7 +176,7 @@ private struct ClipboardRow: View {
 
     private var iconTint: Color {
         if justCopied { return SystemPalette.positive }
-        return isHovering ? Color.accentColor : .secondary
+        return isHovering ? Color.appAccent : .secondary
     }
 
     /// Kopyalandığı an tikle onaylanıyor: tıklamanın görünür bir sonucu

@@ -60,7 +60,7 @@ struct FormCardDivider: View {
 /// boyuna oranlı — rozet büyüdüğünde simge orantısız kalmasın diye.
 struct FormCardIcon: View {
     let systemName: String
-    var tint: Color = .accentColor
+    var tint: Color = .appAccent
     var size: CGFloat = 26
 
     var body: some View {

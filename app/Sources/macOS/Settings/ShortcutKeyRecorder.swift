@@ -19,7 +19,7 @@ struct ShortcutKeyRecorder: View {
         } label: {
             Text(isRecording ? L10n.s("Bir tuşa bas…", "Press a key…", "Нажмите клавишу…") : keyLabel)
                 .font(.app(.bodyLarge, weight: .medium))
-                .foregroundStyle(isRecording ? Color.accentColor : .primary)
+                .foregroundStyle(isRecording ? Color.appAccent : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .frame(minWidth: 84)
@@ -28,7 +28,7 @@ struct ShortcutKeyRecorder: View {
                 }
                 .overlay {
                     Capsule().strokeBorder(
-                        isRecording ? Color.accentColor.opacity(0.7) : .white.opacity(0.12),
+                        isRecording ? Color.appAccent.opacity(0.7) : .white.opacity(0.12),
                         lineWidth: 1
                     )
                 }

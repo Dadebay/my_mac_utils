@@ -36,6 +36,10 @@ struct GlassDoApp: App {
                 container: container
             )
             .frame(minWidth: 780, minHeight: 480)
+            // Sistem denetimleri (anahtar, kaydırıcı, seçici) vurgu rengini
+            // ortamdan alıyor; burada verilmezse macOS'un sistem mavisine
+            // düşüyorlar (bkz. `Color.appAccent`).
+            .tint(Color.appAccent)
         }
         .modelContainer(container)
         // Ayarlar artık ayrı bir pencere değil, bu pencerenin bir sayfası;
@@ -52,6 +56,7 @@ struct GlassDoApp: App {
         Window(L10n.s("GlassDo Hakkında", "About GlassDo", "О GlassDo"), id: "about") {
             AboutGlassDoView()
                 .frame(minWidth: 600, idealWidth: 660, minHeight: 560, idealHeight: 720)
+                .tint(Color.appAccent)
         }
         .windowResizability(.contentMinSize)
 
@@ -60,6 +65,7 @@ struct GlassDoApp: App {
         // yazdıklarını kaybettirirdi.
         Window(L10n.s("Hata Bildir", "Report a Bug", "Сообщить об ошибке"), id: "bug-report") {
             BugReportView(panelController: panelController)
+                .tint(Color.appAccent)
         }
         // Dialog gibi davranıyor: boyu içeriğe kilitli, kullanıcı
         // yeniden boyutlandıramıyor. Serbest boyutlu bir pencerede
@@ -136,6 +142,7 @@ private struct RootWindowView: View {
                 panelController.attach(container: container) {
                     EdgeShellView()
                         .environment(switcherController)
+                        .tint(Color.appAccent)
                 }
                 switcherController.startIfAuthorized()
             }

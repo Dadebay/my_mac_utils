@@ -12,9 +12,9 @@ struct PanelQuickAddView: View {
         HStack(spacing: 9) {
             Image(systemName: "plus")
                 .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 23, height: 23)
-                .background(Circle().fill(Color.accentColor.opacity(0.14)))
+                .background(Circle().fill(Color.appAccent.opacity(0.14)))
 
             TextField(L10n.panelQuickAddPlaceholder, text: $newTaskTitle)
                 .textFieldStyle(.plain)
@@ -27,7 +27,7 @@ struct PanelQuickAddView: View {
                         .font(.system(size: 8.5, weight: .bold))
                         .foregroundStyle(.white)
                         .frame(width: 21, height: 21)
-                        .background(Circle().fill(Color.accentColor))
+                        .background(Circle().fill(Color.appAccent))
                 }
                 .buttonStyle(.pressScale(reduceMotion ? 1 : 0.92))
                 .transition(.scale.combined(with: .opacity))

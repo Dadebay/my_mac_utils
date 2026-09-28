@@ -271,7 +271,7 @@ struct PanelShelfView: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .strokeBorder(
-                            searchFocused ? Color.accentColor.opacity(0.55) : Color.primary.opacity(0.07),
+                            searchFocused ? Color.appAccent.opacity(0.55) : Color.primary.opacity(0.07),
                             lineWidth: searchFocused ? 1 : 0.5
                         )
                 }
@@ -541,7 +541,7 @@ struct PanelShelfView: View {
             Button(L10n.shelfClearSearch) { searchText = "" }
                 .buttonStyle(.plain)
                 .font(.app(.body, weight: .medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 28)
@@ -552,7 +552,7 @@ struct PanelShelfView: View {
     private var dropOverlay: some View {
         ZStack(alignment: .bottom) {
             RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
-                .strokeBorder(Color.accentColor.opacity(0.9), lineWidth: 2)
+                .strokeBorder(Color.appAccent.opacity(0.9), lineWidth: 2)
 
             HStack(spacing: 7) {
                 HugeIcon(name: .drop, size: 13)
@@ -561,7 +561,7 @@ struct PanelShelfView: View {
             }
             .padding(.horizontal, 13)
             .padding(.vertical, 8)
-            .background { Capsule().fill(Color.accentColor) }
+            .background { Capsule().fill(Color.appAccent) }
             .foregroundStyle(.white)
             .padding(.bottom, 18)
         }
@@ -1125,7 +1125,7 @@ private struct ShelfGridCard: View {
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .strokeBorder(
-                    isSelected ? Color.accentColor.opacity(0.8) : palette.border,
+                    isSelected ? Color.appAccent.opacity(0.8) : palette.border,
                     lineWidth: isSelected ? 1.5 : 0.5
                 )
         }
@@ -1206,7 +1206,7 @@ private struct ShelfListRow: View {
         .padding(.vertical, 5)
         .background {
             RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
-                .fill(isSelected ? Color.accentColor.opacity(0.16) : (isHovering ? palette.card : .clear))
+                .fill(isSelected ? Color.appAccent.opacity(0.16) : (isHovering ? palette.card : .clear))
         }
         .onHover { isHovering = $0 }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovering)

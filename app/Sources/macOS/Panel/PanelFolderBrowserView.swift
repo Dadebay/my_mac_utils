@@ -63,7 +63,7 @@ struct PanelFolderBrowserView: View {
         .background {
             if isTargeted {
                 RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
+                    .strokeBorder(Color.appAccent, lineWidth: 2)
             }
         }
         .onDrop(of: [.fileURL], isTargeted: $isTargeted.animation(motion), perform: handleDrop)
@@ -114,7 +114,7 @@ struct PanelFolderBrowserView: View {
 
             Image(systemName: "folder.fill")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(folder.name)
@@ -425,7 +425,7 @@ private struct FileRow: View {
     }
 
     private var fill: Color {
-        if isSelected { return Color.accentColor.opacity(0.18) }
+        if isSelected { return Color.appAccent.opacity(0.18) }
         return Color.primary.opacity(isHovering ? 0.075 : 0.03)
     }
 

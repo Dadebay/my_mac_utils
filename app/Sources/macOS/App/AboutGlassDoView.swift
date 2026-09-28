@@ -440,7 +440,7 @@ struct AboutGlassDoView: View {
                         let isToday = day.id == columns.last?.id
                         Text(Self.weekdayFormatter.string(from: day.day))
                             .font(.app(.micro, weight: isToday ? .semibold : .medium))
-                            .foregroundStyle(isToday ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
+                            .foregroundStyle(isToday ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.tertiary))
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -482,7 +482,7 @@ struct AboutGlassDoView: View {
                 UnevenRoundedRectangle(
                     topLeadingRadius: 2, topTrailingRadius: 2, style: .continuous
                 )
-                .fill(isToday ? Color.accentColor : Color.accentColor.opacity(0.55))
+                .fill(isToday ? Color.appAccent : Color.appAccent.opacity(0.55))
                 .frame(height: max(3, Self.trendBarHeight * CGFloat(day.total) / CGFloat(max(peak, 1))))
             }
         }
@@ -716,7 +716,7 @@ private struct UsageBarRow: View {
                     Capsule().fill(Color.primary.opacity(0.07))
                     if barFraction > 0 {
                         Capsule()
-                            .fill(Color.accentColor)
+                            .fill(Color.appAccent)
                             // En küçük sayı da görünür kalsın: yüzde birlik
                             // bir pay yuvarlanıp kaybolmasın diye taban
                             // dört punto.

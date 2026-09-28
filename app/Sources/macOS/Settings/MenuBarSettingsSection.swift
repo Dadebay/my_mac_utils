@@ -204,19 +204,19 @@ struct MenuBarSettingsSection: View {
                         .minimumScaleFactor(0.8)
                 }
                 .font(.app(.micro, weight: .medium))
-                .foregroundStyle(isOn ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
+                .foregroundStyle(isOn ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 6)
             .frame(width: Self.tileWidth)
             .background {
                 RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
-                    .fill(isOn ? Color.accentColor.opacity(0.12) : Color.primary.opacity(0.045))
+                    .fill(isOn ? Color.appAccent.opacity(0.12) : Color.primary.opacity(0.045))
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .strokeBorder(
-                        isOn ? Color.accentColor.opacity(0.85) : Color.primary.opacity(0.08),
+                        isOn ? Color.appAccent.opacity(0.85) : Color.primary.opacity(0.08),
                         lineWidth: isOn ? 1.5 : 1
                     )
             }

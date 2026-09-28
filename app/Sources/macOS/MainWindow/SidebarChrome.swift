@@ -152,8 +152,8 @@ struct SidebarRowButtonStyle: ButtonStyle {
                     .shadow(color: ChromePalette.selectionTop.opacity(0.18), radius: 10, y: 3)
             } else {
                 shape
-                    .fill(Color.accentColor.opacity(0.16))
-                    .overlay { shape.strokeBorder(Color.accentColor.opacity(0.26), lineWidth: 0.8) }
+                    .fill(Color.appAccent.opacity(0.16))
+                    .overlay { shape.strokeBorder(Color.appAccent.opacity(0.26), lineWidth: 0.8) }
             }
         }
     }

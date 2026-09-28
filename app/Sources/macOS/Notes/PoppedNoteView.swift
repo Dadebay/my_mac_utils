@@ -745,7 +745,7 @@ private struct PoppedNoteContent: View {
             .overlay {
                 RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .strokeBorder(
-                        addFocused ? Color.accentColor.opacity(0.65) : Color.primary.opacity(0.12),
+                        addFocused ? Color.appAccent.opacity(0.65) : Color.primary.opacity(0.12),
                         lineWidth: 1
                     )
             }
@@ -915,7 +915,7 @@ private struct NoteRow: View {
         .overlay {
             if isSelected {
                 RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(0.45), lineWidth: 1)
+                    .strokeBorder(Color.appAccent.opacity(0.45), lineWidth: 1)
             }
         }
         .contentShape(Rectangle())
@@ -941,7 +941,7 @@ private struct NoteRow: View {
     }
 
     private var selectionFill: Color {
-        if isSelected { return Color.accentColor.opacity(0.22) }
+        if isSelected { return Color.appAccent.opacity(0.22) }
         return Color.primary.opacity(isHovering ? 0.06 : 0)
     }
 

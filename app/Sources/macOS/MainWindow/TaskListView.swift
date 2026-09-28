@@ -63,7 +63,7 @@ struct TaskListView: View {
             notes.toggle()
         } label: {
             Image(systemName: notes.isOpen ? "pip.exit" : "pip.enter")
-                .foregroundStyle(notes.isOpen ? Color.accentColor : .primary)
+                .foregroundStyle(notes.isOpen ? Color.appAccent : .primary)
         }
         .help(notes.isOpen
               ? L10n.s("Notu kapat", "Close note", "Закрыть заметку")
@@ -134,9 +134,9 @@ struct TaskListView: View {
         HStack(spacing: 9) {
             Image(systemName: "plus")
                 .font(.system(size: 9.5, weight: .bold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 24, height: 24)
-                .background(Circle().fill(Color.accentColor.opacity(0.14)))
+                .background(Circle().fill(Color.appAccent.opacity(0.14)))
 
             TextField(L10n.mainWindowQuickAddPlaceholder, text: $newTaskTitle)
                 .textFieldStyle(.plain)
@@ -162,7 +162,7 @@ struct TaskListView: View {
                 .overlay {
                     RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                         .strokeBorder(
-                            quickAddFocused ? Color.accentColor.opacity(0.48) : Color.primary.opacity(0.09),
+                            quickAddFocused ? Color.appAccent.opacity(0.48) : Color.primary.opacity(0.09),
                             lineWidth: 0.75
                         )
                 }

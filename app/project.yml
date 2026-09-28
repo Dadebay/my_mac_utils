@@ -90,6 +90,11 @@ targets:
       base:
         CODE_SIGN_ENTITLEMENTS: Config/GlassDo.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Uygulamanın vurgu rengi (`Color.appAccent` ile aynı mor). Kodda
+        # renk doğrudan kullanılıyor; bu, `.tint`'in ulaşmadığı sistem
+        # öğeleri (odak halkası, metin seçimi) için. macOS bunu yalnızca
+        # kullanıcının vurgu rengi "Çok renkli" iken uygular.
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
       configs:
         # Mac App Store App Sandbox zorunlu tutuyor, ama sandbox pencere
         # değiştirici ve sistem ölçerlerinin dayandığı API'leri kapatıyor.

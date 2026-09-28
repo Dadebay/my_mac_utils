@@ -23,13 +23,13 @@ struct TaskRow: View {
     /// ve `listRowBackground`'a verilen yuvarlak şekli yok sayıyor — bu
     /// yüzden seçimi tamamen burada, kendi yuvarlak zeminimizle gösteriyoruz.
     private var rowBackgroundFill: Color {
-        if isSelected { return Color.accentColor.opacity(0.13) }
+        if isSelected { return Color.appAccent.opacity(0.13) }
         if isHovering { return Color.primary.opacity(0.045) }
         return .clear
     }
 
     private var rowBorderColor: Color {
-        isSelected ? Color.accentColor.opacity(0.22) : .clear
+        isSelected ? Color.appAccent.opacity(0.22) : .clear
     }
 
 

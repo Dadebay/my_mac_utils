@@ -655,7 +655,7 @@ struct ProcessorAreaChart: View {
                 // Üstteki katman (toplam) önce, altındaki onun üstüne:
                 // iki alan üst üste binmiyor, iç içe okunuyor.
                 ForEach(Array(series.enumerated().reversed()), id: \.offset) { index, values in
-                    let color = colors.indices.contains(index) ? colors[index] : colors.last ?? .accentColor
+                    let color = colors.indices.contains(index) ? colors[index] : colors.last ?? .appAccent
 
                     ActivityArea(values: values, scaleMax: scale, closed: true)
                         .fill(
@@ -675,9 +675,9 @@ struct ProcessorAreaChart: View {
                 // yani hareket veriyi anlatıyor, dikkat çekmiyor.
                 if let head = headPoint(series, scale: scale, in: geo.size) {
                     Circle()
-                        .fill(colors.first ?? .accentColor)
+                        .fill(colors.first ?? .appAccent)
                         .frame(width: 5, height: 5)
-                        .shadow(color: (colors.first ?? .accentColor).opacity(0.8), radius: 4)
+                        .shadow(color: (colors.first ?? .appAccent).opacity(0.8), radius: 4)
                         .position(head)
                 }
 

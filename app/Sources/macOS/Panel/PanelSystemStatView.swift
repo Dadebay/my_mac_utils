@@ -758,7 +758,7 @@ struct PanelDiskView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.app(.micro, weight: .semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(Color.appAccent)
 
                         if let blocked = analyzer.blockedItem {
                             Button(L10n.revealInFinder) {

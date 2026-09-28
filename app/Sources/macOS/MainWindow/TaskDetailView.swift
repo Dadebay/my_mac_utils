@@ -227,7 +227,7 @@ struct TaskDetailView: View {
                     } label: {
                         Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
                             .font(.app(.title))
-                            .foregroundStyle(subtask.isCompleted ? Color.accentColor : .secondary)
+                            .foregroundStyle(subtask.isCompleted ? Color.appAccent : .secondary)
                     }
                     .buttonStyle(.plain)
 

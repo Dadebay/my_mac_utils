@@ -64,7 +64,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
     var tint: Color {
         switch self {
         case .tasks: Color(red: 0.24, green: 0.58, blue: 1.0)
-        case .quickAdd: .accentColor
+        case .quickAdd: .appAccent
         case .completed: Color(red: 0.30, green: 0.78, blue: 0.45)
         case .folders: Color(red: 0.56, green: 0.61, blue: 0.72)
         case .memory: Color(red: 0.95, green: 0.42, blue: 0.34)

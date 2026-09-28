@@ -5,26 +5,47 @@ import SwiftUI
 /// Kenar çubuğu ile pano aynı ışığı paylaşıyor. İki yüzey kendi paletini
 /// tutsaydı biri ayarlandığında öteki geride kalır, pencerenin iki yarısı
 /// farklı iki uygulamadan gelmiş gibi görünürdü.
+extension Color {
+    /// Uygulamanın tek vurgu rengi: işlemci panosunun moru.
+    ///
+    /// Eskiden vurgu için `Color.appAccent` kullanılıyordu ve projede
+    /// bir `AccentColor` tanımı yoktu; yani anahtarlar, seçiciler,
+    /// kaydırıcılar, seçili karolar ve çubuklar macOS'un sistem vurgusunu,
+    /// çoğu makinede maviyi alıyordu. Pano ise kendi morunu kullanıyordu.
+    /// Aynı pencerede iki vurgu rengi yan yana duruyordu.
+    ///
+    /// `Color.appAccent` kullanıcının Sistem Ayarları'ndaki seçimine
+    /// uyuyor (orada mavi seçiliyse uygulamanın kendi rengi yok sayılır),
+    /// bu yüzden kodda doğrudan bu renk kullanılıyor; sistem denetimleri de
+    /// pencere köklerindeki `.tint` ile ona bağlanıyor.
+    static let appAccent = Color(red: 0.42, green: 0.36, blue: 0.92)
+}
+
 enum ChromePalette {
-    /// Zemin: yukarıdan aşağı hafifçe koyulaşan lacivert.
-    static let base0 = Color(red: 0.031, green: 0.043, blue: 0.086)
-    static let base1 = Color(red: 0.043, green: 0.063, blue: 0.125)
-    static let base2 = Color(red: 0.051, green: 0.071, blue: 0.141)
+    /// Zemin: yukarıdan aşağı hafifçe koyulaşan gece moru. Eskiden
+    /// laciverte çalıyordu; vurgu mora geçince kenar çubuğu ile içerik
+    /// iki ayrı renk ailesinden gelmiş gibi duruyordu.
+    static let base0 = Color(red: 0.043, green: 0.035, blue: 0.086)
+    static let base1 = Color(red: 0.063, green: 0.049, blue: 0.125)
+    static let base2 = Color(red: 0.071, green: 0.055, blue: 0.141)
 
     /// Ortam ışığının üç kaynağı. Tek bir ışık alanının farklı yerlerdeki
-    /// tonları — birbirinden bağımsız süsler değil.
+    /// tonları — birbirinden bağımsız süsler değil. Ortadaki eskiden
+    /// maviydi; artık vurgunun açık, lavanta tonu.
     static let indigo = Color(red: 0.42, green: 0.36, blue: 0.95)
-    static let blue = Color(red: 0.24, green: 0.52, blue: 0.98)
+    static let lavender = Color(red: 0.52, green: 0.46, blue: 0.98)
     static let violet = Color(red: 0.55, green: 0.34, blue: 0.92)
 
-    /// Seçili/etkin yüzeylerin camı.
-    static let selectionTop = Color(red: 0.13, green: 0.43, blue: 0.86)
-    static let selectionMid = Color(red: 0.15, green: 0.28, blue: 0.67)
-    static let selectionEnd = Color(red: 0.32, green: 0.20, blue: 0.71)
-    static let selectionEdge = Color(red: 0.31, green: 0.59, blue: 1.0)
+    /// Seçili/etkin yüzeylerin camı — vurgu renginin tonları. Eskiden
+    /// üstten maviden aşağı mora iniyordu; kenar çubuğunda seçili satır,
+    /// sayfadaki mor seçimlerle aynı renkten değildi.
+    static let selectionTop = Color(red: 0.48, green: 0.40, blue: 0.96)
+    static let selectionMid = Color(red: 0.36, green: 0.28, blue: 0.80)
+    static let selectionEnd = Color(red: 0.34, green: 0.20, blue: 0.72)
+    static let selectionEdge = Color(red: 0.62, green: 0.54, blue: 1.0)
 
-    static let progressStart = Color(red: 0.24, green: 0.80, blue: 0.56)
-    static let progressEnd = Color(red: 0.36, green: 0.72, blue: 0.98)
+    static let progressStart = Color(red: 0.55, green: 0.34, blue: 0.92)
+    static let progressEnd = Color.appAccent
     static let statusDot = Color(red: 0.30, green: 0.85, blue: 0.52)
 
     static let hairline = Color.white.opacity(0.10)
@@ -110,7 +131,7 @@ struct ChromeAmbience: View {
                     .opacity(reduceTransparency ? 1 : 0.88)
 
                     glow(ChromePalette.indigo, 0.10, UnitPoint(x: 1.02, y: 0.04), size, 1.15)
-                    glow(ChromePalette.blue, 0.07, UnitPoint(x: 1.02, y: 0.42), size, 1.05)
+                    glow(ChromePalette.lavender, 0.07, UnitPoint(x: 1.02, y: 0.42), size, 1.05)
                     glow(ChromePalette.violet, 0.075, UnitPoint(x: 0.45, y: 0.98), size, 1.1)
 
                     if placement == .sidebar {
