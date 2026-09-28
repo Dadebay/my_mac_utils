@@ -295,15 +295,15 @@ private struct WidgetPreviewTile<Content: View>: View {
       .padding(WidgetPreviewMetrics.contentInset)
       .frame(width: nativeSize.width, height: nativeSize.height, alignment: .topLeading)
       .background {
-        RoundedRectangle(cornerRadius: 24, style: .continuous)
+        RoundedRectangle(cornerRadius: Layout.Radius.systemWidget, style: .continuous)
           .fill(Color.black.opacity(0.72))
           .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.systemWidget, style: .continuous)
               .strokeBorder(Color.white.opacity(0.09), lineWidth: 0.5)
           }
       }
       .environment(\.colorScheme, .dark)
-      .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+      .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.systemWidget, style: .continuous))
       // Ölçek 1'i hiçbir zaman geçmez. Önceki implementation tam
       // sütun genişliğini native genişliğe bölüp 2× büyüttüğü için
       // medium widget'lar ekranın tamamını kaplıyordu.
@@ -313,7 +313,7 @@ private struct WidgetPreviewTile<Content: View>: View {
       // binmesini engeller.
       .frame(width: fittedWidth, height: fittedHeight, alignment: .topLeading)
       .clipShape(
-        RoundedRectangle(cornerRadius: 24 * scale, style: .continuous)
+        RoundedRectangle(cornerRadius: Layout.Radius.systemWidget * scale, style: .continuous)
       )
   }
 }

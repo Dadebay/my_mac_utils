@@ -367,7 +367,7 @@ private struct AppUsageRow: View {
                 .resizable()
                 .frame(width: 26, height: 26)
         } else {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.secondary.opacity(0.15))
                 .frame(width: 26, height: 26)
         }
@@ -390,10 +390,10 @@ private struct AppUsageRow: View {
     private var rowBackground: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(Color.primary.opacity(isHovering ? 0.07 : 0.035))
 
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [

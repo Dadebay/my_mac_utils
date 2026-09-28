@@ -223,7 +223,7 @@ struct PanelTaskListView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 120)
         .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                 .fill(Color.primary.opacity(0.035))
         }
         .transition(.opacity)

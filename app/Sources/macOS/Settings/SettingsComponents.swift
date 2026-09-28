@@ -62,10 +62,10 @@ struct SettingsCard<Content: View>: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                     .fill(Color.primary.opacity(0.05))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                             .strokeBorder(Color.primary.opacity(0.09), lineWidth: 1)
                     }
             }

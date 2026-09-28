@@ -62,7 +62,7 @@ struct PanelFolderBrowserView: View {
         .folderSurfaceFrame(isCompact: isCompact)
         .background {
             if isTargeted {
-                RoundedRectangle(cornerRadius: Layout.cardCornerRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                     .strokeBorder(Color.accentColor, lineWidth: 2)
             }
         }
@@ -104,7 +104,7 @@ struct PanelFolderBrowserView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: 22, height: 22)
                     .background {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                             .fill(Color.primary.opacity(0.06))
                     }
                     .contentShape(Rectangle())
@@ -405,7 +405,7 @@ private struct FileRow: View {
         .padding(.horizontal, 7)
         .padding(.vertical, 5)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(fill)
         }
         .contentShape(Rectangle())
@@ -436,9 +436,9 @@ private struct FileRow: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: Self.thumbnailSize, height: Self.thumbnailSize)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous))
         } else {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.07))
                 .frame(width: Self.thumbnailSize, height: Self.thumbnailSize)
                 .overlay {

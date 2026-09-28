@@ -364,7 +364,7 @@ private struct PoppedNoteContent: View {
                 .frame(width: 26, height: 20)
                 .contentShape(Rectangle())
                 .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(Color.primary.opacity(0.08))
                 }
         }
@@ -739,11 +739,11 @@ private struct PoppedNoteContent: View {
             .padding(.horizontal, 9)
             .padding(.vertical, 7)
             .background {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(Color.primary.opacity(0.07))
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .strokeBorder(
                         addFocused ? Color.accentColor.opacity(0.65) : Color.primary.opacity(0.12),
                         lineWidth: 1

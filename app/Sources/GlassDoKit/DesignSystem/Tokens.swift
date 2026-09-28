@@ -1,10 +1,42 @@
 import SwiftUI
 
 public enum Layout {
-    public static let panelCornerRadius: CGFloat = 22
-    public static let cardCornerRadius: CGFloat = 16
-    public static let rowHeight: CGFloat = 34
-    public static let gutter: CGFloat = 14
+    /// Köşe yarıçapı ölçeği.
+    ///
+    /// Arayüzde on dokuz ayrı yarıçap dolaşıyordu (5, 6, 7, 8, 9, 10, 11,
+    /// 12, 13, 14, 15, 16, 18, 20, 22, 24…). Aradaki bir puntoluk farklar
+    /// gözle ayırt edilmiyor ama her yeni yüzeyde "kaç yazayım?" sorusunu
+    /// doğuruyor ve komşu iki kartın farklı yuvarlanmasıyla sonuçlanıyordu.
+    ///
+    /// Basamaklar uydurulmadı: var olan değerlerin kümelendiği yerlerden
+    /// çıkarıldı, her basamak kendi kümesinin en çok kullanılan üyesine
+    /// yakın duruyor.
+    ///
+    /// Ölçeğin dışında bilerek bırakılan tek grup var: ölçer
+    /// çubuklarının, sparkline uçlarının ve iki-üç punto yüksekliğindeki
+    /// dolguların yarıçapı (1, 1.5, 2, 2.5, 3). Bunlar kendi
+    /// yüksekliklerinin yarısı kadar yuvarlanıyor — bir ölçek basamağına
+    /// oturtmak üç punto yüksekliğindeki çubuğu hapa çevirir. Yerlerinde
+    /// sayı olarak duruyorlar.
+    public enum Radius {
+        /// Küçük rozetler, satır içi jetonlar, küçük küçük resimler.
+        public static let small: CGFloat = 6
+        /// Düğmeler, giriş alanları, liste satırı vurguları.
+        public static let medium: CGFloat = 9
+        /// Panel içi bloklar, açılır listeler.
+        public static let large: CGFloat = 12
+        /// Sayfa ve panel kartları — bir yüzeyin üstünde duran kutular.
+        public static let card: CGFloat = 16
+        /// Pencere ölçeğindeki cam yüzeyler: kenar paneli, pencere
+        /// değiştirici bindirmesi.
+        public static let panel: CGFloat = 22
+        /// Bildirim Merkezi widget'ının köşesi. Ölçeğin bir basamağı
+        /// değil, macOS'un kendi değeri: ayarlardaki widget önizlemesi
+        /// gerçek widget'ı taklit ettiği için sistemle birebir kalmalı,
+        /// ölçek değişse bile buna dokunulmuyor.
+        public static let systemWidget: CGFloat = 24
+    }
+
     public static let tightGutter: CGFloat = 8
     /// Pencere araç çubuğunun içeriğini kenardan ayıran pay. Sayfa
     /// içerikleri de bunu kullanıyor: araç çubuğundaki sayfa rozeti ile

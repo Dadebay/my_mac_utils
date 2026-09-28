@@ -62,11 +62,11 @@ public extension View {
         modifier(AdaptiveGlassCapsule())
     }
 
-    func adaptiveGlassCard(cornerRadius: CGFloat = Layout.cardCornerRadius) -> some View {
+    func adaptiveGlassCard(cornerRadius: CGFloat = Layout.Radius.card) -> some View {
         modifier(AdaptiveGlassCard(cornerRadius: cornerRadius))
     }
 
-    func adaptiveGlassShell(edge: ScreenEdge, cornerRadius: CGFloat = Layout.panelCornerRadius) -> some View {
+    func adaptiveGlassShell(edge: ScreenEdge, cornerRadius: CGFloat = Layout.Radius.panel) -> some View {
         modifier(AdaptiveGlassShell(edge: edge, cornerRadius: cornerRadius))
     }
 }

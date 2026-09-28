@@ -123,10 +123,10 @@ private struct ClipboardRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 9)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(isHovering ? 0.07 : 0.035))
         }
-        .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous))
         .onHover { isHovering = $0 }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.13), value: isHovering)
         .onTapGesture { copy() }
@@ -151,10 +151,10 @@ private struct ClipboardRow: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 34, height: 34)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous))
                 .overlay {
                     if isHovering || justCopied {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                             .fill(.black.opacity(0.55))
                             .overlay {
                                 HugeIcon(name: justCopied ? .check : .copy, size: 15)

@@ -309,7 +309,7 @@ struct PanelShelfView: View {
                 .foregroundStyle(isOn ? Color.primary : Color.secondary)
                 .frame(width: 24, height: 20)
                 .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(isOn ? Color.primary.opacity(0.10) : .clear)
                 }
                 .contentShape(Rectangle())
@@ -551,7 +551,7 @@ struct PanelShelfView: View {
     /// çerçeve ve altta küçük bir rozet: altındaki raf görünür kalıyor.
     private var dropOverlay: some View {
         ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: Layout.cardCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                 .strokeBorder(Color.accentColor.opacity(0.9), lineWidth: 2)
 
             HStack(spacing: 7) {
@@ -1171,7 +1171,7 @@ private struct ShelfListRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            ShelfThumbnail(item: item, height: 30, cornerRadius: 6, symbolSize: 14, inset: 3)
+            ShelfThumbnail(item: item, height: 30, cornerRadius: Layout.Radius.small, symbolSize: 14, inset: 3)
                 .frame(width: 42)
 
             Text(ShelfFormat.displayName(item))
@@ -1259,15 +1259,15 @@ private struct ShelfQuickLook: View {
                 footer
             }
             .background {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                     .fill(palette.card)
                     .background {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                             .fill(.ultraThinMaterial)
                     }
             }
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                     .strokeBorder(palette.border, lineWidth: 0.5)
             }
             .shadow(color: .black.opacity(0.38), radius: 28, y: 10)

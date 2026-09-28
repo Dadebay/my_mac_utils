@@ -669,10 +669,10 @@ struct StatBatteryGauge: View {
                     .frame(width: capWidth, height: capHeight)
 
                 ZStack(alignment: .bottom) {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(color.opacity(0.18))
 
-                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                         .fill(color)
                         .frame(height: max(bodyHeight * CGFloat(min(max(fraction, 0), 1)), 3))
                         .animation(animation, value: fraction)
@@ -808,7 +808,7 @@ extension View {
     /// Izgarada yan yana duran kartlar aynı yüksekliğe uzanıyor
     /// (`maxHeight: .infinity`) — aksi hâlde kısa içerikli kart komşusunun
     /// yanında yarım kalmış gibi görünüyordu.
-    func dashboardCard(cornerRadius: CGFloat = Layout.cardCornerRadius) -> some View {
+    func dashboardCard(cornerRadius: CGFloat = Layout.Radius.card) -> some View {
         padding(16)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .modifier(DashboardCardSurface(cornerRadius: cornerRadius))
@@ -819,7 +819,7 @@ extension View {
 /// parlama ve çok yumuşak bir dış gölge. Parlama yalnızca üstte — ışık
 /// yukarıdan geliyor, çerçevenin tamamı parlarsa cam değil neon olur.
 struct DashboardCardSurface: ViewModifier {
-    var cornerRadius: CGFloat = Layout.cardCornerRadius
+    var cornerRadius: CGFloat = Layout.Radius.card
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency

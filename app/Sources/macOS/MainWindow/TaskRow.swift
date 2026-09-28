@@ -116,11 +116,11 @@ struct TaskRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(rowBackgroundFill)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .strokeBorder(rowBorderColor, lineWidth: 0.75)
         }
         .animation(

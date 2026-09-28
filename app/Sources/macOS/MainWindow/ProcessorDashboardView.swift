@@ -251,10 +251,10 @@ struct ProcessorDashboardView: View {
         VStack(spacing: showsLabel ? 6 : 0) {
             GeometryReader { geo in
                 ZStack(alignment: .bottom) {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(Color.primary.opacity(0.07))
 
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: coreColors(for: value),

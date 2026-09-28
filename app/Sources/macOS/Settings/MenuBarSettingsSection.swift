@@ -84,11 +84,11 @@ struct MenuBarSettingsSection: View {
                     .frame(height: 34)
                     .frame(maxWidth: .infinity)
                     .background {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                             .fill(Color.primary.opacity(isOn ? 0.10 : 0.045))
                     }
                     .overlay {
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                             .strokeBorder(
                                 isOn ? Color.accentColor.opacity(0.85) : Color.primary.opacity(0.08),
                                 lineWidth: isOn ? 1.5 : 1

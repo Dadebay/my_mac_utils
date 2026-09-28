@@ -20,7 +20,7 @@ struct DesktopWidgetView: View {
     }
 
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 16, style: .continuous)
+        RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
     }
 
     var body: some View {

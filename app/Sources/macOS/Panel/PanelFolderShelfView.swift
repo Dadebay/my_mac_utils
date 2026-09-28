@@ -93,7 +93,7 @@ struct PanelFolderShelfView: View {
         .folderSurfaceFrame(isCompact: isCompact)
         .background {
             if isTargeted {
-                RoundedRectangle(cornerRadius: Layout.cardCornerRadius, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.card, style: .continuous)
                     .strokeBorder(Color.accentColor, lineWidth: 2)
             }
         }
@@ -499,7 +499,7 @@ private struct FolderRow: View {
             .padding(.horizontal, 7)
             .padding(.vertical, 5)
             .background {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(Color.primary.opacity(isHovering ? 0.075 : 0.03))
             }
             .contentShape(Rectangle())

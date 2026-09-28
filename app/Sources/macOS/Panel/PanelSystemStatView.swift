@@ -836,7 +836,7 @@ struct PanelDiskView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(0.045))
         }
         .contentShape(Rectangle())
@@ -907,10 +907,10 @@ private func compactPill(_ label: String, _ value: String, tint: Color? = nil) -
 }
 
 private var panelSurface: some View {
-    RoundedRectangle(cornerRadius: 12, style: .continuous)
+    RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
         .fill(Color.primary.opacity(0.055))
         .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.large, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.055), lineWidth: 0.5)
         }
 }
@@ -1416,7 +1416,7 @@ private struct PanelNetworkProcessRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(isHovering ? 0.075 : 0.03))
         }
         .animation(reduceMotion ? .easeOut(duration: 0.12) : .easeOut(duration: 0.14), value: isHovering)
@@ -1439,7 +1439,7 @@ private struct PanelNetworkProcessRow: View {
         } else {
             // Arka plan süreçlerinin ikonu yok. Boş bırakmak yerine nötr bir
             // rozet: satırların hizası bozulmasın.
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
                 .fill(Color.primary.opacity(0.07))
                 .frame(width: 26, height: 26)
                 .overlay {

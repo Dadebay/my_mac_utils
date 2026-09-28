@@ -48,7 +48,7 @@ struct WorkspacePickerView: View {
                         .foregroundStyle(tint)
                         .frame(width: 34, height: 34)
                         .background {
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                                 .fill(tint.opacity(0.16))
                         }
 

@@ -191,7 +191,7 @@ private struct CPUProcessRow: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                 .fill(Color.primary.opacity(isHovering ? 0.075 : 0.03))
         }
         .onHover { isHovering = $0 }
