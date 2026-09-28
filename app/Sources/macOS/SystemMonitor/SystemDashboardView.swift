@@ -9,7 +9,14 @@ struct SystemDashboardView: View {
     private let controller = SystemStatsController.shared
     private let widgets = DesktopWidgetController.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.openSettings) private var openSettings
+
+    /// Kartların dişlisi. Eskiden SwiftUI'nin `openSettings` ortam eylemiydi
+    /// ve ayrı bir pencere açıyordu; ayarlar bu pencerenin bir sayfası
+    /// olunca pano kendi penceresinde sayfa değiştiriyor — dışarıdaki
+    /// kapılarla aynı yol (bkz. `MainWindowRouter`).
+    private func openSettings() {
+        MainWindowRouter.shared.showSettings()
+    }
 
     private var animation: Animation? {
         reduceMotion ? nil : Motion.dataUpdate

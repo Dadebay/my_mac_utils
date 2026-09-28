@@ -38,18 +38,13 @@ struct GlassDoApp: App {
             .frame(minWidth: 780, minHeight: 480)
         }
         .modelContainer(container)
+        // Ayarlar artık ayrı bir pencere değil, bu pencerenin bir sayfası;
+        // ⌘, da ona gidiyor (bkz. `SettingsCommands`).
+        .commands { SettingsCommands() }
 
         MenuBarExtra("GlassDo", systemImage: "checklist") {
             MenuBarContentView(panelController: panelController, switcherController: switcherController)
         }
-
-        Settings {
-            SettingsView(switcherController: switcherController)
-                .background(SettingsWindowChromeConfigurator())
-        }
-        // İçerik yalnızca en küçük ölçüyü dayatsın; kullanıcı pencereyi
-        // istediği kadar büyütebilsin.
-        .windowResizability(.contentMinSize)
 
         // Tekil pencere: aynı `id` ile ikinci kez açılmaya çalışılırsa
         // AppKit yeni bir örnek yaratmıyor, var olanı öne getiriyor —
@@ -78,7 +73,6 @@ private struct RootWindowView: View {
     let switcherController: WindowSwitcherController
     let container: ModelContainer
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     /// Yalnızca daha önce hiç sorulmadıysa `true` olur — reddedilmiş bir
     /// seçim bir daha sorulmaz, yalnızca Ayarlar'dan değiştirilebilir.
@@ -91,6 +85,10 @@ private struct RootWindowView: View {
         ContentView()
             .environment(StickyNotesController.shared)
             .environment(panelController)
+            // Pencere Değiştirici ayar sayfası denetleyiciyi ortamdan
+            // okuyor; ayarlar ayrı pencereden buraya taşınınca bu ağaca
+            // da girmesi gerekti.
+            .environment(switcherController)
             .sheet(isPresented: $showingAnalyticsPrompt) {
                 AnalyticsConsentPromptView { granted in
                     AnalyticsConsent.setGranted(granted)
@@ -121,22 +119,20 @@ private struct RootWindowView: View {
                     NSApp.activate(ignoringOtherApps: true)
                     openWindow(id: "main")
                 }
-                panelController.openSettings = {
+                // Dişli, menü çubuğu ve pencere değiştirici: üçü de aynı
+                // kapıdan giriyor — ayarlar ana pencerede bir sayfa.
+                let showSettings = {
                     NSApp.activate(ignoringOtherApps: true)
-                    openSettings()
+                    MainWindowRouter.shared.showSettings()
+                    openWindow(id: "main")
                 }
-                MenuBarStatsController.shared.openSettings = {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openSettings()
-                }
+                panelController.openSettings = showSettings
+                MenuBarStatsController.shared.openSettings = showSettings
                 MenuBarStatsController.shared.openMainWindow = {
                     NSApp.activate(ignoringOtherApps: true)
                     openWindow(id: "main")
                 }
-                switcherController.openSettings = {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openSettings()
-                }
+                switcherController.openSettings = showSettings
                 panelController.attach(container: container) {
                     EdgeShellView()
                         .environment(switcherController)
@@ -158,49 +154,25 @@ private struct RootWindowView: View {
     }
 }
 
-/// Ayarlar penceresinin native başlık metnini gizler ve içerik alanını
-/// başlık çubuğunun altına kadar uzatır — kenar çubuğu malzemesi böylece
-/// pencerenin en üst kenarına kesintisiz ulaşabiliyor. Trafik ışıkları
-/// native kalıyor, yalnızca arkalarındaki opak şerit kaldırılıyor.
+/// Uygulama menüsündeki "Ayarlar…" ve ⌘,.
 ///
-/// Yalnızca Ayarlar penceresini etkiler: bu görünüm yalnızca
-/// `SettingsView`'ın kendi ağacına ekleniyor — ana pencere, kenar paneli
-/// ve pencere değiştirici bu ağaçta değil, dolayısıyla dokunulmuyor.
-private struct SettingsWindowChromeConfigurator: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView {
-        let probe = NSView(frame: .zero)
-        probe.translatesAutoresizingMaskIntoConstraints = false
-        // Pencereye ilk bağlandığı anda henüz `probe.window` kurulu
-        // olmayabilir; bir sonraki run loop turunda kesin var.
-        DispatchQueue.main.async { [weak probe] in
-            configure(probe?.window)
+/// SwiftUI'nin `Settings` sahnesi bu maddeyi kendi kurar ve her zaman
+/// ayrı bir pencere açar; ayarlar ana pencereye taşınınca o sahne kalktı,
+/// madde de buradan yeniden kuruluyor. Menü çubuğundaki ve dişlideki
+/// karşılıklarıyla aynı kapı: istek yönlendiriciye bırakılıp ana pencere
+/// öne getiriliyor.
+private struct SettingsCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(L10n.settingsTitle) {
+                NSApp.activate(ignoringOtherApps: true)
+                MainWindowRouter.shared.showSettings()
+                openWindow(id: "main")
+            }
+            .keyboardShortcut(",", modifiers: .command)
         }
-        return probe
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        configure(nsView.window)
-    }
-
-    /// Aynı pencereye tekrar tekrar çağrılsa da zararsız: hepsi durum
-    /// değiştirmeyen doğrudan atama, açma/kapama gibi bir yan etkisi yok.
-    private func configure(_ window: NSWindow?) {
-        guard let window, window.styleMask.contains(.titled) else { return }
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
-        // SwiftUI'ın `Settings` sahnesi pencereyi küçültme/büyütme
-        // düğmeleri olmadan, `.windowResizability(.contentMinSize)`e rağmen
-        // sabit boyutlu kuruyor — trafik ışıklarındaki sarı/yeşil düğmeler
-        // pasif görünüyordu. Bu iki bit eksikti, geri kalanı zaten SwiftUI
-        // tarafından yönetiliyor.
-        window.styleMask.insert([.fullSizeContentView, .resizable, .miniaturizable])
-
-        // Ayarlar kendi sabit HSplitView kenar çubuğunu kullanıyor; başlık
-        // çubuğunda trafik ışıkları dışında ek bir araç yok.
-        window.toolbar = nil
-        // Görsel başlık gizli ama pencere kimliği VoiceOver ve pencere
-        // menüsü (Cmd+`) için "Settings" olarak kalmalı.
-        window.title = L10n.settingsTitle
     }
 }
 
@@ -299,7 +271,6 @@ private struct MenuBarContentView: View {
     let panelController: EdgePanelController
     let switcherController: WindowSwitcherController
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         // Panel
@@ -347,7 +318,8 @@ private struct MenuBarContentView: View {
         // Uygulama
         Button {
             NSApp.activate(ignoringOtherApps: true)
-            openSettings()
+            MainWindowRouter.shared.showSettings()
+            openWindow(id: "main")
         } label: {
             Label(L10n.settingsTitle, systemImage: "gearshape")
         }

@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var pageSubtitle: String?
     /// Pencere değiştirici ayar sayfası denetleyicisini istiyor.
     @Environment(WindowSwitcherController.self) private var switcherController
+    /// Pencere dışından gelen sayfa istekleri (dişli, menü çubuğu, ⌘,).
+    private let router = MainWindowRouter.shared
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -98,5 +100,26 @@ struct ContentView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .preferredColorScheme((AppTheme(rawValue: themeRaw) ?? .system).colorScheme)
+        // Pencere zaten açıkken gelen istek buradan giriyor.
+        .onChange(of: router.requestedSelection) { _, requested in
+            applyRequestedSelection(requested)
+        }
+        // Pencere kapalıyken bırakılan istek `onChange`'e hiç uğramıyor:
+        // istek, pencere kurulmadan önce konuyor. İlk kuruluşta burada
+        // okunuyor.
+        .onAppear { applyRequestedSelection(router.requestedSelection) }
+        // Ayarlardan çıkılan bölüm hatırlanıyor: ayarlar bir dahaki sefere
+        // buradan açılıyor (bkz. `MainWindowRouter.showSettings`).
+        .onChange(of: selection) { _, new in
+            if case .settings(let category) = new {
+                SettingsCategory.lastViewed = category
+            }
+        }
+    }
+
+    private func applyRequestedSelection(_ requested: SidebarSelection?) {
+        guard let requested else { return }
+        selection = requested
+        router.consume()
     }
 }

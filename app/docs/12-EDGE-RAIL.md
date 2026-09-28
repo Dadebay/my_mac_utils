@@ -368,7 +368,7 @@ Xcode'dan odak kaçar. Tek istisna: hızlı ekleme alanına yazarken geçici
 | 2 | `plus` | Hızlı ekle alanına odaklan |
 | 3 | `checkmark.circle` | Tamamlananlar görünümü |
 | 4 | `pin` / `pin.fill` | Pinned modu aç/kapa |
-| 5 | `gear` | Ayarlar penceresi |
+| 5 | `gear` | Ayarlar sayfası (ana pencerede) |
 
 > **İleriye dönük:** Proje/kategori kavramı geri gelirse, ray'in 3. ve 4.
 > sırası arasına proje ikonları eklenir (referans görseldeki "uygulama

@@ -23,9 +23,10 @@ final class MenuBarStatsController {
     private var outsideClickMonitor: Any?
     private var resignActiveObserver: NSObjectProtocol?
 
-    /// Ayarlar penceresini açan kanca — `EdgePanelController` ile aynı
-    /// desen: SwiftUI'nin `openSettings` ortam eylemi yalnızca bir
-    /// görünümün içinden çağrılabiliyor, menü çubuğu ise görünüm değil.
+    /// Ayarlar sayfasını açan kanca — `EdgePanelController` ile aynı
+    /// desen: ayarları açmak ana pencereyi öne getirip sayfa seçmek
+    /// demek ve `openWindow` yalnızca bir görünümün içinden
+    /// çağrılabiliyor, menü çubuğu ise görünüm değil.
     var openSettings: (() -> Void)?
     /// Ana pencereyi açan kanca — aynı gerekçe.
     var openMainWindow: (() -> Void)?

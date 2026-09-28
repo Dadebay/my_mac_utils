@@ -75,7 +75,7 @@ final class WindowSwitcherController {
     /// Ayarları'nda anahtar açık görünür, macOS ise yeni ikiliyi tanımaz.
     private(set) var isAuthorizationStale = false
 
-    /// Ayarlar penceresini açan kanca — `EdgePanelController` ile aynı
+    /// Ayarlar sayfasını açan kanca — `EdgePanelController` ile aynı
     /// desen. İzin eksikken kullanıcıyı durumun açıklandığı sayfaya
     /// götürmek için kullanılıyor.
     var openSettings: (() -> Void)?

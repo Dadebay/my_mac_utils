@@ -100,7 +100,7 @@ final class EdgePanelController: NSObject, NSWindowDelegate {
 
     /// Ana pencereyi açmak için GlassDoApp tarafından set edilir (gear butonu).
     var openMainWindow: (() -> Void)?
-    /// Ayarlar penceresini açmak için GlassDoApp tarafından set edilir (gear butonu).
+    /// Ayarlar sayfasını açmak için GlassDoApp tarafından set edilir (gear butonu).
     var openSettings: (() -> Void)?
 
     /// `NSScreen.main` odaklı pencereye göre değişir ve panel hiç key olmadığı
