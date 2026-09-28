@@ -355,7 +355,7 @@ struct NetworkSettingsSection: View {
               .font(.app(.bodyLarge, weight: .medium))
 
               Text(agentStatusText)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             }
@@ -377,7 +377,7 @@ struct NetworkSettingsSection: View {
 
           if let error = agent.lastError {
             Text(error)
-              .font(.app(size: 10.5))
+              .font(.app(.caption))
               .foregroundStyle(SystemPalette.danger)
               .fixedSize(horizontal: false, vertical: true)
           }
@@ -409,7 +409,7 @@ struct NetworkSettingsSection: View {
             "Deletes every stored daily network total and restarts counting from zero. Tasks, folders and other settings are not affected.",
             "Удаляет все сохранённые дневные сетевые итоги и начинает подсчёт с нуля. Задачи, папки и другие настройки не затрагиваются."
           ))
-          .font(.app(size: 11.5))
+          .font(.app(.body))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
 
@@ -505,7 +505,7 @@ struct NetworkSettingsSection: View {
         .foregroundStyle(.secondary)
         .frame(width: 16)
       Text(text)
-        .font(.app(size: 11.5))
+        .font(.app(.body))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }

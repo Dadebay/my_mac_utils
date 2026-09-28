@@ -54,9 +54,9 @@ struct WorkspacePickerView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(kind.title)
-                            .font(.app(size: 13.5, weight: .semibold))
+                            .font(.app(.headline, weight: .semibold))
                         Text(kind.subtitle)
-                            .font(.app(size: 11.5))
+                            .font(.app(.body))
                             .foregroundStyle(.secondary)
                     }
 
@@ -73,7 +73,7 @@ struct WorkspacePickerView: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(L10n.workspaceSampleTasksLabel)
-                        .font(.app(size: 10.5, weight: .semibold))
+                        .font(.app(.caption, weight: .semibold))
                         .foregroundStyle(.tertiary)
                         .textCase(.uppercase)
                         .kerning(0.3)
@@ -84,7 +84,7 @@ struct WorkspacePickerView: View {
                                 .font(.app(size: 8))
                                 .foregroundStyle(.tertiary)
                             Text(task.title)
-                                .font(.app(size: 11.5))
+                                .font(.app(.body))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -103,7 +103,7 @@ struct WorkspacePickerView: View {
                         ),
                         systemImage: "checkmark.circle.fill"
                     )
-                    .font(.app(size: 11.5, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .foregroundStyle(SystemPalette.positive)
                     .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 } else {
@@ -112,7 +112,7 @@ struct WorkspacePickerView: View {
                             ? L10n.workspaceAlreadyApplied
                             : L10n.workspacePreview(newTags: preview.newTagCount, newTasks: preview.newTaskCount)
                     )
-                    .font(.app(size: 11.5))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .transition(.opacity)
                 }
@@ -144,7 +144,7 @@ struct WorkspacePickerView: View {
     private func tagRow(label: String, tags: [WorkspaceTagSpec]) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(label)
-                .font(.app(size: 10.5, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .foregroundStyle(.tertiary)
                 .textCase(.uppercase)
                 .kerning(0.3)

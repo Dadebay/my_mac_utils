@@ -136,7 +136,7 @@ struct SidebarView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("GlassDo")
-                    .font(.app(size: 16, weight: .bold))
+                    .font(.app(.titleLarge, weight: .bold))
                     .foregroundStyle(tiers.primary)
 
                 Text(L10n.appTagline)

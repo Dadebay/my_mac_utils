@@ -94,7 +94,7 @@ struct NetworkCard: View {
                 )
 
                 Text(L10n.networkHistoryHint)
-                    .font(.app(size: 10.5))
+                    .font(.app(.caption))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -281,13 +281,13 @@ struct BatteryCard: View {
                 )
 
             Text(L10n.batteryAdapterLabel)
-                .font(.app(size: 12.5, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 8)
 
             Text(adapterStatus)
-                .font(.app(size: 12.5, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .foregroundStyle(
                     battery.isAdapterConnected ? Color.primary : Color.secondary.opacity(0.65)
                 )
@@ -610,7 +610,7 @@ struct ProcessorCard: View {
                     VStack(alignment: .leading, spacing: 7) {
                         HStack(spacing: 6) {
                             Text(L10n.processorCoreActivityLabel)
-                                .font(.app(size: 11.5, weight: .semibold))
+                                .font(.app(.body, weight: .semibold))
                                 .foregroundStyle(.secondary)
 
                             Spacer(minLength: 4)

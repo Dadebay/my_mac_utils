@@ -166,7 +166,7 @@ struct PanelTaskListView: View {
             .buttonStyle(.pressScale(reduceMotion ? 1 : 0.92))
 
             Text(task.title)
-                .font(.app(size: 13.5, weight: .medium))
+                .font(.app(.headline, weight: .medium))
                 .strikethrough(isChecked)
                 .foregroundStyle(isChecked ? .secondary : .primary)
                 // Dar panelde tek satır çoğu başlığı ortasından kesiyordu.
@@ -218,7 +218,7 @@ struct PanelTaskListView: View {
                 .foregroundStyle(.tertiary)
 
             Text(showCompleted ? L10n.emptyCompleted : L10n.emptyTasks)
-                .font(.app(size: 11.5, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)

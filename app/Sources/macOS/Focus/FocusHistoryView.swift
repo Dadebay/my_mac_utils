@@ -68,11 +68,11 @@ struct FocusHistoryView: View {
             ForEach(Array(perTaskTotals.enumerated()), id: \.offset) { pair in
                 HStack(spacing: 8) {
                     Text(pair.element.task.title)
-                        .font(.app(size: 12.5))
+                        .font(.app(.bodyLarge))
                         .lineLimit(1)
                     Spacer(minLength: 8)
                     Text(minuteLabel(pair.element.minutes))
-                        .font(.app(size: 12.5, weight: .medium))
+                        .font(.app(.bodyLarge, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
@@ -96,7 +96,7 @@ struct FocusHistoryView: View {
                 .font(.app(size: 26, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.focusNoHistory)
-                .font(.app(size: 12.5))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

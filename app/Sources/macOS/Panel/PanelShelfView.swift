@@ -508,7 +508,7 @@ struct PanelShelfView: View {
                 .font(.app(.headline, weight: .semibold))
 
             Text(L10n.shelfEmptyBody)
-                .font(.app(size: 11.5))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -540,7 +540,7 @@ struct PanelShelfView: View {
 
             Button(L10n.shelfClearSearch) { searchText = "" }
                 .buttonStyle(.plain)
-                .font(.app(size: 11.5, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .foregroundStyle(Color.accentColor)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1348,7 +1348,7 @@ private struct ShelfQuickLook: View {
                     .truncationMode(.middle)
 
                 Text(ShelfFormat.metadata(item))
-                    .font(.app(size: 11.5))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
             }
 

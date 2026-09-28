@@ -184,13 +184,13 @@ struct PanelMemoryView: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(segment.label)
-                        .font(.app(size: 9.5, weight: .medium))
+                        .font(.app(.micro, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
 
                     Text(Self.text(segment.bytes))
-                        .font(.app(size: 11.5, weight: .semibold))
+                        .font(.app(.body, weight: .semibold))
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                 }
@@ -254,7 +254,7 @@ struct PanelMemoryView: View {
                         .foregroundStyle(SystemPalette.warning)
 
                     Text(message)
-                        .font(.app(size: 9.5))
+                        .font(.app(.micro))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 

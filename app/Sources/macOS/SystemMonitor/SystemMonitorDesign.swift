@@ -339,7 +339,7 @@ struct StatLegend: View {
                             .frame(width: 7, height: 7)
 
                         Text(item.label)
-                            .font(.app(size: 12.5, weight: .medium))
+                            .font(.app(.bodyLarge, weight: .medium))
                             .lineLimit(1)
                     }
 

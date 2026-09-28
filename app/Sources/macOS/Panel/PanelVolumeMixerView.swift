@@ -118,7 +118,7 @@ struct PanelVolumeMixerView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .font(.app(size: 11.5, weight: .medium))
+            .font(.app(.body, weight: .medium))
         }
     }
 

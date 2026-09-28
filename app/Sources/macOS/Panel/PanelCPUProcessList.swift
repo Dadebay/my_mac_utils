@@ -41,7 +41,7 @@ struct PanelCPUProcessList: View {
                         .font(.system(size: 10))
                         .foregroundStyle(SystemPalette.warning)
                     Text(message)
-                        .font(.app(size: 10.5))
+                        .font(.app(.caption))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
@@ -62,12 +62,12 @@ struct PanelCPUProcessList: View {
                 HStack(spacing: 7) {
                     ProgressView().controlSize(.small)
                     Text(L10n.s("Ölçülüyor…", "Measuring…", "Измерение…"))
-                        .font(.app(size: 10.5))
+                        .font(.app(.caption))
                         .foregroundStyle(.tertiary)
                 }
             } else if monitor.processes.isEmpty {
                 Text(L10n.s("İşlemciyi yoran bir süreç yok.", "Nothing is keeping the CPU busy.", "Ничто не нагружает ЦП."))
-                    .font(.app(size: 10.5))
+                    .font(.app(.caption))
                     .foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 3) {
@@ -168,7 +168,7 @@ private struct CPUProcessRow: View {
             Spacer(minLength: 4)
 
             Text(String(format: "%.1f%%", usage.percent))
-                .font(.app(size: 11.5, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)

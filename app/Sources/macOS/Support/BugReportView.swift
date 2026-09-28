@@ -163,7 +163,7 @@ struct BugReportView: View {
                     "Version and system details are attached automatically.",
                     "Сведения о версии и системе прикрепляются автоматически."
                 ))
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.secondary)
             }
 
@@ -180,7 +180,7 @@ struct BugReportView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title)
-                .font(.app(size: 10.5, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
             content()
         }
@@ -230,7 +230,7 @@ struct BugReportView: View {
         HStack(spacing: 8) {
             Toggle(isOn: $includeDiagnostics) {
                 Text(L10n.s("Teknik bilgileri ekle", "Attach technical details", "Прикрепить техническую информацию"))
-                    .font(.app(size: 11.5))
+                    .font(.app(.body))
             }
             .toggleStyle(.checkbox)
             .disabled(phase == .sending)
@@ -349,7 +349,7 @@ struct BugReportView: View {
                 "Thank you. The number of devices reporting the same bug sets the priority.",
                 "Спасибо. Число устройств с той же ошибкой определяет приоритет."
             ))
-            .font(.app(size: 11.5))
+            .font(.app(.body))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)

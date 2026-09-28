@@ -126,7 +126,7 @@ struct SpeedTestSection: View {
             localRow
 
             Text(L10n.publicIPSourceNote)
-                .font(.app(size: 9.5))
+                .font(.app(.micro))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -182,7 +182,7 @@ struct SpeedTestSection: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.app(size: 10.5))
+                    .font(.app(.caption))
                     .foregroundStyle(.tertiary)
 
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -198,7 +198,7 @@ struct SpeedTestSection: View {
 
                     if let detail, !detail.isEmpty {
                         Text(detail)
-                            .font(.app(size: 10.5, weight: .medium))
+                            .font(.app(.caption, weight: .medium))
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
@@ -286,7 +286,7 @@ struct SpeedTestSection: View {
             }
 
             Text(L10n.speedTestTrafficNote)
-                .font(.app(size: 9.5))
+                .font(.app(.micro))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -359,7 +359,7 @@ struct SpeedTestSection: View {
                     .background(Circle().fill(color.opacity(0.16)))
 
                 Text(label)
-                    .font(.app(size: 9.5, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
@@ -388,7 +388,7 @@ struct SpeedTestSection: View {
 
     private func message(_ text: String, isError: Bool = false) -> some View {
         Text(text)
-            .font(.app(size: 10.5))
+            .font(.app(.caption))
             .foregroundStyle(isError ? Color.red.opacity(0.9) : .secondary)
             .fixedSize(horizontal: false, vertical: true)
     }

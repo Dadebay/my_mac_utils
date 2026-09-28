@@ -273,7 +273,7 @@ struct PanelProcessorView: View {
             }
 
             Text(SystemFormat.memoryBytes(bytes))
-                .font(.app(size: 10.5, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -286,11 +286,11 @@ struct PanelProcessorView: View {
         HStack(spacing: 7) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text(label)
-                .font(.app(size: 10.5, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
             Spacer(minLength: 2)
             Text(value)
-                .font(.app(size: 12.5, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
         }
@@ -379,7 +379,7 @@ struct PanelBatteryView: View {
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("\(battery.charge) / \(battery.currentCapacity) mAh")
-                        .font(.app(size: 11.5, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
@@ -422,7 +422,7 @@ struct PanelBatteryView: View {
     private func metric(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(.app(size: 9.5, weight: .medium))
+                .font(.app(.micro, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
@@ -443,13 +443,13 @@ struct PanelBatteryView: View {
                 .foregroundStyle(battery.isAdapterConnected ? SystemPalette.positive : .secondary)
 
             Text(L10n.batteryAdapterLabel)
-                .font(.app(size: 11.5, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 6)
 
             Text(adapterStatus)
-                .font(.app(size: 11.5, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .lineLimit(1)
         }
     }
@@ -639,7 +639,7 @@ struct PanelDiskView: View {
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("Disk used")
-                        .font(.app(size: 11.5, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
 
@@ -679,7 +679,7 @@ struct PanelDiskView: View {
             HStack(spacing: 5) {
                 Circle().fill(tint).frame(width: 6, height: 6)
                 Text(label)
-                    .font(.app(size: 9.5, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -721,13 +721,13 @@ struct PanelDiskView: View {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text(L10n.storageScanning)
-                        .font(.app(size: 10.5, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, minHeight: 64)
             } else if analyzer.items.isEmpty {
                 Text(analyzer.errorMessage ?? L10n.storageNoItems)
-                    .font(.app(size: 10.5, weight: .medium))
+                    .font(.app(.caption, weight: .medium))
                     .foregroundStyle(analyzer.errorMessage == nil ? Color.secondary : SystemPalette.danger)
                     .frame(maxWidth: .infinity, minHeight: 54)
             } else {
@@ -741,7 +741,7 @@ struct PanelDiskView: View {
             if let error = analyzer.errorMessage, !analyzer.items.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(error)
-                        .font(.app(size: 9.5, weight: .medium))
+                        .font(.app(.micro, weight: .medium))
                         .foregroundStyle(SystemPalette.danger)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -757,7 +757,7 @@ struct PanelDiskView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .font(.app(size: 9.5, weight: .semibold))
+                        .font(.app(.micro, weight: .semibold))
                         .foregroundStyle(Color.accentColor)
 
                         if let blocked = analyzer.blockedItem {
@@ -765,7 +765,7 @@ struct PanelDiskView: View {
                                 analyzer.reveal(blocked)
                             }
                             .buttonStyle(.plain)
-                            .font(.app(size: 9.5, weight: .medium))
+                            .font(.app(.micro, weight: .medium))
                             .foregroundStyle(.secondary)
                         }
 
@@ -797,7 +797,7 @@ struct PanelDiskView: View {
             Spacer(minLength: 4)
 
             Text(SystemFormat.bytes(item.allocatedSize))
-                .font(.app(size: 10.5, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
@@ -878,7 +878,7 @@ private func panelHeader(
                 .font(.app(.titleLarge, weight: .semibold))
             if let subtitle {
                 Text(subtitle)
-                    .font(.app(size: 10.5, weight: .medium))
+                    .font(.app(.caption, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -898,7 +898,7 @@ private func compactPill(_ label: String, _ value: String, tint: Color? = nil) -
             .foregroundStyle(tint ?? Color.primary)
             .monospacedDigit()
     }
-    .font(.app(size: 10.5, weight: .semibold))
+    .font(.app(.caption, weight: .semibold))
     .padding(.horizontal, 8)
     .padding(.vertical, 5)
     .background {
@@ -1050,7 +1050,7 @@ struct PanelNetworkView: View {
                     ? L10n.networkHistoryHintAgentEnabled
                     : L10n.networkHistoryHint
             )
-                .font(.app(size: 9.5))
+                .font(.app(.micro))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1079,7 +1079,7 @@ struct PanelNetworkView: View {
                         Text(network.localAddress)
                     }
                 }
-                .font(.app(size: 10.5, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             }
@@ -1161,7 +1161,7 @@ struct PanelNetworkView: View {
                 Spacer(minLength: 4)
 
                 Text(SystemFormat.rate(rate))
-                    .font(.app(size: 10.5, weight: .medium))
+                    .font(.app(.caption, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -1219,13 +1219,13 @@ struct PanelNetworkView: View {
     private func historyItem(_ label: String, _ bytes: UInt64) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(.app(size: 9.5, weight: .medium))
+                .font(.app(.micro, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
             Text(SystemFormat.bytes(bytes))
-                .font(.app(size: 11.5, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -1332,7 +1332,7 @@ struct PanelNetworkProcessList: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(L10n.networkProcessesHint)
-                    .font(.app(size: 9.5))
+                    .font(.app(.micro))
                     .foregroundStyle(.tertiary)
                     .lineLimit(2)
             }
@@ -1350,7 +1350,7 @@ struct PanelNetworkProcessList: View {
             }
 
             Text(L10n.networkProcessesHint)
-                .font(.app(size: 9.5))
+                .font(.app(.micro))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1364,7 +1364,7 @@ struct PanelNetworkProcessList: View {
                 .foregroundStyle(.tertiary)
 
             Text(text)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1405,7 +1405,7 @@ private struct PanelNetworkProcessRow: View {
 
             VStack(alignment: .trailing, spacing: 3) {
                 Text(SystemFormat.bytes(usage.total))
-                    .font(.app(size: 11.5, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
                     .lineLimit(1)

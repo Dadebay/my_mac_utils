@@ -29,7 +29,7 @@ struct ContextAwareSettingsSection: View {
             ) {
                 Toggle(isOn: $isEnabled) {
                     Text(L10n.s("Etkin", "Enabled", "Включено"))
-                        .font(.app(size: 12.5))
+                        .font(.app(.bodyLarge))
                 }
                 .toggleStyle(.switch)
                 .onChange(of: isEnabled) { _, newValue in
@@ -91,7 +91,7 @@ struct ContextAwareSettingsSection: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(rule.displayName ?? rule.bundleIdentifier)
-                    .font(.app(size: 12.5, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .lineLimit(1)
                 Text(targetLabel(rule))
                     .font(.app(.body))

@@ -166,7 +166,7 @@ struct PanelFolderBrowserView: View {
                 .foregroundStyle(SystemPalette.warning)
 
             Text(message)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -236,7 +236,7 @@ struct PanelFolderBrowserView: View {
                 .foregroundStyle(.secondary)
 
             Text(L10n.dropFilesHere)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)

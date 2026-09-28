@@ -281,7 +281,7 @@ struct PanelFolderShelfView: View {
                 .foregroundStyle(SystemPalette.warning)
 
             Text(message)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 

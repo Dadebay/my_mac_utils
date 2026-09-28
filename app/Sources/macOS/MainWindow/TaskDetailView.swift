@@ -126,7 +126,7 @@ struct TaskDetailView: View {
                 if task.dueDate == nil {
                     Button(L10n.noDueDate) { task.dueDate = .now }
                         .buttonStyle(.plain)
-                        .font(.app(size: 12.5, weight: .medium))
+                        .font(.app(.bodyLarge, weight: .medium))
                         .foregroundStyle(.secondary)
                 } else {
                     DatePicker(
@@ -310,7 +310,7 @@ struct TaskDetailView: View {
                 .frame(width: 18, alignment: .center)
 
             Text(attachment.displayName)
-                .font(.app(size: 12.5))
+                .font(.app(.bodyLarge))
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -391,7 +391,7 @@ struct TaskDetailView: View {
     private func detailRow(icon: String, text: String) -> some View {
         HStack(spacing: 9) {
             Image(systemName: icon)
-                .font(.app(size: 12.5, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .center)
             Text(text)

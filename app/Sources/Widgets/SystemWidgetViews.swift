@@ -210,7 +210,7 @@ struct BatteryWidgetView: View {
                 .monospacedDigit()
                 .lineLimit(1)
             Text(label)
-                .font(.app(size: 9.5))
+                .font(.app(.micro))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }

@@ -74,7 +74,7 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.battery.healthFraction))
                         .overviewValue(size: 27)
                     Text("\(snapshot.battery.currentCapacity) / \(snapshot.battery.designCapacity) mAh")
-                        .font(.app(size: 9.5, weight: .medium))
+                        .font(.app(.micro, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -107,12 +107,12 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.disk.usedFraction, decimals: 1))
                         .overviewValue(size: 25)
                     Text(WidgetFormat.bytes(snapshot.disk.used))
-                        .font(.app(size: 10.5, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
                     Text(WidgetFormat.bytes(snapshot.disk.total))
-                        .font(.app(size: 10.5, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
@@ -150,7 +150,7 @@ struct SystemOverviewWidgetView: View {
                         "Core \(busiest.number) • \(percent)%",
                         "Ядро \(busiest.number) • \(percent)%"
                     ))
-                    .font(.app(size: 9.5, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 }
@@ -183,7 +183,7 @@ struct SystemOverviewWidgetView: View {
                     Text(WidgetFormat.percent(snapshot.memory.usedFraction, decimals: 1))
                         .overviewValue(size: 25)
                     Text("\(WidgetFormat.memoryBytes(snapshot.memory.used)) / \(WidgetFormat.memoryBytes(snapshot.memory.total))")
-                        .font(.app(size: 9.5, weight: .medium))
+                        .font(.app(.micro, weight: .medium))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -268,7 +268,7 @@ struct SystemOverviewWidgetView: View {
         VStack(alignment: .leading, spacing: 1) {
             Text(label).overviewCaption()
             Text(value)
-                .font(.app(size: 11.5, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -280,7 +280,7 @@ struct SystemOverviewWidgetView: View {
             Image(systemName: symbol)
             Text(value).lineLimit(1)
         }
-        .font(.app(size: 9.5, weight: .semibold))
+        .font(.app(.micro, weight: .semibold))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
@@ -330,7 +330,7 @@ struct SystemOverviewWidgetView: View {
 
 private extension Text {
     func overviewCaption() -> some View {
-        font(.app(size: 9.5, weight: .medium))
+        font(.app(.micro, weight: .medium))
             .foregroundStyle(.secondary)
     }
 

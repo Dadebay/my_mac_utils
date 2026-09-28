@@ -36,11 +36,11 @@ struct MenuBarSettingsSection: View {
             ) {
                 HStack(spacing: 8) {
                     Text(L10n.s("Görünen ölçer", "Visible readings", "Показателей"))
-                        .font(.app(size: 12.5))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                     Text("\(enabled.count)")
-                        .font(.app(size: 12.5, weight: .semibold))
+                        .font(.app(.bodyLarge, weight: .semibold))
                         .monospacedDigit()
                 }
                 .padding(.vertical, 2)
@@ -96,7 +96,7 @@ struct MenuBarSettingsSection: View {
                     }
 
                 Text(kind.title)
-                    .font(.app(size: 10.5))
+                    .font(.app(.caption))
                     .foregroundStyle(isOn ? .primary : .secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)

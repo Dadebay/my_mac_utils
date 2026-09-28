@@ -147,7 +147,7 @@ struct AboutGlassDoView: View {
                 .background(Capsule().fill(Color.primary.opacity(0.06)))
 
             Text(copyrightString)
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -287,7 +287,7 @@ struct AboutGlassDoView: View {
                     )
                 }
             }
-            .font(.app(size: 11.5))
+            .font(.app(.body))
             .foregroundStyle(.secondary)
             .lineLimit(1)
 
@@ -296,7 +296,7 @@ struct AboutGlassDoView: View {
                 "Statistics are kept only on this Mac.",
                 "Статистика хранится только на этом Mac."
             ))
-            .font(.app(size: 10.5))
+            .font(.app(.caption))
             .foregroundStyle(.tertiary)
         }
         .accessibilityElement(children: .combine)
@@ -342,7 +342,7 @@ struct AboutGlassDoView: View {
     private func summaryCard(title: String, value: String, isNumeric: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.app(size: 10.5, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(value)
@@ -367,7 +367,7 @@ struct AboutGlassDoView: View {
     private var miniChart: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.s("Son 7 Gün", "Last 7 Days", "Последние 7 дней"))
-                .font(.app(size: 10.5, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
 
             let maxTotal = max(periodSnapshot.dailyTotals.map(\.total).max() ?? 0, 1)
@@ -440,7 +440,7 @@ struct AboutGlassDoView: View {
                 "Open widgets from the edge rail to see your activity here.",
                 "Откройте виджеты на боковой панели, чтобы увидеть здесь свою активность."
             ))
-            .font(.app(size: 11.5))
+            .font(.app(.body))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
@@ -457,7 +457,7 @@ struct AboutGlassDoView: View {
                 "Usage statistics stay on this Mac and are never uploaded.",
                 "Статистика использования остаётся на этом Mac и никогда не загружается."
             ))
-            .font(.app(size: 10.5))
+            .font(.app(.caption))
             .foregroundStyle(.tertiary)
             .fixedSize(horizontal: false, vertical: true)
 
@@ -502,7 +502,7 @@ private struct AppLinkRow: View {
                     .frame(width: 18)
 
                 Text(link.title)
-                    .font(.app(size: 12.5))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 8)
@@ -556,7 +556,7 @@ private struct UsageBarRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 5) {
                     Text(usage.feature.title)
-                        .font(.app(size: 12.5))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(isUnused ? .secondary : .primary)
 
                     if isTopUsed {
@@ -574,7 +574,7 @@ private struct UsageBarRow: View {
                         .foregroundStyle(isUnused ? .tertiary : .secondary)
                         .contentTransition(reduceMotion ? .identity : .numericText())
                     Text(percentText)
-                        .font(.app(size: 10.5, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                         .frame(width: 34, alignment: .trailing)

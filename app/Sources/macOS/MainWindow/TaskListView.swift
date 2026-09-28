@@ -140,7 +140,7 @@ struct TaskListView: View {
 
             TextField(L10n.mainWindowQuickAddPlaceholder, text: $newTaskTitle)
                 .textFieldStyle(.plain)
-                .font(.app(size: 13.5))
+                .font(.app(.headline))
                 .focused($quickAddFocused)
                 .onSubmit(addTask)
 

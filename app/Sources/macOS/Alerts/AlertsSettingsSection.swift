@@ -108,7 +108,7 @@ struct AlertsSettingsSection: View {
                                 )) {
                                     SystemAlertService.openFullDiskAccessSettings()
                                 }
-                                .font(.app(size: 11.5))
+                                .font(.app(.body))
                                 .fixedSize()
                                 .padding(.top, 2)
                             }
@@ -119,7 +119,7 @@ struct AlertsSettingsSection: View {
                                     "Right now: \(SystemAlertService.formatted(trashSize))",
                                     "Сейчас: \(SystemAlertService.formatted(trashSize))"
                                 ))
-                                .font(.app(size: 11.5))
+                                .font(.app(.body))
                                 .foregroundStyle(.secondary)
 
                                 Spacer(minLength: 8)
@@ -129,7 +129,7 @@ struct AlertsSettingsSection: View {
                                         NSWorkspace.shared.open(url)
                                     }
                                 }
-                                .font(.app(size: 11.5))
+                                .font(.app(.body))
                                 .fixedSize()
                             }
                             .padding(.top, 2)

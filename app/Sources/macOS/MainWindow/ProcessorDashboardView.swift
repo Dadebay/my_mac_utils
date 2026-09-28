@@ -271,7 +271,7 @@ struct ProcessorDashboardView: View {
 
             if showsLabel {
                 Text("\(Int((value * 100).rounded()))%")
-                    .font(.app(size: 9.5, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

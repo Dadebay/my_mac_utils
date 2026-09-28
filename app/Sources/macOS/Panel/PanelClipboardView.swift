@@ -60,7 +60,7 @@ struct PanelClipboardView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.clipboardEmptyHint)
-                .font(.app(size: 11.5))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

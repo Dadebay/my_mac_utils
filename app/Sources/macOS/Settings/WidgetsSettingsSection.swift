@@ -91,7 +91,7 @@ struct WidgetsSettingsSection: View {
           "Нажмите правой кнопкой на рабочем столе, выберите «Изменить виджеты» и найдите GlassDo."
         )
       )
-      .font(.app(size: 12.5))
+      .font(.app(.bodyLarge))
       .foregroundStyle(.secondary)
       .fixedSize(horizontal: false, vertical: true)
 
@@ -210,14 +210,14 @@ struct WidgetsSettingsSection: View {
   private func previewGroupHeader(_ title: String, detail: String?) -> some View {
     HStack(spacing: 8) {
       Text(title)
-        .font(.app(size: 11.5, weight: .semibold))
+        .font(.app(.body, weight: .semibold))
         .foregroundStyle(.secondary)
 
       Spacer(minLength: 8)
 
       if let detail {
         Text(detail)
-          .font(.app(size: 10.5, weight: .medium))
+          .font(.app(.caption, weight: .medium))
           .foregroundStyle(.tertiary)
           .padding(.horizontal, 7)
           .padding(.vertical, 3)
@@ -233,7 +233,7 @@ struct WidgetsSettingsSection: View {
         .foregroundStyle(.secondary)
         .frame(width: 16)
       Text(text)
-        .font(.app(size: 11.5))
+        .font(.app(.body))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }

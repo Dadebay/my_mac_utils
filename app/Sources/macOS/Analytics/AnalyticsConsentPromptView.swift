@@ -35,7 +35,7 @@ struct AnalyticsConsentPromptView: View {
                         "We improve GlassDo by looking at what actually gets used. This is entirely optional and can be changed later in Settings.",
                         "Мы улучшаем GlassDo, глядя на то, что действительно используется. Это полностью необязательно и может быть изменено позже в настройках."
                     ))
-                    .font(.app(size: 12.5))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 }

@@ -336,7 +336,7 @@ private struct PoppedNoteContent: View {
 
                 Button(L10n.noteTextSizeReset) { fontScale = NoteAppearance.defaultFontScale }
                     .buttonStyle(.plain)
-                    .font(.app(size: 10.5))
+                    .font(.app(.caption))
                     .foregroundStyle(.secondary)
                     .disabled(abs(fontScale - NoteAppearance.defaultFontScale) < 0.001)
             }
@@ -437,7 +437,7 @@ private struct PoppedNoteContent: View {
     private func sectionLabel(_ text: String) -> some View {
         HStack {
             Text(text)
-                .font(.app(size: 9.5, weight: .semibold))
+                .font(.app(.micro, weight: .semibold))
                 .foregroundStyle(.tertiary)
                 .kerning(0.5)
                 .textCase(.uppercase)
@@ -454,7 +454,7 @@ private struct PoppedNoteContent: View {
                 .font(.system(size: 22, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.emptyTasks)
-                .font(.app(size: 11.5))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -495,7 +495,7 @@ private struct PoppedNoteContent: View {
             Text(selection.coversWholeBlocks
                  ? L10n.noteSelectedCount(selectedBlockIDs.count)
                  : L10n.s("Seçili metin", "Selected text", "Выделенный текст"))
-                .font(.app(size: 10.5))
+                .font(.app(.caption))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
 
@@ -732,7 +732,7 @@ private struct PoppedNoteContent: View {
 
                 TextField(L10n.mainWindowQuickAddPlaceholder, text: $newTitle)
                     .textFieldStyle(.plain)
-                    .font(.app(size: 12.5))
+                    .font(.app(.bodyLarge))
                     .focused($addFocused)
                     .onSubmit(addTask)
             }
@@ -970,7 +970,7 @@ private struct NoteRow: View {
 
         case .numbered:
             Text("\(ordinal).")
-                .font(.app(size: 11.5, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.top, 1)

@@ -97,7 +97,7 @@ struct MenuBarPopoverView: View {
                 if let onOpenApp {
                     Button(L10n.s("Uygulamada Aç", "Open in App", "Открыть в приложении"), action: onOpenApp)
                         .buttonStyle(.plain)
-                        .font(.app(size: 11.5, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                 }
 
                 Spacer(minLength: 8)
@@ -108,7 +108,7 @@ struct MenuBarPopoverView: View {
                         action: onRemove
                     )
                     .buttonStyle(.plain)
-                    .font(.app(size: 11.5))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                 }
             }
