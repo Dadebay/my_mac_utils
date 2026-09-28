@@ -75,7 +75,7 @@ struct NetworkCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L10n.networkTodayLabel)
-                        .font(.app(size: 13))
+                        .font(.app(.headline))
                         .foregroundStyle(.secondary)
 
                     StatHeadline(
@@ -134,16 +134,16 @@ struct NetworkActivityCard: View {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(L10n.networkConnectionLabel)
-                            .font(.app(size: 12))
+                            .font(.app(.bodyLarge))
                             .foregroundStyle(.secondary)
 
                         Text(network.interfaceName.isEmpty ? "—" : network.interfaceName)
-                            .font(.app(size: 14, weight: .semibold))
+                            .font(.app(.title, weight: .semibold))
                             .lineLimit(1)
 
                         if !network.localAddress.isEmpty {
                             Label(network.localAddress, systemImage: "network")
-                                .font(.app(size: 11))
+                                .font(.app(.body))
                                 .foregroundStyle(.tertiary)
                                 .labelStyle(.titleAndIcon)
                                 .lineLimit(1)
@@ -183,7 +183,7 @@ struct NetworkActivityCard: View {
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.app(size: 15, weight: .semibold))
+                .font(.app(.titleLarge, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -617,7 +617,7 @@ struct ProcessorCard: View {
 
                             if let busiest = PerCoreLoadChart.busiest(in: cpu.perCoreUsage) {
                                 Text(L10n.processorBusiestCore(busiest.number, busiest.usage))
-                                    .font(.app(size: 11, weight: .medium))
+                                    .font(.app(.body, weight: .medium))
                                     .monospacedDigit()
                                     .foregroundStyle(.tertiary)
                                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -662,7 +662,7 @@ func unavailable(_ message: String, symbolName: String) -> some View {
             .font(.system(size: 26, weight: .light))
             .foregroundStyle(.tertiary)
         Text(message)
-            .font(.app(size: 12))
+            .font(.app(.bodyLarge))
             .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity)

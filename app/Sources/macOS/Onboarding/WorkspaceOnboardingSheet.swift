@@ -14,7 +14,7 @@ struct WorkspaceOnboardingSheet: View {
                     Text(L10n.workspaceOnboardingTitle)
                         .font(.app(size: 20, weight: .bold))
                     Text(L10n.workspaceOnboardingSubtitle)
-                        .font(.app(size: 13))
+                        .font(.app(.headline))
                         .foregroundStyle(.secondary)
                 }
 

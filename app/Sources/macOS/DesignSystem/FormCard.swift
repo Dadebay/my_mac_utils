@@ -27,7 +27,7 @@ struct FormCard<Content: View>: View {
         VStack(alignment: .leading, spacing: FormCardMetrics.spacing) {
             if let title {
                 Text(title)
-                    .font(.app(size: 12, weight: .semibold))
+                    .font(.app(.bodyLarge, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
 
@@ -35,7 +35,7 @@ struct FormCard<Content: View>: View {
 
             if let footnote {
                 Text(footnote)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }

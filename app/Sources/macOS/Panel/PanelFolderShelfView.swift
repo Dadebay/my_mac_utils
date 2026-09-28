@@ -136,12 +136,12 @@ struct PanelFolderShelfView: View {
                 }
 
             Text(L10n.shelfTitle)
-                .font(.app(size: 15, weight: .semibold))
+                .font(.app(.titleLarge, weight: .semibold))
 
             Spacer(minLength: 4)
 
             Text("\(folders.count)")
-                .font(.app(size: 11, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .contentTransition(reduceMotion ? .identity : .numericText())
@@ -188,7 +188,7 @@ struct PanelFolderShelfView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.emptyFoldersHint)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -215,7 +215,7 @@ struct PanelFolderShelfView: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.secondary)
                     Text(L10n.addFolder)
-                        .font(.app(size: 12))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 0)
                 }
@@ -239,14 +239,14 @@ struct PanelFolderShelfView: View {
 
             TextField(L10n.folderNameLabel, text: $draftName)
                 .textFieldStyle(.plain)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .focused($isDraftFocused)
                 .onSubmit(createFolder)
                 .onExitCommand(perform: cancelCreate)
 
             Button(action: createFolder) {
                 Text(L10n.create)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
@@ -469,7 +469,7 @@ private struct FolderRow: View {
                 if isRenaming {
                     TextField("", text: $renameDraft)
                         .textFieldStyle(.plain)
-                        .font(.app(size: 12, weight: .medium))
+                        .font(.app(.bodyLarge, weight: .medium))
                         .focused($isRenameFocused)
                         .onSubmit(onCommitRename)
                         .onExitCommand(perform: onCancelRename)
@@ -477,12 +477,12 @@ private struct FolderRow: View {
                 } else {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(folder.name)
-                            .font(.app(size: 12, weight: .medium))
+                            .font(.app(.bodyLarge, weight: .medium))
                             .lineLimit(1)
                             .truncationMode(.middle)
 
                         Text(subtitle)
-                            .font(.app(size: 10))
+                            .font(.app(.caption))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }

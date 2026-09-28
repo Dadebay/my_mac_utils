@@ -118,12 +118,12 @@ struct PanelFolderBrowserView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(folder.name)
-                    .font(.app(size: 14, weight: .semibold))
+                    .font(.app(.title, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
 
                 Text(L10n.fileCountLabel(items.count))
-                    .font(.app(size: 10))
+                    .font(.app(.caption))
                     .foregroundStyle(.secondary)
                     .contentTransition(reduceMotion ? .identity : .numericText())
             }
@@ -135,7 +135,7 @@ struct PanelFolderBrowserView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 9, weight: .bold))
                     Text(L10n.addFiles)
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                 }
                 .foregroundStyle(.primary)
                 .padding(.horizontal, 8)
@@ -150,7 +150,7 @@ struct PanelFolderBrowserView: View {
     private var importProgress: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(L10n.copyingFiles)
-                .font(.app(size: 10, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .foregroundStyle(.secondary)
 
             ProgressView(value: Double(importedCount), total: Double(max(importTotal, 1)))
@@ -232,7 +232,7 @@ struct PanelFolderBrowserView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.emptyFolder)
-                .font(.app(size: 12, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
                 .foregroundStyle(.secondary)
 
             Text(L10n.dropFilesHere)
@@ -390,12 +390,12 @@ private struct FileRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
 
                 Text(subtitle)
-                    .font(.app(size: 10))
+                    .font(.app(.caption))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -501,7 +501,7 @@ private struct FilePreviewOverlay: View {
                         .foregroundStyle(.secondary)
 
                     Text(item.name)
-                        .font(.app(size: 12, weight: .semibold))
+                        .font(.app(.bodyLarge, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.middle)
 
@@ -520,7 +520,7 @@ private struct FilePreviewOverlay: View {
                 body(for: item)
 
                 Text(SystemFormat.bytes(item.size))
-                    .font(.app(size: 10))
+                    .font(.app(.caption))
                     .foregroundStyle(.tertiary)
             }
             .padding(12)

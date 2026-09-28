@@ -107,7 +107,7 @@ struct WidgetsSettingsSection: View {
   private var previewSection: some View {
     VStack(alignment: .leading, spacing: 10) {
       Text(L10n.previewGroup)
-        .font(.app(size: 11, weight: .semibold))
+        .font(.app(.body, weight: .semibold))
         .foregroundStyle(.secondary)
         .textCase(.uppercase)
         .kerning(0.4)

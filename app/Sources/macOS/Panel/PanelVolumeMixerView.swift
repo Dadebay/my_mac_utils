@@ -36,7 +36,7 @@ struct PanelVolumeMixerView: View {
                         controller.setOutputMuted(!controller.isOutputMuted)
                     } label: {
                         Image(systemName: controller.isOutputMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .font(.app(size: 12))
+                            .font(.app(.bodyLarge))
                             .frame(width: 18)
                     }
                     .buttonStyle(.plain)
@@ -53,7 +53,7 @@ struct PanelVolumeMixerView: View {
                     .disabled(controller.isOutputMuted)
 
                     Text("\(Int((volume * 100).rounded()))%")
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .frame(width: 34, alignment: .trailing)
@@ -62,7 +62,7 @@ struct PanelVolumeMixerView: View {
                 // Dijital çıkışlarda seviye cihazda ayarlanıyor; sahte bir
                 // kaydırıcı göstermek yerine sebebi yazılıyor.
                 Text(L10n.volumeNotAdjustable)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -98,7 +98,7 @@ struct PanelVolumeMixerView: View {
     ) -> some View {
         HStack(spacing: 8) {
             Text(label)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
 
             Spacer(minLength: 8)
@@ -130,7 +130,7 @@ struct PanelVolumeMixerView: View {
 
             if controller.playingApps.isEmpty {
                 Text(L10n.volumeNothingPlaying)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -139,7 +139,7 @@ struct PanelVolumeMixerView: View {
                 }
 
                 Text(L10n.volumePerAppNote)
-                    .font(.app(size: 10))
+                    .font(.app(.caption))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -150,7 +150,7 @@ struct PanelVolumeMixerView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 7) {
                 Text(app.name)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .lineLimit(1)
 
                 Spacer(minLength: 8)
@@ -160,7 +160,7 @@ struct PanelVolumeMixerView: View {
                         perApp.resetVolume(for: app.id)
                     } label: {
                         Image(systemName: "arrow.uturn.backward")
-                            .font(.app(size: 9, weight: .semibold))
+                            .font(.app(.micro, weight: .semibold))
                             .foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
@@ -181,7 +181,7 @@ struct PanelVolumeMixerView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.app(size: 10, weight: .semibold))
+            .font(.app(.caption, weight: .semibold))
             .foregroundStyle(.tertiary)
             .textCase(.uppercase)
             .kerning(0.4)

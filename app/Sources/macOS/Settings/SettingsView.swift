@@ -352,7 +352,7 @@ struct NetworkSettingsSection: View {
                 "Keep measuring while GlassDo is closed",
                 "Измерять, даже когда GlassDo закрыт"
               ))
-              .font(.app(size: 12, weight: .medium))
+              .font(.app(.bodyLarge, weight: .medium))
 
               Text(agentStatusText)
                 .font(.app(size: 10.5))
@@ -371,7 +371,7 @@ struct NetworkSettingsSection: View {
               agent.openLoginItemsSettings()
             }
             .buttonStyle(.plain)
-            .font(.app(size: 11, weight: .semibold))
+            .font(.app(.body, weight: .semibold))
             .foregroundStyle(Color.accentColor)
           }
 
@@ -419,7 +419,7 @@ struct NetworkSettingsSection: View {
             isConfirmingReset = true
           } label: {
             Text(L10n.s("Ağ Geçmişini Sıfırla…", "Reset Network History…", "Сбросить историю сети…"))
-              .font(.app(size: 12, weight: .medium))
+              .font(.app(.bodyLarge, weight: .medium))
           }
           .fixedSize()
         }
@@ -561,7 +561,7 @@ struct WindowSwitcherSettingsSection: View {
 
         HStack {
           Text(L10n.s("Tekrarlanan tuş", "Repeated key", "Повторяемая клавиша"))
-            .font(.app(size: 13))
+            .font(.app(.headline))
           Spacer(minLength: 12)
           ShortcutKeyRecorder(keyCode: $triggerKeyCode, keyLabel: $triggerKeyLabel)
             .onChange(of: triggerKeyCode) { _, newValue in
@@ -584,7 +584,7 @@ struct WindowSwitcherSettingsSection: View {
                 ? L10n.s("Kapat", "Close", "Закрыть")
                 : L10n.s("Test Et", "Test It", "Протестировать")
             )
-            .font(.app(size: 12, weight: .medium))
+            .font(.app(.bodyLarge, weight: .medium))
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(
@@ -608,7 +608,7 @@ struct WindowSwitcherSettingsSection: View {
                 "Оставляет наложение открытым, пока вы его не закроете, если разрешения предоставлены"
               )
           )
-          .font(.app(size: 11))
+          .font(.app(.body))
           .foregroundStyle(.tertiary)
           // Uzun metin genişlik talep etmek yerine satır atlasın.
           .fixedSize(horizontal: false, vertical: true)
@@ -687,7 +687,7 @@ struct WindowSwitcherSettingsSection: View {
             refreshPermissions()
           } label: {
             Text(L10n.s("İzin İste", "Request Access", "Запросить доступ"))
-              .font(.app(size: 12, weight: .medium))
+              .font(.app(.bodyLarge, weight: .medium))
           }
           .buttonStyle(.plain)
           .foregroundStyle(Color.accentColor)
@@ -702,7 +702,7 @@ struct WindowSwitcherSettingsSection: View {
                 "Открыть системные настройки"
               )
             )
-            .font(.app(size: 12, weight: .medium))
+            .font(.app(.bodyLarge, weight: .medium))
           }
           .buttonStyle(.plain)
           .foregroundStyle(Color.accentColor)
@@ -756,7 +756,7 @@ struct WindowSwitcherSettingsSection: View {
         .foregroundStyle(isWarning ? Color.orange : Color.secondary)
 
       Text(text)
-        .font(.app(size: 11))
+        .font(.app(.body))
         .foregroundStyle(.secondary)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -782,7 +782,7 @@ struct WindowSwitcherSettingsSection: View {
   private func animationToggleRow(label: String, isOn: Binding<Bool>) -> some View {
     HStack {
       Text(label)
-        .font(.app(size: 13))
+        .font(.app(.headline))
       Spacer(minLength: 12)
       Toggle("", isOn: isOn)
         .toggleStyle(.switch)
@@ -800,9 +800,9 @@ struct WindowSwitcherSettingsSection: View {
 
       VStack(alignment: .leading, spacing: 1) {
         Text(title)
-          .font(.app(size: 13))
+          .font(.app(.headline))
         Text(subtitle)
-          .font(.app(size: 11))
+          .font(.app(.body))
           .foregroundStyle(.tertiary)
       }
 

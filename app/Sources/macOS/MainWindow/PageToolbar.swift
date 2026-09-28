@@ -37,7 +37,7 @@ struct PageToolbarBadge: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(entry.title)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
                     .kerning(-0.2)
                     .lineLimit(1)
 

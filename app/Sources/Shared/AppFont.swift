@@ -69,10 +69,61 @@ enum AppFont {
     }
 }
 
+/// Punto ölçeği.
+///
+/// `.app(size:)` dört yüz çağrının her birinde çiğ bir sayı alıyordu ve
+/// ortaya yirmi üç ayrı punto çıkmıştı (6.5, 7, 8.5, 9, 10, 11, 12, 13,
+/// 14, 15, 16, 17, 19, 20, 22…). Yeni bir etiket yazarken "kaç punto?"
+/// sorusunun cevabı yoktu; en yakın dosyadan kopyalanıyordu.
+///
+/// Basamaklar arayüzün gerçekten kullandığı yedi boydan geliyor. Dürüst
+/// olmak gerekirse bunlar tasarlanmış bir ölçekten daha sıkışık —
+/// 9'dan 15'e birer birer gidiyor, yani aralarında gerçek bir hiyerarşi
+/// yok, zamanla oluşmuş bir süreklilik var. Buradaki iş o sürekliliği
+/// adlandırıp yenilerinin eklenmesini durdurmak; basamak sayısını
+/// azaltmak ayrı bir iş ve çalışan uygulamaya bakmayı gerektiriyor
+/// (panel yüzeyleri dar, bir punto büyütmek satırı taşırabiliyor).
+enum TextSize {
+    /// Ölçer alt etiketi, rozet içi sayı.
+    case micro
+    /// İkincil, yardımcı metin.
+    case caption
+    /// Gövde metni — panelin varsayılanı, en kalabalık boy.
+    case body
+    /// Ana pencerenin gövde metni.
+    case bodyLarge
+    /// Kart ve bölüm başlığı.
+    case headline
+    /// Kenar çubuğu satırı, sayfa içi başlık.
+    case title
+    /// Sayfa başlığı.
+    case titleLarge
+
+    var points: CGFloat {
+        switch self {
+        case .micro: 9
+        case .caption: 10
+        case .body: 11
+        case .bodyLarge: 12
+        case .headline: 13
+        case .title: 14
+        case .titleLarge: 15
+        }
+    }
+}
+
 extension Font {
     /// Uygulamanın her yerinde `.system(size:weight:)` yerine bu kullanılıyor.
     /// Yazı tipi kararı arayüzün dört yüz ayrı noktasına dağılmasın diye
     /// tek bir geçit.
+    static func app(_ size: TextSize, weight: Font.Weight = .regular) -> Font {
+        AppFont.font(size: size.points, weight: weight)
+    }
+
+    /// Ölçek dışı boylar için. Ekran başına bir kez kullanılan iri
+    /// okumalar (panelin CPU yüzdesi, Hakkında sayfasının başlığı,
+    /// widget'ların büyük sayısı) burada kalıyor: her biri kendi dar
+    /// kutusuna göre seçilmiş ve ortak bir basamağa oturtmak taşırıyor.
     static func app(size: CGFloat, weight: Font.Weight = .regular) -> Font {
         AppFont.font(size: size, weight: weight)
     }

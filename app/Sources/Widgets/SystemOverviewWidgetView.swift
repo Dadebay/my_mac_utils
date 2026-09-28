@@ -127,7 +127,7 @@ struct SystemOverviewWidgetView: View {
             Spacer(minLength: 1)
 
             Text(snapshot.disk.volumeName.isEmpty ? "Macintosh HD" : snapshot.disk.volumeName)
-                .font(.app(size: 10, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .lineLimit(1)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
@@ -234,7 +234,7 @@ struct SystemOverviewWidgetView: View {
                 Text(entry.snapshot.isStale
                      ? s("Güncelleme bekleniyor", "Waiting for update", "Ожидание обновления")
                      : s("Canlı ölçümler", "Live measurements", "Актуальные данные"))
-                    .font(.app(size: 10, weight: .medium))
+                    .font(.app(.caption, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }

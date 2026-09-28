@@ -128,7 +128,7 @@ struct WorkspacePickerView: View {
                         onFinished?()
                     } label: {
                         Text(L10n.workspaceApply)
-                            .font(.app(size: 12, weight: .semibold))
+                            .font(.app(.bodyLarge, weight: .semibold))
                             .padding(.horizontal, 4)
                     }
                     .buttonStyle(.borderedProminent)
@@ -154,7 +154,7 @@ struct WorkspacePickerView: View {
             FlowLayoutWrap(spacing: 6) {
                 ForEach(tags, id: \.name) { tag in
                     Text(tag.name)
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background {

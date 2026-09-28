@@ -20,7 +20,7 @@ struct FocusHistoryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L10n.focusHistoryTitle)
-                .font(.app(size: 15, weight: .semibold))
+                .font(.app(.titleLarge, weight: .semibold))
 
             if finished.isEmpty {
                 emptyState
@@ -48,7 +48,7 @@ struct FocusHistoryView: View {
     private func totalTile(title: String, minutes: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
             Text(minuteLabel(minutes))
                 .font(.app(size: 17, weight: .semibold))
@@ -62,7 +62,7 @@ struct FocusHistoryView: View {
     private var perTaskBreakdown: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(L10n.focusPerTaskLabel)
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             ForEach(Array(perTaskTotals.enumerated()), id: \.offset) { pair in

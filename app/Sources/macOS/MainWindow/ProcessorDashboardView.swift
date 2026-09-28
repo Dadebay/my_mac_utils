@@ -92,7 +92,7 @@ struct ProcessorDashboardView: View {
         card {
             VStack(alignment: .leading, spacing: 14) {
                 Text(L10n.processorPerformanceEyebrow)
-                    .font(.app(size: 10, weight: .semibold))
+                    .font(.app(.caption, weight: .semibold))
                     .kerning(0.9)
                     .foregroundStyle(SystemPalette.accent)
 
@@ -102,7 +102,7 @@ struct ProcessorDashboardView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(verdict.body)
-                        .font(.app(size: 12))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -161,7 +161,7 @@ struct ProcessorDashboardView: View {
                     .minimumScaleFactor(0.7)
                     .contentTransition(reduceMotion ? .identity : .numericText())
                 Text(L10n.processorTotalUsageLabel)
-                    .font(.app(size: 9))
+                    .font(.app(.micro))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -181,7 +181,7 @@ struct ProcessorDashboardView: View {
                         .shadow(color: thermalTint.opacity(0.7), radius: 3)
 
                     Text(thermalText)
-                        .font(.app(size: 13, weight: .semibold))
+                        .font(.app(.headline, weight: .semibold))
 
                     Spacer(minLength: 4)
                 }
@@ -221,7 +221,7 @@ struct ProcessorDashboardView: View {
 
                 if cpu.perCoreUsage.isEmpty {
                     Text("—")
-                        .font(.app(size: 12))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, minHeight: 120)
                 } else {
@@ -369,7 +369,7 @@ struct ProcessorDashboardView: View {
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("\(battery.charge) / \(battery.currentCapacity) mAh")
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -428,7 +428,7 @@ struct ProcessorDashboardView: View {
                             .contentTransition(reduceMotion ? .identity : .numericText())
 
                         Text("\(battery.currentCapacity) / \(battery.designCapacity) mAh")
-                            .font(.app(size: 11))
+                            .font(.app(.body))
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -484,9 +484,9 @@ struct ProcessorDashboardView: View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
                 Text(subtitle)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
             }
 
@@ -494,7 +494,7 @@ struct ProcessorDashboardView: View {
 
             if let trailing {
                 Text(trailing)
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .foregroundStyle(.secondary)
             }
         }
@@ -509,7 +509,7 @@ struct ProcessorDashboardView: View {
             }
 
             Text(label)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -519,7 +519,7 @@ struct ProcessorDashboardView: View {
             // Sayı hiçbir koşulda kırpılmıyor: dar sütunda kısalması
             // gereken şey etiket, değer değil.
             Text(value)
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .fixedSize()
@@ -719,7 +719,7 @@ struct ProcessorAreaChart: View {
     /// şey söylemiyor; bu yazı söylüyor.
     private func scaleLabel(_ scale: Double) -> some View {
         Text("\(Int((scale * 100).rounded()))%")
-            .font(.app(size: 9, weight: .medium))
+            .font(.app(.micro, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(.tertiary)
             .padding(.leading, 2)

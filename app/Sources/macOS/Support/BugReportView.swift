@@ -133,7 +133,7 @@ struct BugReportView: View {
                 L10n.s("E-posta (isteğe bağlı)", "Email (optional)", "E-mail (необязательно)"),
                 text: $contact
             )
-            .font(.app(size: 12))
+            .font(.app(.bodyLarge))
             .textFieldStyle(.roundedBorder)
             .disabled(phase == .sending)
 
@@ -156,7 +156,7 @@ struct BugReportView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(L10n.s("Hata Bildir", "Report a Bug", "Сообщить об ошибке"))
-                    .font(.app(size: 14, weight: .semibold))
+                    .font(.app(.title, weight: .semibold))
 
                 Text(L10n.s(
                     "Sürüm ve sistem bilgisi rapora kendiliğinden eklenir.",
@@ -194,7 +194,7 @@ struct BugReportView: View {
         ZStack(alignment: .topLeading) {
             if text.wrappedValue.isEmpty {
                 Text(placeholder)
-                    .font(.app(size: 12))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 7)
@@ -202,7 +202,7 @@ struct BugReportView: View {
             }
 
             TextEditor(text: text)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .scrollContentBackground(.hidden)
                 .frame(height: height)
                 .padding(.horizontal, 2)
@@ -240,7 +240,7 @@ struct BugReportView: View {
                     showDiagnostics = true
                 } label: {
                     Text(L10n.s("neler gidiyor?", "what's included?", "что войдёт?"))
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .underline()
                 }
                 .buttonStyle(.plain)
@@ -261,7 +261,7 @@ struct BugReportView: View {
                 "No task titles, file names, note text, or clipboard contents are sent.",
                 "Названия задач, имена файлов, текст заметок и буфер обмена не отправляются."
             ))
-            .font(.app(size: 11))
+            .font(.app(.body))
             .foregroundStyle(.secondary)
             .fixedSize(horizontal: false, vertical: true)
 
@@ -342,7 +342,7 @@ struct BugReportView: View {
                 .foregroundStyle(.green)
 
             Text(L10n.s("Rapor gönderildi", "Report sent", "Отчёт отправлен"))
-                .font(.app(size: 14, weight: .semibold))
+                .font(.app(.title, weight: .semibold))
 
             Text(L10n.s(
                 "Teşekkürler. Aynı hatayı bildiren cihaz sayısı öncelik sırasını belirliyor.",
@@ -391,7 +391,7 @@ struct BugReportView: View {
                 .foregroundStyle(.orange)
 
             Text(message)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

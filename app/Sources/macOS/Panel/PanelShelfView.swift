@@ -231,7 +231,7 @@ struct PanelShelfView: View {
 
     private var countLabel: some View {
         Text(L10n.shelfItemCount(items.count))
-            .font(.app(size: 12))
+            .font(.app(.bodyLarge))
             .monospacedDigit()
             .foregroundStyle(.tertiary)
             .contentTransition(reduceMotion ? .identity : .numericText())
@@ -252,7 +252,7 @@ struct PanelShelfView: View {
 
             TextField(L10n.shelfSearchPlaceholder, text: $searchText)
                 .textFieldStyle(.plain)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .focused($searchFocused)
                 .onExitCommand(perform: closeSearch)
 
@@ -398,7 +398,7 @@ struct PanelShelfView: View {
             HugeIcon(name: .alert, size: 12)
 
             Text(message)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 6)
@@ -505,7 +505,7 @@ struct PanelShelfView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.shelfEmptyTitle)
-                .font(.app(size: 13, weight: .semibold))
+                .font(.app(.headline, weight: .semibold))
 
             Text(L10n.shelfEmptyBody)
                 .font(.app(size: 11.5))
@@ -515,7 +515,7 @@ struct PanelShelfView: View {
 
             Button(action: addFiles) {
                 Text(L10n.addFiles)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background {
@@ -533,7 +533,7 @@ struct PanelShelfView: View {
     private var noResultsState: some View {
         VStack(spacing: 7) {
             Text(L10n.shelfNoMatches(query))
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -557,7 +557,7 @@ struct PanelShelfView: View {
             HStack(spacing: 7) {
                 HugeIcon(name: .drop, size: 13)
                 Text(L10n.shelfDropNow)
-                    .font(.app(size: 12, weight: .semibold))
+                    .font(.app(.bodyLarge, weight: .semibold))
             }
             .padding(.horizontal, 13)
             .padding(.vertical, 8)
@@ -1175,7 +1175,7 @@ private struct ShelfListRow: View {
                 .frame(width: 42)
 
             Text(ShelfFormat.displayName(item))
-                .font(.app(size: 13, weight: .medium))
+                .font(.app(.headline, weight: .medium))
                 .lineLimit(1)
                 .truncationMode(.middle)
 
@@ -1186,18 +1186,18 @@ private struct ShelfListRow: View {
                     .transition(.opacity)
             } else {
                 Text(ShelfFormat.typeLabel(item))
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .frame(width: 52, alignment: .leading)
 
                 Text(SystemFormat.bytes(item.size))
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .frame(width: 66, alignment: .trailing)
 
                 Text(ShelfFormat.relative(item.modifiedAt))
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.tertiary)
                     .frame(width: 84, alignment: .trailing)
             }
@@ -1282,7 +1282,7 @@ private struct ShelfQuickLook: View {
         HStack(spacing: 8) {
             Button(action: onClose) {
                 Label(L10n.shelfBackToShelf, huge: .back, size: 12)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -1331,7 +1331,7 @@ private struct ShelfQuickLook: View {
                     HugeIcon(name: item.kind.hugeIcon, size: 44)
                         .foregroundStyle(.tertiary)
                     Text(ShelfFormat.typeLabel(item))
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -1343,7 +1343,7 @@ private struct ShelfQuickLook: View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
-                    .font(.app(size: 13, weight: .semibold))
+                    .font(.app(.headline, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
 

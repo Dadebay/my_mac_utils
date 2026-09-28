@@ -61,7 +61,7 @@ struct TaskDetailView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(L10n.taskDetailTitle)
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
                 .kerning(0.4)
@@ -70,7 +70,7 @@ struct TaskDetailView: View {
 
             Button(L10n.close) { dismiss() }
                 .buttonStyle(.plain)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
                 .keyboardShortcut(.cancelAction)
         }
@@ -90,7 +90,7 @@ struct TaskDetailView: View {
             sectionTitle(L10n.notesSectionTitle)
 
             TextEditor(text: $task.notes)
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 90)
                 .padding(8)
@@ -98,7 +98,7 @@ struct TaskDetailView: View {
                 .overlay(alignment: .topLeading) {
                     if task.notes.isEmpty {
                         Text(L10n.notesPlaceholder)
-                            .font(.app(size: 13))
+                            .font(.app(.headline))
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 13)
                             .padding(.vertical, 16)
@@ -114,12 +114,12 @@ struct TaskDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "calendar")
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .frame(width: 18, alignment: .center)
 
                 Text(L10n.dueDateLabel)
-                    .font(.app(size: 13))
+                    .font(.app(.headline))
 
                 Spacer(minLength: 8)
 
@@ -146,7 +146,7 @@ struct TaskDetailView: View {
                         task.recurrenceRule = nil
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.app(size: 11))
+                            .font(.app(.body))
                             .foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
@@ -155,12 +155,12 @@ struct TaskDetailView: View {
 
             HStack(spacing: 10) {
                 Image(systemName: task.priority.symbolName)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(task.priority.tintColor)
                     .frame(width: 18, alignment: .center)
 
                 Text(L10n.priorityLabel)
-                    .font(.app(size: 13))
+                    .font(.app(.headline))
 
                 Spacer(minLength: 8)
 
@@ -175,12 +175,12 @@ struct TaskDetailView: View {
 
             HStack(spacing: 10) {
                 Image(systemName: "repeat")
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .frame(width: 18, alignment: .center)
 
                 Text(L10n.recurrenceLabel)
-                    .font(.app(size: 13))
+                    .font(.app(.headline))
 
                 Spacer(minLength: 8)
 
@@ -197,7 +197,7 @@ struct TaskDetailView: View {
 
             if task.dueDate == nil {
                 Text(L10n.recurrenceNeedsDueDateHint)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -226,13 +226,13 @@ struct TaskDetailView: View {
                         subtask.completedAt = subtask.isCompleted ? .now : nil
                     } label: {
                         Image(systemName: subtask.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .font(.app(size: 14))
+                            .font(.app(.title))
                             .foregroundStyle(subtask.isCompleted ? Color.accentColor : .secondary)
                     }
                     .buttonStyle(.plain)
 
                     Text(subtask.title)
-                        .font(.app(size: 13))
+                        .font(.app(.headline))
                         .strikethrough(subtask.isCompleted, color: .secondary)
                         .foregroundStyle(subtask.isCompleted ? .secondary : .primary)
 
@@ -242,7 +242,7 @@ struct TaskDetailView: View {
                         context.delete(subtask)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.app(size: 9, weight: .semibold))
+                            .font(.app(.micro, weight: .semibold))
                             .foregroundStyle(.tertiary)
                     }
                     .buttonStyle(.plain)
@@ -251,7 +251,7 @@ struct TaskDetailView: View {
 
             TextField(L10n.addSubtaskPlaceholder, text: $newSubtaskTitle)
                 .textFieldStyle(.plain)
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .onSubmit(addSubtask)
         }
     }
@@ -283,7 +283,7 @@ struct TaskDetailView: View {
                     Button(L10n.addFromClipboardAttachment) { showingClipboardPicker = true }
                 } label: {
                     Image(systemName: "plus")
-                        .font(.app(size: 10, weight: .bold))
+                        .font(.app(.caption, weight: .bold))
                 }
                 .menuStyle(.borderlessButton)
                 .fixedSize()
@@ -292,7 +292,7 @@ struct TaskDetailView: View {
 
             if attachments.isEmpty {
                 Text(L10n.noAttachments)
-                    .font(.app(size: 12))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.tertiary)
             } else {
                 ForEach(attachments) { attachment in
@@ -305,7 +305,7 @@ struct TaskDetailView: View {
     private func attachmentRow(_ attachment: TaskAttachment) -> some View {
         HStack(spacing: 9) {
             Image(systemName: symbolName(for: attachment.kind))
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .center)
 
@@ -320,7 +320,7 @@ struct TaskDetailView: View {
                 context.delete(attachment)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.app(size: 9, weight: .semibold))
+                    .font(.app(.micro, weight: .semibold))
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
@@ -380,7 +380,7 @@ struct TaskDetailView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.app(size: 11, weight: .semibold))
+            .font(.app(.body, weight: .semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .kerning(0.4)
@@ -395,7 +395,7 @@ struct TaskDetailView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 18, alignment: .center)
             Text(text)
-                .font(.app(size: 13))
+                .font(.app(.headline))
         }
     }
 }

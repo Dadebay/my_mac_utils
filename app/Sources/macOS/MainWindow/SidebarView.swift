@@ -105,7 +105,7 @@ struct SidebarView: View {
 
     private func sectionHeader(_ title: String, topPadding: CGFloat = 0) -> some View {
         Text(title)
-            .font(.app(size: 10, weight: .semibold))
+            .font(.app(.caption, weight: .semibold))
             .foregroundStyle(tiers.section)
             .kerning(1.0)
             .textCase(.uppercase)
@@ -140,7 +140,7 @@ struct SidebarView: View {
                     .foregroundStyle(tiers.primary)
 
                 Text(L10n.appTagline)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(tiers.secondary)
             }
 
@@ -161,7 +161,7 @@ struct SidebarView: View {
                 SidebarIconTile(symbolName: list.symbolName, colors: list.tint)
 
                 Text(list.title)
-                    .font(.app(size: 14, weight: isSelected ? .semibold : .medium))
+                    .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
 
                 Spacer(minLength: 6)
@@ -198,7 +198,7 @@ struct SidebarView: View {
                 SidebarIconTile(symbolName: symbolName, colors: colors)
 
                 Text(title)
-                    .font(.app(size: 14, weight: isSelected ? .semibold : .medium))
+                    .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
 
                 Spacer(minLength: 6)
@@ -214,7 +214,7 @@ struct SidebarView: View {
     /// sayı yalnızca göz gezdirirken fark edilmeli.
     private func badge(_ count: Int) -> some View {
         Text("\(count)")
-            .font(.app(size: 11, weight: .medium))
+            .font(.app(.body, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(tiers.secondary)
             .padding(.horizontal, 7)
@@ -269,7 +269,7 @@ struct SidebarView: View {
                     .shadow(color: ChromePalette.statusDot.opacity(0.55), radius: 3)
 
                 Text(L10n.sidebarSystemRunning)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(tiers.secondary)
 
                 Spacer(minLength: 0)
@@ -278,7 +278,7 @@ struct SidebarView: View {
             }
 
             Text(L10n.progressSummary(completedTasks.count, total))
-                .font(.app(size: 12, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(tiers.primary)
 

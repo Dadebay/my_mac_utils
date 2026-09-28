@@ -57,7 +57,7 @@ struct MenuBarSettingsSection: View {
     private func categorySection(_ category: MenuBarCategory) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(category.title, systemImage: category.symbolName)
-                .font(.app(size: 13, weight: .semibold))
+                .font(.app(.headline, weight: .semibold))
                 .labelStyle(.titleAndIcon)
                 .foregroundStyle(.secondary)
 

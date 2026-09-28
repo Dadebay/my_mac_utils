@@ -116,7 +116,7 @@ struct TaskListView: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(searchText.isEmpty ? emptyMessage : L10n.noSearchResults)
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -146,7 +146,7 @@ struct TaskListView: View {
 
             if !newTaskTitle.isEmpty {
                 Text(L10n.enterHint)
-                    .font(.app(size: 10, weight: .medium))
+                    .font(.app(.caption, weight: .medium))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 3)

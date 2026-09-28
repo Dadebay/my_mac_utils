@@ -224,7 +224,7 @@ private struct PoppedNoteContent: View {
             // Sayaç kalıyor: bu bir denetim değil, tek bakışta okunması
             // gereken bilgi — notun var oluş sebebi.
             Text(L10n.progressSummary(completedTasks.count, total))
-                .font(.app(size: 10, weight: .medium))
+                .font(.app(.caption, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(tint.foreground.opacity(0.75))
         }
@@ -290,7 +290,7 @@ private struct PoppedNoteContent: View {
     private var appearancePicker: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(L10n.s("Renk", "Color", "Цвет"))
-                .font(.app(size: 11, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 8) {
@@ -300,7 +300,7 @@ private struct PoppedNoteContent: View {
             }
 
             Text(L10n.themeLabel)
-                .font(.app(size: 11, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             Picker("", selection: $themeRaw) {
@@ -313,7 +313,7 @@ private struct PoppedNoteContent: View {
             .frame(width: 190)
 
             Text(L10n.noteTextSize)
-                .font(.app(size: 11, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 8) {
@@ -323,7 +323,7 @@ private struct PoppedNoteContent: View {
                 .disabled(fontScale <= NoteAppearance.fontScaleRange.lowerBound + 0.001)
 
                 Text("\(Int((fontScale * 100).rounded()))%")
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .monospacedDigit()
                     .frame(width: 44)
 
@@ -343,7 +343,7 @@ private struct PoppedNoteContent: View {
             .frame(width: 190)
 
             Text(L10n.s("Saydamlık", "Opacity", "Прозрачность"))
-                .font(.app(size: 11, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             Slider(value: $noteOpacity, in: NoteTint.opacityRange)
@@ -483,7 +483,7 @@ private struct PoppedNoteContent: View {
                 }
             } label: {
                 Text(commonKind?.displayName ?? L10n.noteMixedKinds)
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
             }
             .menuStyle(.borderlessButton)
             .fixedSize()

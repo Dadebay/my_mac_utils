@@ -111,12 +111,12 @@ struct PanelTaskListView: View {
                 }
 
             Text(showCompleted ? L10n.completedTasks : L10n.activeTasks)
-                .font(.app(size: 15, weight: .semibold))
+                .font(.app(.titleLarge, weight: .semibold))
 
             Spacer(minLength: 0)
 
             Text("\(visibleTasks.count)")
-                .font(.app(size: 11, weight: .semibold))
+                .font(.app(.body, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)

@@ -71,12 +71,12 @@ struct PanelMemoryView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(L10n.systemMonitorTitle)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
 
                 Spacer(minLength: 8)
 
                 Text(percentText)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
@@ -92,7 +92,7 @@ struct PanelMemoryView: View {
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text("/ \(Self.text(controller.memory.total))")
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
@@ -226,7 +226,7 @@ struct PanelMemoryView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(selection == .system ? L10n.systemProcessesLabel : L10n.runningAppsLabel)
-                    .font(.app(size: 10, weight: .semibold))
+                    .font(.app(.caption, weight: .semibold))
                     .kerning(0.45)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -234,7 +234,7 @@ struct PanelMemoryView: View {
                 Spacer()
 
                 Text("\(visibleProcesses.count)")
-                    .font(.app(size: 10, weight: .semibold))
+                    .font(.app(.caption, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 7)
@@ -357,7 +357,7 @@ struct PanelMemoryView: View {
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.systemMonitorEmpty)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -446,7 +446,7 @@ private struct PanelAppUsageRow: View {
             appIcon
 
             Text(app.name)
-                .font(.app(size: 12, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
                 .lineLimit(1)
 
             Spacer(minLength: 6)
@@ -456,7 +456,7 @@ private struct PanelAppUsageRow: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else {
                 Text(valueText)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -504,7 +504,7 @@ private struct PanelAppUsageRow: View {
     private var confirmButton: some View {
         Button(action: onConfirmQuit) {
             Text(L10n.quit)
-                .font(.app(size: 10, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)

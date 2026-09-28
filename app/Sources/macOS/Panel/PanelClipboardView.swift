@@ -34,7 +34,7 @@ struct PanelClipboardView: View {
     private var header: some View {
         HStack(spacing: 8) {
             Text(L10n.clipboardTitle)
-                .font(.app(size: 12, weight: .medium))
+                .font(.app(.bodyLarge, weight: .medium))
 
             Spacer(minLength: 8)
 
@@ -43,7 +43,7 @@ struct PanelClipboardView: View {
                     store.clearAll()
                 } label: {
                     Text(L10n.s("Temizle", "Clear", "Очистить"))
-                        .font(.app(size: 11, weight: .semibold))
+                        .font(.app(.body, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -103,19 +103,19 @@ private struct ClipboardRow: View {
 
                 HStack(spacing: 6) {
                     Text(style.label)
-                        .font(.app(size: 11, weight: .semibold))
+                        .font(.app(.body, weight: .semibold))
                         .foregroundStyle(.tertiary)
 
                     if lines.count > 2 {
                         Text(L10n.clipboardMoreLines(lines.count - 2))
-                            .font(.app(size: 9, weight: .bold))
+                            .font(.app(.micro, weight: .bold))
                             .foregroundStyle(.tertiary)
                     }
 
                     Spacer(minLength: 4)
 
                     Text(Self.relativeText(for: entry.createdAt))
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .foregroundStyle(.tertiary)
                 }
             }

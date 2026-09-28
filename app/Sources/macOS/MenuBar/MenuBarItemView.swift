@@ -379,7 +379,7 @@ private struct MenuBarValue: View {
 
     var body: some View {
         MenuBarReservedText(text: text, samples: reserving)
-            .font(.app(size: 11, weight: .medium))
+            .font(.app(.body, weight: .medium))
             .monospacedDigit()
             .foregroundStyle(tint)
             .lineLimit(1)

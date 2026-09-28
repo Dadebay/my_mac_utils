@@ -61,7 +61,7 @@ struct SettingsDetailView: View {
                     .minimumScaleFactor(0.7)
 
                 Text(category.subtitle)
-                    .font(.app(size: 15))
+                    .font(.app(.titleLarge))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

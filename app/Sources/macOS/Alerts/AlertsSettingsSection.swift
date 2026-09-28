@@ -45,7 +45,7 @@ struct AlertsSettingsSection: View {
                             "The notification arrives when the temperature stays above the threshold for two consecutive samples (about a minute), and names the app using the most CPU. One-off spikes (a build, indexing) produce nothing.",
                             "Уведомление приходит, когда температура держится выше порога два измерения подряд (около минуты), и называет приложение, потребляющее больше всего процессора. Разовые всплески не уведомляют."
                         ))
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .foregroundStyle(.tertiary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
@@ -144,7 +144,7 @@ struct AlertsSettingsSection: View {
                             "The notification only informs you; the decision to delete stays with you in Finder. A repeat notification for the same Trash needs a week to pass or its size to grow by half.",
                             "Уведомление только информирует; решение об удалении остаётся за вами в Finder. Повторное уведомление требует недели или роста размера на половину."
                         ))
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .foregroundStyle(.tertiary)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 2)
@@ -182,7 +182,7 @@ struct AlertsSettingsSection: View {
                 .font(.system(size: 10))
                 .foregroundStyle(.orange)
             Text(text)
-                .font(.app(size: 11))
+                .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

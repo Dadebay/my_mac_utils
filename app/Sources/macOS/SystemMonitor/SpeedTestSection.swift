@@ -69,7 +69,7 @@ struct SpeedTestSection: View {
             // Uyarı duruyor: test gerçek veri harcıyor, bunu söylemek
             // açıklama değil, kullanıcıyı koruyan bilgi.
             Text(L10n.speedTestTrafficNote)
-                .font(.app(size: 10))
+                .font(.app(.caption))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -102,7 +102,7 @@ struct SpeedTestSection: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Text(L10n.networkConnectionLabel)
-                    .font(.app(size: 10, weight: .semibold))
+                    .font(.app(.caption, weight: .semibold))
                     .kerning(0.4)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -190,7 +190,7 @@ struct SpeedTestSection: View {
                         .font(
                             isMonospaced
                                 ? .system(size: 13, weight: .medium, design: .monospaced)
-                                : .app(size: 13, weight: .medium)
+                                : .app(.headline, weight: .medium)
                         )
                         .textSelection(.enabled)
                         .lineLimit(1)
@@ -301,7 +301,7 @@ struct SpeedTestSection: View {
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(accent)
             Text(L10n.speedTestLabel)
-                .font(.app(size: 10, weight: .semibold))
+                .font(.app(.caption, weight: .semibold))
                 .kerning(0.4)
                 .foregroundStyle(.tertiary)
                 .textCase(.uppercase)
@@ -366,14 +366,14 @@ struct SpeedTestSection: View {
 
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 Text(unit)
-                    .font(.app(size: 9))
+                    .font(.app(.micro))
                     .foregroundStyle(.secondary)
             }
         }

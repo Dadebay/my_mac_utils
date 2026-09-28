@@ -39,7 +39,7 @@ struct ContextAwareSettingsSection: View {
                 }
 
                 Text(L10n.contextAwarePrivacyNote)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -47,10 +47,10 @@ struct ContextAwareSettingsSection: View {
                     FormCardDivider()
                     HStack(spacing: 6) {
                         Text(L10n.contextSuggestedNowLabel)
-                            .font(.app(size: 11))
+                            .font(.app(.body))
                             .foregroundStyle(.secondary)
                         Text(name)
-                            .font(.app(size: 11, weight: .semibold))
+                            .font(.app(.body, weight: .semibold))
                         Spacer(minLength: 0)
                     }
                 }
@@ -59,7 +59,7 @@ struct ContextAwareSettingsSection: View {
             SettingsCard(title: L10n.contextRulesTitle) {
                 if rules.isEmpty {
                     Text(L10n.contextRulesEmpty)
-                        .font(.app(size: 12))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
@@ -94,7 +94,7 @@ struct ContextAwareSettingsSection: View {
                     .font(.app(size: 12.5, weight: .medium))
                     .lineLimit(1)
                 Text(targetLabel(rule))
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -105,7 +105,7 @@ struct ContextAwareSettingsSection: View {
                 context.delete(rule)
             } label: {
                 Text(L10n.s("Kaldır", "Remove", "Удалить"))
-                    .font(.app(size: 9, weight: .semibold))
+                    .font(.app(.micro, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)

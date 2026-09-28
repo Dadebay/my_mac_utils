@@ -132,14 +132,14 @@ struct AboutGlassDoView: View {
                     "Tasks and system insights at the edge of your Mac",
                     "Задачи и системная информация на краю экрана"
                 ))
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             }
 
             Text(versionString)
-                .font(.app(size: 11, weight: .medium))
+                .font(.app(.body, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
@@ -246,7 +246,7 @@ struct AboutGlassDoView: View {
                 "No activity in this period.",
                 "В этот период активности не было."
             ))
-            .font(.app(size: 11))
+            .font(.app(.body))
         }
         .foregroundStyle(.tertiary)
     }
@@ -262,7 +262,7 @@ struct AboutGlassDoView: View {
 
                 if let last = allTimeSnapshot.lastUsedDate, let feature = allTimeSnapshot.lastUsedFeature {
                     Text(lastUsedSummary(feature: feature, date: last))
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -433,7 +433,7 @@ struct AboutGlassDoView: View {
                 .foregroundStyle(.tertiary)
 
             Text(L10n.s("Henüz kullanım kaydedilmedi", "No usage recorded yet", "Использование пока не зафиксировано"))
-                .font(.app(size: 13, weight: .medium))
+                .font(.app(.headline, weight: .medium))
 
             Text(L10n.s(
                 "Etkinliğinizi burada görmek için kenar rayındaki widget'ları açın.",
@@ -467,7 +467,7 @@ struct AboutGlassDoView: View {
                 showResetConfirmation = true
             } label: {
                 Text(L10n.s("Kullanım Verisini Sıfırla…", "Reset Usage Data…", "Сбросить данные…"))
-                    .font(.app(size: 11))
+                    .font(.app(.body))
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
@@ -478,7 +478,7 @@ struct AboutGlassDoView: View {
 
     private func sectionEyebrow(_ title: String) -> some View {
         Text(title)
-            .font(.app(size: 11, weight: .semibold))
+            .font(.app(.body, weight: .semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .kerning(0.4)
@@ -569,7 +569,7 @@ private struct UsageBarRow: View {
                     Spacer(minLength: 8)
 
                     Text("\(usage.count)")
-                        .font(.app(size: 12, weight: .semibold))
+                        .font(.app(.bodyLarge, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(isUnused ? .tertiary : .secondary)
                         .contentTransition(reduceMotion ? .identity : .numericText())

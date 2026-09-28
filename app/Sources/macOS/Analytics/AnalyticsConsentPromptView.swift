@@ -84,11 +84,11 @@ struct AnalyticsConsentPromptView: View {
     private func bullet(_ icon: String, _ text: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: icon)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
                 .frame(width: 16)
             Text(text)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

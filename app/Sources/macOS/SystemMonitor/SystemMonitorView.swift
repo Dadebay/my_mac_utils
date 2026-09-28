@@ -93,7 +93,7 @@ struct SystemMonitorView: View {
         return HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(L10n.memoryUsedLabel)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .kerning(0.5)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -108,7 +108,7 @@ struct SystemMonitorView: View {
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("/ \(Self.text(memory.total))")
-                        .font(.app(size: 13, weight: .medium))
+                        .font(.app(.headline, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
@@ -117,7 +117,7 @@ struct SystemMonitorView: View {
             Spacer(minLength: 12)
 
             Text(percentText)
-                .font(.app(size: 13, weight: .semibold))
+                .font(.app(.headline, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 9)
@@ -209,12 +209,12 @@ struct SystemMonitorView: View {
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(segment.label)
-                        .font(.app(size: 11))
+                        .font(.app(.body))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text(Self.text(segment.bytes))
-                        .font(.app(size: 13, weight: .semibold))
+                        .font(.app(.headline, weight: .semibold))
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                 }
@@ -246,7 +246,7 @@ struct SystemMonitorView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(selection == .system ? L10n.systemProcessesLabel : L10n.runningAppsLabel)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .kerning(0.5)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -305,7 +305,7 @@ struct SystemMonitorView: View {
                 .font(.system(size: 34, weight: .light))
                 .foregroundStyle(.tertiary)
             Text(L10n.systemMonitorEmpty)
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -339,13 +339,13 @@ private struct AppUsageRow: View {
             icon
 
             Text(app.name)
-                .font(.app(size: 13))
+                .font(.app(.headline))
                 .lineLimit(1)
 
             Spacer(minLength: 8)
 
             Text(valueText)
-                .font(.app(size: 12, weight: .semibold))
+                .font(.app(.bodyLarge, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .contentTransition(reduceMotion ? .identity : .numericText())

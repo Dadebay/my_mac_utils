@@ -41,7 +41,7 @@ struct StatCard<Content: View>: View {
                     .frame(width: 18, height: 18)
 
                 Text(title)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
 
                 Spacer(minLength: 8)
 
@@ -119,7 +119,7 @@ struct StatHeadline: View {
 
             if let detail {
                 Text(detail)
-                    .font(.app(size: 14, weight: .medium))
+                    .font(.app(.title, weight: .medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -163,11 +163,11 @@ struct StatPill: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(label)
-                .font(.app(size: 12))
+                .font(.app(.bodyLarge))
                 .foregroundStyle(.secondary)
 
             Text(value)
-                .font(.app(size: 12, weight: .bold))
+                .font(.app(.bodyLarge, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(tint ?? .primary)
                 .contentTransition(reduceMotion ? .identity : .numericText())
@@ -298,12 +298,12 @@ struct StatColumns: View {
             ForEach(items) { item in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.label)
-                        .font(.app(size: 12))
+                        .font(.app(.bodyLarge))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text(item.value)
-                        .font(.app(size: 14, weight: .semibold))
+                        .font(.app(.title, weight: .semibold))
                         .monospacedDigit()
                         .contentTransition(reduceMotion ? .identity : .numericText())
                         .lineLimit(1)
@@ -344,7 +344,7 @@ struct StatLegend: View {
                     }
 
                     Text(item.value)
-                        .font(.app(size: 13, weight: .semibold))
+                        .font(.app(.headline, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                         .contentTransition(reduceMotion ? .identity : .numericText())

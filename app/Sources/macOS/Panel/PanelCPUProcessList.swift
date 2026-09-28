@@ -23,13 +23,13 @@ struct PanelCPUProcessList: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Text(L10n.s("En çok işlemci kullananlar", "Top CPU processes", "Больше всего нагружают ЦП"))
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 if !monitor.processes.isEmpty {
                     Text("\(monitor.processes.count)")
-                        .font(.app(size: 10, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                 }
@@ -153,7 +153,7 @@ private struct CPUProcessRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(usage.name)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -175,7 +175,7 @@ private struct CPUProcessRow: View {
 
             Button(action: onQuitRequested) {
                 Image(systemName: "xmark.circle")
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .foregroundStyle(
                         canQuit
                             ? (isQuitHovering ? Color.red : Color.secondary)

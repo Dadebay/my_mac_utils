@@ -149,7 +149,7 @@ struct PanelProcessorView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(L10n.processorCoreActivityLabel)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
@@ -157,7 +157,7 @@ struct PanelProcessorView: View {
 
                 if let busiest = PerCoreLoadChart.busiest(in: cpu.perCoreUsage) {
                     Text(L10n.processorBusiestCore(busiest.number, busiest.usage))
-                        .font(.app(size: 10, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                         .contentTransition(reduceMotion ? .identity : .numericText())
@@ -185,7 +185,7 @@ struct PanelProcessorView: View {
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text(L10n.processorCoreSummary(cpu.coreCount))
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .foregroundStyle(.secondary)
             }
 
@@ -233,7 +233,7 @@ struct PanelProcessorView: View {
                     .contentTransition(reduceMotion ? .identity : .numericText())
 
                 Text("\(SystemFormat.memoryBytes(memory.used)) / \(SystemFormat.memoryBytes(memory.total))")
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -267,7 +267,7 @@ struct PanelProcessorView: View {
             HStack(spacing: 4) {
                 Circle().fill(color).frame(width: 5, height: 5)
                 Text(label)
-                    .font(.app(size: 9, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -427,7 +427,7 @@ struct PanelBatteryView: View {
                 .lineLimit(1)
 
             Text(value)
-                .font(.app(size: 13, weight: .semibold))
+                .font(.app(.headline, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -472,7 +472,7 @@ struct PanelBatteryView: View {
                         .contentTransition(reduceMotion ? .identity : .numericText())
 
                     Text("\(battery.currentCapacity) / \(battery.designCapacity) mAh")
-                        .font(.app(size: 11, weight: .medium))
+                        .font(.app(.body, weight: .medium))
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
 
@@ -685,7 +685,7 @@ struct PanelDiskView: View {
             }
 
             Text(value)
-                .font(.app(size: 14, weight: .semibold))
+                .font(.app(.title, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .lineLimit(1)
@@ -700,7 +700,7 @@ struct PanelDiskView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Text(L10n.storageLargestItems)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
 
                 Spacer(minLength: 0)
 
@@ -785,11 +785,11 @@ struct PanelDiskView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name)
-                    .font(.app(size: 11, weight: .medium))
+                    .font(.app(.body, weight: .medium))
                     .lineLimit(1)
 
                 Text(item.parentName)
-                    .font(.app(size: 9, weight: .medium))
+                    .font(.app(.micro, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
@@ -875,7 +875,7 @@ private func panelHeader(
 
         VStack(alignment: .leading, spacing: 1) {
             Text(title)
-                .font(.app(size: 15, weight: .semibold))
+                .font(.app(.titleLarge, weight: .semibold))
             if let subtitle {
                 Text(subtitle)
                     .font(.app(size: 10.5, weight: .medium))
@@ -921,7 +921,7 @@ private func unavailablePanel(_ text: String, symbol: String) -> some View {
             .font(.system(size: 24, weight: .medium))
             .foregroundStyle(.secondary)
         Text(text)
-            .font(.app(size: 12, weight: .medium))
+            .font(.app(.bodyLarge, weight: .medium))
             .foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity, minHeight: 120)
@@ -1069,7 +1069,7 @@ struct PanelNetworkView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(L10n.networkActivityLabel)
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
 
                 HStack(spacing: 5) {
                     Text(network.interfaceName.isEmpty ? "—" : network.interfaceName)
@@ -1144,14 +1144,14 @@ struct PanelNetworkView: View {
                     .foregroundStyle(color)
 
                 Text(label)
-                    .font(.app(size: 11, weight: .semibold))
+                    .font(.app(.body, weight: .semibold))
 
                 Spacer(minLength: 4)
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(SystemFormat.bytes(total))
-                    .font(.app(size: 15, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
                     .monospacedDigit()
                     .tracking(-0.2)
                     .contentTransition(reduceMotion ? .identity : .numericText())
@@ -1188,7 +1188,7 @@ struct PanelNetworkView: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.networkTodayLabel)
-                    .font(.app(size: 10, weight: .semibold))
+                    .font(.app(.caption, weight: .semibold))
                     .kerning(0.4)
                     .foregroundStyle(.tertiary)
                     .textCase(.uppercase)
@@ -1305,14 +1305,14 @@ struct PanelNetworkProcessList: View {
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
 
                 Text(L10n.networkTopProcessesLabel)
-                    .font(.app(size: 12, weight: .semibold))
+                    .font(.app(.bodyLarge, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Spacer(minLength: 0)
 
                 if isExpanded, !monitor.processes.isEmpty {
                     Text("\(monitor.processes.count)")
-                        .font(.app(size: 10, weight: .medium))
+                        .font(.app(.caption, weight: .medium))
                         .monospacedDigit()
                         .foregroundStyle(.tertiary)
                 }
@@ -1391,7 +1391,7 @@ private struct PanelNetworkProcessRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(presentation.displayName)
-                    .font(.app(size: 12, weight: .medium))
+                    .font(.app(.bodyLarge, weight: .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
 
@@ -1457,7 +1457,7 @@ private struct PanelNetworkProcessRow: View {
                 .foregroundStyle(color)
 
             Text(SystemFormat.bytes(bytes))
-                .font(.app(size: 10))
+                .font(.app(.caption))
                 .monospacedDigit()
                 .contentTransition(reduceMotion ? .identity : .numericText())
                 .foregroundStyle(.secondary)
@@ -1499,6 +1499,6 @@ private struct PanelNetworkProcessRow: View {
             .accessibilityLabel(L10n.networkProcessQuit)
             .onHover { isQuitHovering = $0 && isControllable }
         }
-        .font(.app(size: 12, weight: .medium))
+        .font(.app(.bodyLarge, weight: .medium))
     }
 }

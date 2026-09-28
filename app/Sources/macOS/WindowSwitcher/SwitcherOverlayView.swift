@@ -169,7 +169,7 @@ struct SwitcherOverlayView: View {
                             .frame(width: 17, height: 17)
                     }
                     Text(window.appName)
-                        .font(.app(size: 12, weight: .medium))
+                        .font(.app(.bodyLarge, weight: .medium))
                         .foregroundStyle(.white)
                         .lineLimit(1)
 
@@ -184,7 +184,7 @@ struct SwitcherOverlayView: View {
 
                     if let profileLabel = window.profileLabel {
                         Text(profileLabel)
-                            .font(.app(size: 9, weight: .semibold))
+                            .font(.app(.micro, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.85))
                             .lineLimit(1)
                             .padding(.horizontal, 5)

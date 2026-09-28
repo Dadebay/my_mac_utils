@@ -13,7 +13,7 @@ struct ShelfAttachmentPickerView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(L10n.addFromShelfAttachment)
-                    .font(.app(size: 13, weight: .semibold))
+                    .font(.app(.headline, weight: .semibold))
                 Spacer()
                 Button(L10n.close) { dismiss() }
                     .buttonStyle(.plain)
@@ -22,14 +22,14 @@ struct ShelfAttachmentPickerView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.app(size: 11))
+                    .font(.app(.body))
                     .foregroundStyle(.secondary)
             }
 
             if items.isEmpty {
                 Spacer()
                 Text(L10n.emptyFolder)
-                    .font(.app(size: 12))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                 Spacer()
@@ -45,7 +45,7 @@ struct ShelfAttachmentPickerView: View {
                                     Image(systemName: item.kind.symbolName)
                                         .foregroundStyle(.secondary)
                                     Text(item.name)
-                                        .font(.app(size: 12))
+                                        .font(.app(.bodyLarge))
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                     Spacer(minLength: 0)
@@ -89,7 +89,7 @@ struct ClipboardAttachmentPickerView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(L10n.addFromClipboardAttachment)
-                    .font(.app(size: 13, weight: .semibold))
+                    .font(.app(.headline, weight: .semibold))
                 Spacer()
                 Button(L10n.close) { dismiss() }
                     .buttonStyle(.plain)
@@ -99,7 +99,7 @@ struct ClipboardAttachmentPickerView: View {
             if textEntries.isEmpty {
                 Spacer()
                 Text(L10n.emptyFolder)
-                    .font(.app(size: 12))
+                    .font(.app(.bodyLarge))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                 Spacer()
@@ -112,7 +112,7 @@ struct ClipboardAttachmentPickerView: View {
                                 dismiss()
                             } label: {
                                 Text(entry.text ?? "")
-                                    .font(.app(size: 12))
+                                    .font(.app(.bodyLarge))
                                     .lineLimit(2)
                                     .multilineTextAlignment(.leading)
                                     .frame(maxWidth: .infinity, alignment: .leading)
