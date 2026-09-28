@@ -673,18 +673,18 @@ private struct UsageBarRow: View {
     let peak: Int
     let reduceMotion: Bool
 
-    /// Çubuk sütununun genişliği. Sabit: satırlar arası karşılaştırma
-    /// ancak bütün çubuklar aynı ölçekte çizilince yapılabiliyor, oysa
-    /// esnek bir sütun ada göre satırdan satıra kayardı.
-    private static let barWidth: CGFloat = 118
+    /// Ad sütununun alabileceği en fazla genişlik. Sütun sabit değil —
+    /// pencere daraldıkça ad da çubuk da birlikte küçülüyor — ama bir
+    /// tavanı var: geniş pencerede ad sütunu uzayıp çubukları sağa
+    /// itmesin, on satırın çubukları aynı yerde başlasın.
+    private static let nameMaxWidth: CGFloat = 170
 
     private var isUnused: Bool { usage.count == 0 }
 
-    private var barLength: CGFloat {
+    /// Çubuğun rayın kaçta kaçını dolduracağı.
+    private var barFraction: Double {
         guard peak > 0, usage.count > 0 else { return 0 }
-        // En küçük sayı da görünür kalsın: yüzde birlik bir pay yuvarlanıp
-        // kaybolmasın diye taban dört punto.
-        return max(Self.barWidth * CGFloat(usage.count) / CGFloat(peak), 4)
+        return Double(usage.count) / Double(peak)
     }
 
     var body: some View {
@@ -703,25 +703,34 @@ private struct UsageBarRow: View {
                 .foregroundStyle(isUnused ? .secondary : .primary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-
-            Spacer(minLength: 8)
+                .frame(maxWidth: Self.nameMaxWidth, alignment: .leading)
 
             // Çubukların hepsi tek renk. Uzunluk karşılaştırması rengin
             // işi değil; kimlik zaten solda, kendi renginde duruyor. On
             // ayrı renkte on çubuk, hangisinin daha uzun olduğunu
             // okumayı zorlaştırıyordu.
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.primary.opacity(0.07))
-                if barLength > 0 {
-                    Capsule()
-                        .fill(Color.accentColor)
-                        .frame(width: barLength)
+            //
+            // Ray kalan genişliği alıyor: sabit 118 punto, geniş pencerede
+            // ad ile çubuk arasında kocaman bir ölü boşluk bırakıyor, dar
+            // pencerede ise adın yerini yiyordu.
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.primary.opacity(0.07))
+                    if barFraction > 0 {
+                        Capsule()
+                            .fill(Color.accentColor)
+                            // En küçük sayı da görünür kalsın: yüzde birlik
+                            // bir pay yuvarlanıp kaybolmasın diye taban
+                            // dört punto.
+                            .frame(width: max(geo.size.width * barFraction, 4))
+                    }
                 }
             }
-            .frame(width: Self.barWidth, height: 6)
+            .frame(height: 6)
+            .frame(minWidth: 44, maxWidth: .infinity)
             .animation(
                 reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 1.0),
-                value: barLength
+                value: barFraction
             )
 
             Text(isUnused ? "—" : "\(usage.count)")

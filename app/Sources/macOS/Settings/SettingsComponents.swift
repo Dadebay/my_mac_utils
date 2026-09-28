@@ -20,6 +20,17 @@ enum SettingsMetrics {
     /// ucuna kadar uzamıyor, içerik sola yaslı kalıyor.
     static let contentMaxWidth: CGFloat = 740
 
+    /// Veri gösteren sayfalar için daha geniş sınır.
+    ///
+    /// 740 bir metin sütununun sınırı: uzun satırların gözü yormaması
+    /// için. Kullanım sayfası ise metin değil pano — on çubuklu bir
+    /// sıralama, yedi ya da otuz sütunlu bir grafik. Orada genişlik
+    /// okumayı zorlaştırmıyor, kolaylaştırıyor: çubuklar uzadıkça
+    /// aralarındaki fark daha iyi görünüyor. Pencere büyütüldüğünde
+    /// sayfanın olduğu yerde kalması da "büyüttüm ama bir şey olmadı"
+    /// hissi veriyordu.
+    static let wideContentMaxWidth: CGFloat = 1000
+
     /// Sayfa başlığı ile ilk bölüm, ve bölümlerin kendi araları.
     static let sectionSpacing: CGFloat = 24
 }

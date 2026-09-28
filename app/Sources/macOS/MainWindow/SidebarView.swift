@@ -138,10 +138,13 @@ struct SidebarView: View {
                 Text("GlassDo")
                     .font(.app(.titleLarge, weight: .bold))
                     .foregroundStyle(tiers.primary)
+                    .lineLimit(1)
 
                 Text(L10n.appTagline)
                     .font(.app(.body))
                     .foregroundStyle(tiers.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
 
             Spacer(minLength: 0)
@@ -163,6 +166,13 @@ struct SidebarView: View {
                 Text(list.title)
                     .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
+                    // Kenar çubuğu 200 puntoya kadar daralabiliyor;
+                    // sınırsız bırakılan ad orada ikinci satıra taşıyor ve
+                    // o satır komşularından yüksek kalıyordu. Önce küçülüp
+                    // sonra kısalıyor, satır yüksekliği sabit kalıyor.
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
 
                 Spacer(minLength: 6)
 
@@ -200,6 +210,9 @@ struct SidebarView: View {
                 Text(title)
                     .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .truncationMode(.tail)
 
                 Spacer(minLength: 6)
             }

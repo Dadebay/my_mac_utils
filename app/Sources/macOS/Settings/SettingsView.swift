@@ -383,7 +383,13 @@ struct NetworkSettingsSection: View {
       SettingsCard(
         title: L10n.s("Sıfırla", "Reset", "Сброс")
       ) {
-        HStack(alignment: .top, spacing: 12) {
+        // Açıklama ile düğme yan yanaydı ve düğme `.fixedSize()` ile
+        // sıkışmayı tamamen reddediyordu: pencere daraldıkça bütün
+        // daralmayı paragraf yükleniyor, üç satırlık metin sekiz satıra
+        // çıkıp sonunda kelime başına bir satıra iniyordu. Alt alta
+        // durduklarında paragraf bütün genişliği kullanıyor, düğme de
+        // tam adıyla duruyor.
+        VStack(alignment: .leading, spacing: 10) {
           Text(L10n.s(
             "Kaydedilmiş bütün günlük ağ toplamlarını siler ve sayımı sıfırdan başlatır. Görevler, klasörler ve diğer ayarlar etkilenmez.",
             "Deletes every stored daily network total and restarts counting from zero. Tasks, folders and other settings are not affected.",
@@ -392,8 +398,7 @@ struct NetworkSettingsSection: View {
           .font(.app(.body))
           .foregroundStyle(.secondary)
           .fixedSize(horizontal: false, vertical: true)
-
-          Spacer(minLength: 8)
+          .frame(maxWidth: .infinity, alignment: .leading)
 
           Button(role: .destructive) {
             isConfirmingReset = true
@@ -401,7 +406,7 @@ struct NetworkSettingsSection: View {
             Text(L10n.s("Ağ Geçmişini Sıfırla…", "Reset Network History…", "Сбросить историю сети…"))
               .font(.app(.bodyLarge, weight: .medium))
           }
-          .fixedSize()
+          .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .padding(.vertical, 4)
       }
