@@ -359,6 +359,29 @@ final class NoteTextView: NSTextView {
         pasteAsPlainText(sender)
     }
 
+    /// Yazılan ve yapıştırılan metin işaret sayılmamalı.
+    ///
+    /// AppKit imleç hareket edince yazım niteliklerini imlecin solundaki
+    /// karakterden alıyor. İmleç onay kutusunun hemen sağındayken soldaki
+    /// karakter işaretin boşluğu — `glassDoMarker` taşıyor. Oraya yazılan
+    /// ya da yapıştırılan her şey o niteliği devralıyor, belgeden okunurken
+    /// işaret sanılıp atılıyordu: yazı ekranda duruyor ama modele hiç
+    /// girmiyordu. Belge bir sonraki kez yeniden çizilince (başka bir
+    /// satır silinince) yazı kayboluyordu; imleç sınırı da bütün satırı
+    /// işaret sandığı için imleç o satırda sola gidemiyordu (kullanıcı
+    /// bildirdi, ikisi de).
+    override var typingAttributes: [NSAttributedString.Key: Any] {
+        get { Self.withoutMarker(super.typingAttributes) }
+        set { super.typingAttributes = Self.withoutMarker(newValue) }
+    }
+
+    private static func withoutMarker(_ attributes: [NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any] {
+        var clean = attributes
+        clean[.glassDoMarker] = nil
+        clean[.attachment] = nil
+        return clean
+    }
+
     var onToggle: ((UUID) -> Void)?
     var onClearMarker: ((UUID) -> Void)?
     var onRemoveMarker: ((UUID) -> Void)?
