@@ -27,13 +27,40 @@ struct PanelCPUProcessList: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
+                // Ölçek yazılmak zorunda: hemen yukarıdaki toplam yük
+                // bütün çekirdeklere göre (%100 = bütün çekirdekler dolu),
+                // buradaki yüzdeler ise Etkinlik İzleyicisi'yle aynı
+                // ölçekte, tek çekirdeğe göre. İki farklı payda yan yana
+                // aynı "%" işaretiyle durunca liste toplamı üstteki
+                // sayıyı aşıyor ve haklı olarak "hangisi yanlış?"
+                // sorusu geliyor. İkisi de doğru; yazmayınca anlaşılmıyor.
                 if !monitor.processes.isEmpty {
-                    Text("\(monitor.processes.count)")
-                        .font(.app(.caption, weight: .medium))
-                        .monospacedDigit()
+                    Text(L10n.s("%100 = bir çekirdek", "100% = one core", "100% = одно ядро"))
+                        .font(.app(.micro, weight: .medium))
                         .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
             }
+            .help(L10n.s(
+                "Yüzdeler Etkinlik İzleyicisi'yle aynı ölçekte: bir çekirdeğin tamamı "
+                    + "%100, yani çok çekirdekli bir süreç %100'ü aşabilir. Karttaki "
+                    + "toplam yük ise bütün çekirdeklere göre hesaplanıyor — bu yüzden "
+                    + "liste toplamı ondan büyük çıkabilir. Kök kullanıcıya ait "
+                    + "süreçlerin (WindowServer, kernel_task) sayaçları okunamadığı için "
+                    + "listede yoklar ve liste en çok sekiz satır gösteriyor.",
+                "Percentages use the same scale as Activity Monitor: one full core is "
+                    + "100%, so a multi-core process can exceed 100%. The card's total "
+                    + "load is measured against all cores, which is why the list can add "
+                    + "up to more than it. Root-owned processes (WindowServer, "
+                    + "kernel_task) can't be read and are not listed, and the list shows "
+                    + "at most eight rows.",
+                "Проценты в той же шкале, что и в «Мониторинге системы»: одно ядро "
+                    + "целиком — это 100%, поэтому процесс может превысить 100%. Общая "
+                    + "загрузка на карточке считается по всем ядрам, поэтому сумма "
+                    + "списка может быть больше неё. Процессы root (WindowServer, "
+                    + "kernel_task) недоступны для чтения и не показаны, а список "
+                    + "выводит не более восьми строк."
+            ))
 
             if let message {
                 HStack(alignment: .top, spacing: 6) {

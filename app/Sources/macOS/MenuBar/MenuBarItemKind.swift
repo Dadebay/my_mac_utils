@@ -149,9 +149,75 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Karonun altında yazan sunum adı — `title` ne ölçtüğünü söylüyor,
+    /// bu nasıl gösterdiğini.
+    ///
+    /// Galeride aynı ölçümün üç sunumu yan yana duruyordu ve üçünün de
+    /// altında aynı ad yazıyordu ("Toplam yük", "Toplam yük", "Toplam
+    /// yük"). Hangisinin ne olduğunu yalnızca karonun içindeki küçük
+    /// çizimden anlamak gerekiyordu.
+    var styleTitle: String {
+        switch self {
+        case .cpuLoadBar, .cpuTemperatureBar, .memoryUsedBar, .diskUsedBar, .batteryLevelBar:
+            L10n.s("Çubuk", "Bar", "Шкала")
+        case .cpuLoadPercent, .memoryUsedPercent, .diskUsedPercent, .batteryPercent,
+             .batteryHealthPercent:
+            L10n.s("Yüzde", "Percent", "Проценты")
+        case .cpuLoadChart, .memoryPressureChart, .networkActivity:
+            L10n.s("Grafik", "Graph", "График")
+        case .cpuPerCoreBars:
+            L10n.s("Çubuklar", "Bars", "Шкалы")
+        case .cpuTemperatureValue:
+            L10n.s("Derece", "Degrees", "Градусы")
+        case .memoryUsedBytes, .memorySwapBytes, .diskUsedBytes, .diskFreeBytes,
+             .networkDataToday:
+            L10n.s("Bayt", "Bytes", "Байты")
+        case .diskUsedRing:
+            L10n.s("Halka", "Ring", "Кольцо")
+        case .networkDownload, .networkUpload:
+            L10n.s("Hız", "Speed", "Скорость")
+        case .networkArrows:
+            L10n.s("Oklar", "Arrows", "Стрелки")
+        case .networkVPN:
+            L10n.s("Rozet", "Badge", "Значок")
+        case .batteryPower:
+            L10n.s("Watt", "Watts", "Ватты")
+        case .batteryCycles:
+            L10n.s("Sayı", "Count", "Число")
+        case .batteryTimeRemaining, .deviceUptime:
+            L10n.s("Süre", "Time", "Время")
+        }
+    }
+
     static func items(in category: MenuBarCategory) -> [MenuBarItemKind] {
         allCases.filter { $0.category == category }
     }
+
+    /// Bir kategorinin ölçümleri, her biri kendi sunumlarıyla.
+    ///
+    /// Galeri eskiden kategorinin bütün karolarını tek bir üç sütunlu
+    /// ızgaraya diziyordu; aynı ölçümün sunumları ızgara akışında
+    /// birbirinden kopuyor, satır sonunda bölünebiliyordu. Gruplanınca
+    /// "şunu şu biçimde göster" seçimi göz önünde duruyor.
+    static func readings(in category: MenuBarCategory) -> [MenuBarReading] {
+        var order: [String] = []
+        var groups: [String: [MenuBarItemKind]] = [:]
+        for kind in items(in: category) {
+            if groups[kind.title] == nil { order.append(kind.title) }
+            groups[kind.title, default: []].append(kind)
+        }
+        return order.compactMap { title in
+            guard let kinds = groups[title], let first = kinds.first else { return nil }
+            return MenuBarReading(id: first.rawValue, title: title, kinds: kinds)
+        }
+    }
+}
+
+/// Tek bir ölçüm ve onu gösterme biçimleri.
+struct MenuBarReading: Identifiable, Sendable {
+    let id: String
+    let title: String
+    let kinds: [MenuBarItemKind]
 }
 
 /// Menü çubuğunda hangi ölçerlerin göründüğü.

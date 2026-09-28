@@ -79,7 +79,7 @@ struct SidebarView: View {
                     sectionHeader(L10n.s("AYARLAR", "SETTINGS", "НАСТРОЙКИ"), topPadding: 20)
 
                     VStack(spacing: 3) {
-                        ForEach(SettingsCategory.allCases) { category in
+                        ForEach(SettingsCategory.sidebarCases) { category in
                             let entry = SidebarSelection.settings(category).entry
                             systemRow(
                                 entry.selection,

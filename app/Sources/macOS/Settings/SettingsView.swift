@@ -95,45 +95,25 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
   static var lastViewed: SettingsCategory {
     get {
       let raw = UserDefaults.standard.string(forKey: lastViewedKey) ?? ""
-      return SettingsCategory(rawValue: raw) ?? .general
+      let stored = SettingsCategory(rawValue: raw) ?? .general
+      // Kenar çubuğunda satırı olmayan bir bölüm hatırlanmış olabilir
+      // (bkz. `sidebarCases`): o sayfaya dönmek, hiçbir satırın seçili
+      // görünmediği bir pencere açardı.
+      return sidebarCases.contains(stored) ? stored : .general
     }
     set { UserDefaults.standard.set(newValue.rawValue, forKey: lastViewedKey) }
   }
-}
 
-/// Kategori rozeti. Kenar çubuğu satırı ile sayfa başlığı aynı rozeti
-/// kullanıyor — seçilen satırla açılan sayfa arasındaki bağ görsel olarak
-/// kurulsun diye (aynı nesne, iki yerde).
-struct SettingsCategoryIcon: View {
-  let category: SettingsCategory
-  var size: CGFloat = 26
-  var radius: CGFloat = Layout.Radius.small
-  var isSelected = false
-
-  private var accent: Color {
-    category.tint.first ?? .accentColor
-  }
-
-  var body: some View {
-    RoundedRectangle(cornerRadius: radius, style: .continuous)
-      // Büyük gradient uygulama rozeti yerine macOS sidebar'larındaki
-      // gibi sakin, tek tintli bir sembol yüzeyi. Seçim renginin
-      // üstündeyken beyaz material kullanarak kontrastı korur.
-      .fill(isSelected ? Color.white.opacity(0.18) : accent.opacity(0.14))
-      .frame(width: size, height: size)
-      .overlay {
-        Image(systemName: category.symbolName)
-          .font(.system(size: size * 0.48, weight: .medium))
-          .symbolRenderingMode(.hierarchical)
-          .foregroundStyle(isSelected ? Color.white : accent)
-      }
-      .overlay {
-        RoundedRectangle(cornerRadius: radius, style: .continuous)
-          .strokeBorder(
-            isSelected ? Color.white.opacity(0.20) : accent.opacity(0.18),
-            lineWidth: 0.5
-          )
-      }
+  /// Kenar çubuğunda satırı olan bölümler.
+  ///
+  /// Widget'lar listede değil: sayfa masaüstü ve Bildirim Merkezi
+  /// widget'larının önizleme galerisi ve widget'lar zaten kendi
+  /// yerlerinden (Bildirim Merkezi, masaüstü) yönetiliyor — ayarlarda
+  /// ikinci bir kapı olmasının karşılığı yoktu. Bölüm ve sayfası
+  /// duruyor, yalnızca satırı listede değil; geri açmak için buraya
+  /// eklemek yetiyor.
+  static var sidebarCases: [SettingsCategory] {
+    allCases.filter { $0 != .widgets }
   }
 }
 

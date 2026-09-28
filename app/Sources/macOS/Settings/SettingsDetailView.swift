@@ -18,8 +18,6 @@ struct SettingsDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SettingsMetrics.sectionSpacing) {
-                header
-
                 switch category {
                 case .general: GeneralSettingsSection()
                 case .panelSize: PanelSizeSettingsSection()
@@ -47,26 +45,10 @@ struct SettingsDetailView: View {
             // miras almasınlar.
             .id(category)
         }
-    }
-
-    private var header: some View {
-        HStack(spacing: 14) {
-            SettingsCategoryIcon(category: category, size: 48, radius: Layout.Radius.large)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(category.title)
-                    .font(.app(size: 28, weight: .semibold))
-                    .kerning(-0.6)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-
-                Text(category.subtitle)
-                    .font(.app(.titleLarge))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer(minLength: 0)
-        }
+        // Sayfa kimliği üst şeritteki rozette: başlık, simge ve alt
+        // başlık orada duruyor. Sayfanın kendi içinde ikinci bir başlık
+        // bloğu varken ekranda aynı ad iki kez, biri diğerinin hemen
+        // altında yazıyordu.
+        .pageSubtitle(category.subtitle)
     }
 }

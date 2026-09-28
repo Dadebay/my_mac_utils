@@ -421,14 +421,30 @@ struct AboutGlassDoView: View {
                 }
             }
 
+            // Çubuk satırı ile harf satırı ayrı: aradaki ince çizgi
+            // çubukların oturduğu taban. Tek bir HStack içinde harfler de
+            // olsaydı çizgi onların altına düşerdi.
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(columns) { day in
-                    trendColumn(
-                        day: day,
-                        peak: peak,
-                        isToday: day.id == columns.last?.id,
-                        showsWeekday: showsWeekdays
-                    )
+                    trendBar(day: day, peak: peak, isToday: day.id == columns.last?.id)
+                }
+            }
+            .frame(height: Self.trendBarHeight)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.12))
+                    .frame(height: 1)
+            }
+
+            if showsWeekdays {
+                HStack(spacing: 2) {
+                    ForEach(columns) { day in
+                        let isToday = day.id == columns.last?.id
+                        Text(Self.weekdayFormatter.string(from: day.day))
+                            .font(.app(.micro, weight: isToday ? .semibold : .medium))
+                            .foregroundStyle(isToday ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
+                            .frame(maxWidth: .infinity)
+                    }
                 }
             }
 
@@ -453,32 +469,23 @@ struct AboutGlassDoView: View {
     /// değişse de (yedi ↔ otuz) kartın boyu oynamasın.
     private static let trendBarHeight: CGFloat = 52
 
-    private func trendColumn(day: DayCount, peak: Int, isToday: Bool, showsWeekday: Bool) -> some View {
-        let weekday = Self.weekdayFormatter.string(from: day.day)
+    private func trendBar(day: DayCount, peak: Int, isToday: Bool) -> some View {
+        // Sıfır gün boş bir sütun: arkasında bir şey çizilmiyor. Önceki
+        // denemede her günün arkasında çubuk boyunda soluk bir yuva vardı;
+        // koyu zeminde o yuvalar çubuğun kendisi gibi okunuyor, yedi gün de
+        // doluymuş gibi görünüyordu. Günün yerini alttaki harf ve tabandaki
+        // çizgi zaten gösteriyor.
+        ZStack(alignment: .bottom) {
+            Color.clear
 
-        return VStack(spacing: 6) {
-            ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(Color.primary.opacity(0.05))
-
-                if day.total > 0 {
-                    // Yalnızca üst köşeler yuvarlak: çubuk tabana oturuyor,
-                    // alt köşeleri de yuvarlatmak onu zeminden koparıyordu.
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 2, topTrailingRadius: 2, style: .continuous
-                    )
-                    .fill(isToday ? Color.accentColor : Color.accentColor.opacity(0.6))
-                    .frame(
-                        height: max(3, Self.trendBarHeight * CGFloat(day.total) / CGFloat(max(peak, 1)))
-                    )
-                }
-            }
-            .frame(height: Self.trendBarHeight)
-
-            if showsWeekday {
-                Text(weekday)
-                    .font(.app(.micro, weight: isToday ? .semibold : .medium))
-                    .foregroundStyle(isToday ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
+            if day.total > 0 {
+                // Yalnızca üst köşeler yuvarlak: çubuk tabana oturuyor,
+                // alt köşeleri de yuvarlatmak onu çizgiden koparıyordu.
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 2, topTrailingRadius: 2, style: .continuous
+                )
+                .fill(isToday ? Color.accentColor : Color.accentColor.opacity(0.55))
+                .frame(height: max(3, Self.trendBarHeight * CGFloat(day.total) / CGFloat(max(peak, 1))))
             }
         }
         .frame(maxWidth: .infinity)
@@ -487,13 +494,14 @@ struct AboutGlassDoView: View {
             value: day.total
         )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            L10n.s(
+        .accessibilityLabel({
+            let weekday = Self.weekdayFormatter.string(from: day.day)
+            return L10n.s(
                 "\(weekday): \(day.total) kullanım",
                 "\(weekday): \(day.total) uses",
                 "\(weekday): использований \(day.total)"
             )
-        )
+        }())
     }
 
     private static let weekdayFormatter: DateFormatter = {
