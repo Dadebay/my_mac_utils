@@ -224,20 +224,25 @@ struct RailIconsSettingsSection: View {
   @AppStorage(PanelSettings.showCompletedIconKey) private var showCompleted = true
   @AppStorage(PanelSettings.showFoldersIconKey) private var showFolders = true
   @AppStorage(PanelSettings.showMemoryIconKey) private var showMemory = true
+  @AppStorage(PanelSettings.showClipboardIconKey) private var showClipboard = true
   @AppStorage(PanelSettings.showNetworkIconKey) private var showNetwork = false
   @AppStorage(PanelSettings.showBatteryIconKey) private var showBattery = false
   @AppStorage(PanelSettings.showDiskIconKey) private var showDisk = false
   @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessor = false
+  @AppStorage(PanelSettings.showVolumeIconKey) private var showVolume = false
   @AppStorage(PanelSettings.showPinIconKey) private var showPin = true
   @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcher = true
   @AppStorage(PanelSettings.showSettingsIconKey) private var showSettings = true
   @AppStorage(PanelSettings.selectedIconCornerRadiusKey) private var selectedCorner = PanelSettings
     .defaultSelectedIconCornerRadius
 
+  /// Pano ve ses karıştırıcı rayda vardı ama burada satırları yoktu:
+  /// ikisi ayarlardan hiç açılıp kapatılamıyordu ve üstteki "14'ten 11"
+  /// sayacı onları saymadığı için yanlış sonuç veriyordu.
   private var visibleCount: Int {
     [
-      showTasks, showAdd, showCompleted, showFolders, showMemory,
-      showNetwork, showBattery, showDisk, showProcessor,
+      showTasks, showAdd, showCompleted, showFolders,
+      showMemory, showClipboard, showNetwork, showBattery, showDisk, showProcessor, showVolume,
       showPin, showWindowSwitcher, showSettings,
     ]
     .filter { $0 }.count
@@ -245,16 +250,33 @@ struct RailIconsSettingsSection: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 18) {
+      // Köşe kaydırıcısı önizlemenin hemen altında. Eskiden sayfanın en
+      // dibinde, on dört satırlık listenin altındaydı: kaydırıcıyı
+      // sürüklerken etkilediği ikon ekranın dışında kalıyordu, yani
+      // değişikliği ancak bırakıp yukarı kaydırınca görebiliyordun.
+      // Denetim, değiştirdiği şeyin yanında durmalı.
       SettingsCard(title: L10n.previewGroup, subtitle: L10n.previewHint) {
         RailPreview()
           .padding(.vertical, 8)
+        SettingsRowDivider()
+        ValueSlider(
+          label: L10n.selectedIconCornerRadiusLabel,
+          value: $selectedCorner,
+          range: PanelSettings.selectedIconCornerRadiusRange,
+          format: { "\(Int($0.rounded())) pt" }
+        )
       }
 
+      // Liste rayın kendisini aynalıyor: aynı sıra, aynı üç bölüm.
+      // Düz on dört satır, hangi ikonun rayda nerede durduğunu
+      // söylemiyordu; "görevler — ölçerler — eylemler" ayrımı rayı
+      // yukarıdan aşağıya okurken gözün zaten yaptığı ayrım.
       SettingsCard(
         title: L10n.visibleIconsGroup,
         subtitle: L10n.iconCountSummary(visibleCount, PanelSettings.totalIconCount),
         trailing: AnyView(ResetButton { PanelSettings.resetIconDefaults() })
       ) {
+        groupLabel(L10n.s("Görevler", "Tasks", "Задачи"), isFirst: true)
         IconToggleRow(systemName: "checklist", label: L10n.showTasksIconLabel, isOn: $showTasks)
         SettingsRowDivider()
         IconToggleRow(systemName: "plus", label: L10n.showAddIconLabel, isOn: $showAdd)
@@ -263,8 +285,12 @@ struct RailIconsSettingsSection: View {
           systemName: "checkmark.circle", label: L10n.showCompletedIconLabel, isOn: $showCompleted)
         SettingsRowDivider()
         IconToggleRow(systemName: "folder", label: L10n.showFoldersIconLabel, isOn: $showFolders)
-        SettingsRowDivider()
+
+        groupLabel(L10n.s("Ölçerler ve araçlar", "Meters & tools", "Показатели и инструменты"))
         IconToggleRow(systemName: "memorychip", label: L10n.showMemoryIconLabel, isOn: $showMemory)
+        SettingsRowDivider()
+        IconToggleRow(
+          systemName: "doc.on.clipboard", label: L10n.showClipboardIconLabel, isOn: $showClipboard)
         SettingsRowDivider()
         IconToggleRow(systemName: "globe", label: L10n.showNetworkIconLabel, isOn: $showNetwork)
         SettingsRowDivider()
@@ -275,6 +301,10 @@ struct RailIconsSettingsSection: View {
         SettingsRowDivider()
         IconToggleRow(systemName: "cpu", label: L10n.showProcessorIconLabel, isOn: $showProcessor)
         SettingsRowDivider()
+        IconToggleRow(
+          systemName: "speaker.wave.2", label: L10n.showVolumeIconLabel, isOn: $showVolume)
+
+        groupLabel(L10n.s("Eylemler", "Actions", "Действия"))
         IconToggleRow(systemName: "pin", label: L10n.showPinIconLabel, isOn: $showPin)
         SettingsRowDivider()
         IconToggleRow(
@@ -283,16 +313,20 @@ struct RailIconsSettingsSection: View {
         SettingsRowDivider()
         IconToggleRow(systemName: "gear", label: L10n.showSettingsIconLabel, isOn: $showSettings)
       }
-
-      SettingsCard(title: L10n.iconStyleGroup) {
-        ValueSlider(
-          label: L10n.selectedIconCornerRadiusLabel,
-          value: $selectedCorner,
-          range: PanelSettings.selectedIconCornerRadiusRange,
-          format: { "\(Int($0.rounded())) pt" }
-        )
-      }
     }
+  }
+
+  /// Kartın içindeki bölüm etiketi. Ayrı kartlar yerine tek kartın içinde:
+  /// sayaç ve sıfırlama düğmesi on dört ikonun hepsi için geçerli, üç
+  /// ayrı kartın başlıklarına bölünemezdi.
+  private func groupLabel(_ title: String, isFirst: Bool = false) -> some View {
+    Text(title)
+      .font(.app(.caption, weight: .semibold))
+      .foregroundStyle(.tertiary)
+      .textCase(.uppercase)
+      .kerning(0.4)
+      .padding(.top, isFirst ? 6 : 16)
+      .padding(.bottom, 2)
   }
 }
 

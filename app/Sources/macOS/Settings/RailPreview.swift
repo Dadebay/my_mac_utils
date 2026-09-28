@@ -18,10 +18,12 @@ struct RailPreview: View {
     @AppStorage(PanelSettings.showCompletedIconKey) private var showCompleted = true
     @AppStorage(PanelSettings.showFoldersIconKey) private var showFolders = true
     @AppStorage(PanelSettings.showMemoryIconKey) private var showMemory = true
+    @AppStorage(PanelSettings.showClipboardIconKey) private var showClipboard = true
     @AppStorage(PanelSettings.showNetworkIconKey) private var showNetwork = false
     @AppStorage(PanelSettings.showBatteryIconKey) private var showBattery = false
     @AppStorage(PanelSettings.showDiskIconKey) private var showDisk = false
     @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessor = false
+    @AppStorage(PanelSettings.showVolumeIconKey) private var showVolume = false
     @AppStorage(PanelSettings.showPinIconKey) private var showPin = true
     @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcher = true
     @AppStorage(PanelSettings.showSettingsIconKey) private var showSettings = true
@@ -29,6 +31,9 @@ struct RailPreview: View {
     /// Önizleme gerçek boyutun bu oranında çizilir.
     private let scale: CGFloat = 0.62
 
+    /// Sıra `EdgeRailView` ile birebir aynı. Pano ve ses karıştırıcı
+    /// rayda vardı ama burada yoktu: pano varsayılan olarak açık olduğu
+    /// için "canlı önizleme" raydan bir ikon eksik gösteriyordu.
     private var icons: [String] {
         var result: [String] = []
         if showTasks { result.append("checklist") }
@@ -36,10 +41,12 @@ struct RailPreview: View {
         if showCompleted { result.append("checkmark.circle") }
         if showFolders { result.append("folder") }
         if showMemory { result.append("memorychip") }
+        if showClipboard { result.append("doc.on.clipboard") }
         if showNetwork { result.append("globe") }
         if showBattery { result.append("battery.100percent") }
         if showDisk { result.append("internaldrive") }
         if showProcessor { result.append("cpu") }
+        if showVolume { result.append("speaker.wave.2") }
         if showPin { result.append("pin") }
         if showWindowSwitcher { result.append("rectangle.on.rectangle") }
         if showSettings { result.append("gear") }
