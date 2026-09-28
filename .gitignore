@@ -18,6 +18,10 @@ DerivedData/
 
 # Build output
 build/
+# `scripts/run.sh` ve `scripts/make-dmg.sh` kendi derleme köklerini
+# kullanıyor — paylaşılan DerivedData'ya karışmasınlar diye.
+build-debug/
+build-release/
 *.ipa
 *.dSYM.zip
 *.dSYM

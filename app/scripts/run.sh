@@ -9,6 +9,10 @@
 #
 # Gereken tek şey Xcode komut satırı araçları ve xcodegen:
 #   brew install xcodegen
+#
+# İlk çalıştırma uzun sürüyor: Firebase ve RevenueCat paketleri indiriliyor.
+# Sonraki çalıştırmalar hem paketleri hem derleme çıktısını yeniden
+# kullanıyor.
 
 set -euo pipefail
 
@@ -38,11 +42,42 @@ if [ ! -d "$PROJECT" ] || [ project.yml -nt "$PROJECT" ]; then
   xcodegen generate
 fi
 
+# Paketler (Firebase, RevenueCat) buraya bir kez klonlanıyor ve bütün
+# derlemeler onu paylaşıyor. Derleme klasörünün içine klonlansalardı
+# `build-debug` her silindiğinde yüzlerce megabayt yeniden inerdi —
+# firebase-ios-sdk küçük bir depo değil.
+PACKAGES_DIR="$HOME/Library/Caches/GlassDo/SourcePackages"
+mkdir -p "$PACKAGES_DIR"
+
+COMMON_ARGS=(
+  -project "$PROJECT"
+  -scheme "$SCHEME"
+  -configuration Debug
+  -derivedDataPath "$BUILD_DIR"
+  -clonedSourcePackagesDirPath "$PACKAGES_DIR"
+)
+
+# Paket çözümü ayrı bir adım: derlemenin içinde yapılınca ilk çalıştırmada
+# dakikalarca hiçbir çıktı vermeden bekliyor ve donmuş gibi görünüyor.
+# Burada kendi satırını yazıyor, ne beklendiği belli oluyor.
+if [ ! -d "$PACKAGES_DIR/checkouts" ]; then
+  echo "==> Paketler indiriliyor (ilk çalıştırma, birkaç dakika sürebilir)"
+else
+  echo "==> Paketler denetleniyor"
+fi
+xcodebuild "${COMMON_ARGS[@]}" -resolvePackageDependencies
+
 echo "==> Derleniyor (Debug)"
-# `-quiet` yalnızca uyarı ve hataları basıyor: başarılı bir derlemede
-# terminal temiz kalıyor, hata varsa tam metniyle görünüyor.
-xcodebuild -project "$PROJECT" -scheme "$SCHEME" -configuration Debug \
-  -derivedDataPath "$BUILD_DIR" -quiet build
+# Çıktı bastırılmıyor: sessiz bir derlemede ilerleme olup olmadığı
+# anlaşılmıyor. `xcbeautify`/`xcpretty` varsa okunur hâle getiriyor
+# (brew install xcbeautify), yoksa ham çıktı akıyor.
+if command -v xcbeautify >/dev/null 2>&1; then
+  xcodebuild "${COMMON_ARGS[@]}" build | xcbeautify
+elif command -v xcpretty >/dev/null 2>&1; then
+  xcodebuild "${COMMON_ARGS[@]}" build | xcpretty
+else
+  xcodebuild "${COMMON_ARGS[@]}" build
+fi
 
 [ -d "$APP_PATH" ] || { echo "Uygulama bulunamadı: $APP_PATH"; exit 1; }
 
