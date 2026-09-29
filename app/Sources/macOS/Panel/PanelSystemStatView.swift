@@ -1044,16 +1044,21 @@ struct PanelNetworkView: View {
             )
 
             // Panel ile Ayarlar aynı gerçeği söylemeli: ajan kayıtlıysa
-            // geçmiş kapalıyken de birikiyor, değilse birikmiyor.
-            Text(
-                NetworkAgentSettings.isEnabled
-                    ? L10n.networkHistoryHintAgentEnabled
-                    : L10n.networkHistoryHint
-            )
+            // geçmiş kapalıyken de birikiyor, değilse birikmiyor. Kayıtlı
+            // olup da susuyorsa ikisi de doğru değil — ölçümü uygulama
+            // sürdürüyor ve bu, kullanıcının düzeltmesi gereken bir durum.
+            Text(historyHint)
                 .font(.app(.micro))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(NetworkHistoryStore.shared.isAgentSilent ? .secondary : .tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var historyHint: String {
+        guard NetworkAgentSettings.isEnabled else { return L10n.networkHistoryHint }
+        return NetworkHistoryStore.shared.isAgentSilent
+            ? L10n.networkHistoryHintAgentSilent
+            : L10n.networkHistoryHintAgentEnabled
     }
 
     private var header: some View {

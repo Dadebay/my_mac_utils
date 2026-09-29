@@ -47,7 +47,7 @@ final class WindowSwitcherController {
     /// Pencere küçültülünce ekranda çizilmediği için yakalanamıyor — son
     /// başarılı görüntüsü burada saklanıp kartta o gösteriliyor.
     /// Anahtar için bkz. `cacheKey(pid:title:)`.
-    private var thumbnailCache: [String: NSImage] = [:]
+    private var thumbnailCache: [String: NSImage] = SwitcherThumbnailStore.loadAll()
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
@@ -730,9 +730,15 @@ final class WindowSwitcherController {
 
     /// Küçük resim önbelleğinin anahtarı. `CGWindowID` kullanılamıyor çünkü
     /// küçültülmüş pencereler Erişilebilirlik API'sinden geliyor ve orada
-    /// pencere kimliği yok — süreç ve başlık birleşimi yeterince ayırt edici.
+    /// pencere kimliği yok.
+    ///
+    /// Süreç kimliği de kullanılamıyor: her açılışta değişiyor, yani diske
+    /// yazılan görüntü bir sonraki oturumda hiçbir pencereyle eşleşmezdi.
+    /// Paket kimliği oturumlar arası sabit; onunla pencere başlığının
+    /// birleşimi yeterince ayırt edici.
     private static func cacheKey(pid: pid_t, title: String) -> String {
-        "\(pid)|\(title)"
+        let bundleID = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? "pid:\(pid)"
+        return "\(bundleID)|\(title)"
     }
 
     /// Bir uygulamanın GERÇEKTEN simge durumuna küçültülmüş pencereleri.
@@ -889,10 +895,11 @@ final class WindowSwitcherController {
             ))
         }
 
-        // Artık var olmayan pencerelerin görüntülerini önbellekte tutma.
-        let liveKeys = Set(entries.map { Self.cacheKey(pid: $0.pid, title: $0.title) })
-            .union(minimized.map { Self.cacheKey(pid: $0.app.processIdentifier, title: $0.title) })
-        thumbnailCache = thumbnailCache.filter { liveKeys.contains($0.key) }
+        // Bellekteki önbellek artık temizlenmiyor: küçültülmüş bir
+        // pencerenin görüntüsü, uygulama kapanıp açıldıktan sonra da
+        // gerekiyor ve `pid` her açılışta değiştiği için "artık yok"
+        // sanılan kayıtlar aslında bir sonraki oturumun kaynağıydı.
+        // Sınırı disk deposu koyuyor (bkz. `SwitcherThumbnailStore`).
 
         // Kullanıcı hazırlık sürerken ⌥'i bıraktıysa bindirimi hiç açma.
         guard isSessionActive else { return }
@@ -935,6 +942,9 @@ final class WindowSwitcherController {
 
             let key = Self.cacheKey(pid: entry.pid, title: entry.title)
             thumbnailCache[key] = thumbnail
+            // Küçültülmüş pencerelerin kartı bu görüntüden besleniyor ve
+            // uygulama yeniden başladığında bellekteki kopya gidiyor.
+            SwitcherThumbnailStore.store(thumbnail, for: key)
 
             guard isVisible,
                   let index = windows.firstIndex(where: { $0.windowID == entry.windowID })

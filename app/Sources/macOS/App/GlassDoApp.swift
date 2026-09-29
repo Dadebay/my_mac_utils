@@ -279,7 +279,38 @@ private struct MenuBarContentView: View {
     let switcherController: WindowSwitcherController
     @Environment(\.openWindow) private var openWindow
 
+    private let stats = SystemStatsController.shared
+
+    /// Ölçüler menü AÇILDIĞI anda bir kez okunuyor ve açık kaldığı sürece
+    /// değişmiyor. Canlı okunduklarında her ölçümde satırın metni
+    /// değişiyor, menü yeniden çiziliyordu: genişlik zıplıyor ve fare
+    /// altındaki vurgu yukarıdan aşağı kayıyordu (kullanıcı bildirdi).
+    /// Menü saniyeler için açılıyor; donmuş değer yeterince taze.
+    @State private var cpuLine = ""
+    @State private var memoryLine = ""
+
+    private var versionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        return version.map { "GlassDo \($0)" } ?? "GlassDo"
+    }
+
     var body: some View {
+        // Kimlik satırı: menünün neye ait olduğunu söylüyor ve altındaki
+        // grupları bir başlığın altına topluyor. Tıklanamaz.
+        Text(versionText)
+
+        Divider()
+
+        // Ölçüler: menü zaten sistem durumu için açılıyor, en sık sorulan
+        // iki sayıyı görmek için sayfaya gitmeye gerek kalmasın. Bunlar
+        // birer bilgi satırı, düğme değil.
+        if !cpuLine.isEmpty {
+            Text(cpuLine)
+            Text(memoryLine)
+
+            Divider()
+        }
+
         // Panel
         Button {
             // Yalnızca gösterme anı bir "kullanım" — gizlemek yeni bir
@@ -354,5 +385,15 @@ private struct MenuBarContentView: View {
             Label(L10n.quit, systemImage: "power")
         }
         .keyboardShortcut("q", modifiers: .command)
+        // Ölçüm menü açıkken dönüyor, kapanınca duruyor; satırların metni
+        // ise yalnızca burada, bir kez kuruluyor.
+        .task {
+            stats.start()
+            cpuLine = L10n.menuBarCPULine(stats.cpu.usage)
+            memoryLine = L10n.menuBarMemoryLine(stats.memory.used, stats.memory.total)
+        }
+        .onDisappear {
+            stats.stop()
+        }
     }
 }

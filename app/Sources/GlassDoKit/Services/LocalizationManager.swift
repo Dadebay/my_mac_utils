@@ -79,6 +79,151 @@ public enum L10n {
 
     // MARK: - Raf
     public static var shelfTitle: String { s("Raf", "Shelf", "Полка") }
+    /// Menü çubuğu menüsündeki bilgi satırları.
+    public static func menuBarCPULine(_ usage: Double) -> String {
+        let value = String(format: "%.0f%%", usage * 100)
+        return s("İşlemci: \(value)", "CPU: \(value)", "ЦП: \(value)")
+    }
+    public static func menuBarMemoryLine(_ used: UInt64, _ total: UInt64) -> String {
+        // Bayt biçimleyici bu modülde yok (`SystemFormat` uygulama
+        // hedefinde); menü satırı için sistemin kendi biçimleyicisi yeterli.
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        formatter.allowedUnits = [.useGB, .useMB]
+        let value = "\(formatter.string(fromByteCount: Int64(used))) / \(formatter.string(fromByteCount: Int64(total)))"
+        return s("Bellek: \(value)", "Memory: \(value)", "Память: \(value)")
+    }
+
+    public static var shelfGroupToday: String { s("Bugün", "Today", "Сегодня") }
+    public static var shelfGroupYesterday: String { s("Dün", "Yesterday", "Вчера") }
+
+
+    // MARK: - Android telefon
+
+    public static var androidTransferTitle: String { s("Telefon", "Phone", "Телефон") }
+
+    public static var androidNoDeviceTitle: String {
+        s("Bağlı telefon yok", "No phone connected", "Телефон не подключён")
+    }
+    public static var androidNoDeviceDetail: String {
+        s(
+            "Android telefonunu USB kablosuyla bağla, sonra telefonda bildirimi açıp \"Dosya aktarımı\" modunu seç.",
+            "Connect your Android phone over USB, then open the notification on the phone and choose \"File transfer\".",
+            "Подключите Android-телефон по USB, затем откройте уведомление на телефоне и выберите «Передача файлов»."
+        )
+    }
+    public static var androidModeFileTransferOn: String {
+        s("Dosya aktarımı açık", "File transfer is on", "Передача файлов включена")
+    }
+    public static var androidModeFileTransferOff: String {
+        s(
+            "Dosya aktarımı kapalı — telefondaki USB bildirimine dokunup \"Dosya aktarımı\" seç",
+            "File transfer is off — tap the USB notification on the phone and choose \"File transfer\"",
+            "Передача файлов выключена — нажмите USB-уведомление на телефоне и выберите «Передача файлов»"
+        )
+    }
+    public static var androidModeDebuggingOn: String {
+        s("USB hata ayıklama açık", "USB debugging is on", "Отладка по USB включена")
+    }
+    public static var androidModeDebuggingOff: String {
+        s(
+            "USB hata ayıklama kapalı — APK yüklemek için gerekiyor",
+            "USB debugging is off — needed for installing APKs",
+            "Отладка по USB выключена — нужна для установки APK"
+        )
+    }
+    public static var androidSerialLabel: String { s("Seri no", "Serial", "Серийный номер") }
+    // Dosya gezgini
+    public static var androidAdbMissingTitle: String {
+        s("Dosya erişimi hazır değil", "File access isn't ready", "Доступ к файлам не готов")
+    }
+    public static var androidAdbMissing: String {
+        s(
+            "Telefonun dosyalarını okumak için Android platform araçları (adb) gerekiyor ve bu Mac'te bulunamadı.",
+            "Reading the phone's files needs the Android platform tools (adb), which weren't found on this Mac.",
+            "Для чтения файлов телефона нужны инструменты Android (adb) — на этом Mac они не найдены."
+        )
+    }
+    public static var androidDebuggingNeededTitle: String {
+        s("USB hata ayıklama gerekiyor", "USB debugging required", "Нужна отладка по USB")
+    }
+    public static var androidDebuggingNeededDetail: String {
+        s(
+            "Telefonda Ayarlar > Geliştirici seçenekleri > USB hata ayıklama'yı aç, sonra telefonda çıkan onayı kabul et.",
+            "On the phone open Settings > Developer options > USB debugging, then accept the prompt that appears.",
+            "На телефоне откройте Настройки > Для разработчиков > Отладка по USB и подтвердите запрос."
+        )
+    }
+    public static var androidNoSerialTitle: String {
+        s("Telefon tanınamadı", "Phone not identified", "Телефон не определён")
+    }
+    public static var androidNoSerialDetail: String {
+        s(
+            "Cihazın seri numarası okunamadı. Kabloyu çıkarıp yeniden takmak çoğu zaman yetiyor.",
+            "The device serial couldn't be read. Unplugging and reconnecting the cable usually helps.",
+            "Не удалось прочитать серийный номер. Обычно помогает переподключение кабеля."
+        )
+    }
+    public static var androidBadgeFileTransfer: String {
+        s("Dosya aktarımı", "File transfer", "Передача файлов")
+    }
+    public static var androidBadgeDebugging: String {
+        s("Hata ayıklama", "Debugging", "Отладка")
+    }
+    public static var androidGoUp: String { s("Üst klasör", "Parent folder", "Вверх") }
+    public static var androidRefresh: String { s("Yenile", "Refresh", "Обновить") }
+    public static var androidSend: String { s("Gönder", "Send", "Отправить") }
+    public static var androidSendHelp: String {
+        s(
+            "Mac'ten dosya seç ve bu klasöre yükle (APK ise kurulur). Finder'dan sürükleyip bırakabilirsin.",
+            "Pick files on the Mac and upload them here (an APK gets installed). You can also drag them from Finder.",
+            "Выберите файлы на Mac и загрузите сюда (APK будет установлен). Можно перетащить из Finder."
+        )
+    }
+    public static var androidSaveHere: String { s("Buraya kaydet", "Save here", "Сохранить сюда") }
+    public static func androidChooseDestination(_ name: String) -> String {
+        s("\(name) nereye kaydedilsin?", "Where should \(name) be saved?", "Куда сохранить \(name)?")
+    }
+    public static func androidDownloading(_ name: String) -> String {
+        s("\(name) indiriliyor…", "Downloading \(name)…", "Загрузка \(name)…")
+    }
+    public static func androidUploading(_ name: String) -> String {
+        s("\(name) gönderiliyor…", "Sending \(name)…", "Отправка \(name)…")
+    }
+    public static func androidUploadingCount(_ count: Int) -> String {
+        s("\(count) öğe gönderiliyor…", "Sending \(count) items…", "Отправка \(count) объектов…")
+    }
+    public static func androidFreeSpace(_ value: String) -> String {
+        s("\(value) boş", "\(value) free", "\(value) свободно")
+    }
+    public static var androidStorageFreeSuffix: String { s("boş", "free", "свободно") }
+    public static func androidStorageUsedOfTotal(_ used: String, _ total: String) -> String {
+        s("\(used) / \(total) dolu", "\(used) of \(total) used", "\(used) из \(total) занято")
+    }
+    public static var androidDownloadHelp: String {
+        s("Mac'e indir", "Download to Mac", "Скачать на Mac")
+    }
+    public static var androidEmptyFolder: String {
+        s("Bu klasör boş", "This folder is empty", "Папка пуста")
+    }
+
+    public static var androidFilesComingSoon: String {
+        s(
+            "Dosya gezme üzerinde çalışılıyor. Şimdilik bu sayfa telefonun görünüp görünmediğini ve hangi modda bağlı olduğunu gösteriyor.",
+            "File browsing is being built. For now this page shows whether the phone is seen and which mode it is in.",
+            "Просмотр файлов в разработке. Пока страница показывает, виден ли телефон и в каком он режиме."
+        )
+    }
+    public static var androidUSBUnavailableTitle: String {
+        s("USB okunamıyor", "Can't read USB", "Нет доступа к USB")
+    }
+    public static var androidUSBUnavailableDetail: String {
+        s(
+            "Sistem USB aygıt listesini vermedi. Uygulamayı yeniden başlatmak çoğu zaman yetiyor.",
+            "The system did not return the USB device list. Restarting the app usually fixes it.",
+            "Система не вернула список USB-устройств. Обычно помогает перезапуск приложения."
+        )
+    }
     public static var shelfEmptyHint: String {
         s(
             "Görsel ve videoları buraya sürükle — sonra buradan tutup geri sürükleyebilirsin",
@@ -602,6 +747,17 @@ public enum L10n {
             "Geçmiş yalnızca GlassDo çalışırken birikir",
             "History accumulates only while GlassDo is running",
             "История накапливается только когда GlassDo запущен"
+        )
+    }
+
+    /// Ajan açık görünüyor ama çalışmıyor: ölçümü uygulama sürdürüyor,
+    /// yani GlassDo kapalıyken geçmiş birikmiyor. Sessiz kalmak yanlış
+    /// bilgi olurdu — kullanıcı ajanı açtığını sanıp uygulamayı kapatır.
+    public static var networkHistoryHintAgentSilent: String {
+        s(
+            "Arka plan ajanı çalışmıyor — geçmiş yalnızca GlassDo açıkken birikiyor (Ayarlar > Ağ)",
+            "The background agent isn't running — history only accumulates while GlassDo is open (Settings > Network)",
+            "Фоновый агент не работает — история копится только при открытом GlassDo (Настройки > Сеть)"
         )
     }
 

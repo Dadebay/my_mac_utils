@@ -21,6 +21,8 @@ enum SidebarSelection: Hashable {
     case processor
     /// Uygulamanın kendi dosya alanı.
     case folders
+    /// USB'ye bağlı Android telefon.
+    case androidDevice
     /// Odak oturumları geçmişi.
     case focusHistory
     /// Ayar sayfaları. Eskiden ayrı bir pencereydiler ve kendi kenar
@@ -134,6 +136,12 @@ extension SidebarEntry {
                 title: L10n.shelfTitle,
                 symbolName: "tray.full",
                 colors: [Color(red: 0.56, green: 0.61, blue: 0.72), Color(red: 0.36, green: 0.41, blue: 0.52)]
+            ),
+            SidebarEntry(
+                selection: .androidDevice,
+                title: L10n.androidTransferTitle,
+                symbolName: "iphone.gen3",
+                colors: [Color(red: 0.42, green: 0.80, blue: 0.52), Color(red: 0.22, green: 0.62, blue: 0.36)]
             ),
             SidebarEntry(
                 selection: .focusHistory,

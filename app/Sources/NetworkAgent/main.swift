@@ -46,7 +46,7 @@ enum NetworkAgentMain {
             exit(0)
         }
 
-        let persistence = NetworkHistoryPersistence()
+        let persistence = NetworkHistoryPersistence(writer: .agent)
 
         installTerminationHandler(persistence: persistence)
 

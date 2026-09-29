@@ -38,6 +38,12 @@ final class NetworkHistoryStore {
     /// (yerel `UserDefaults` okuma) — ayrı bir gözlemciye gerek yok.
     private var agentOwnsWrites: Bool { NetworkAgentSettings.isEnabled }
 
+    /// Ajan kayıtlı görünüyor ama dosyaya yazmıyor — ölçümü bu süreç
+    /// sürdürüyor. Ayarlar sayfası bunu kullanıcıya bildiriyor.
+    var isAgentSilent: Bool {
+        agentOwnsWrites && !persistence.isAgentWritingLive(now: Date())
+    }
+
     /// Uygulama açılışında bir kez çağrılır.
     func startSampling() {
         guard samplingTask == nil else { return }
@@ -51,19 +57,25 @@ final class NetworkHistoryStore {
         }
     }
 
-    /// Ajan modunda yalnızca diskten yeniden okur; kendi kendine
-    /// örneklemez. Değilse çekirdek sayaçlarını okuyup geçmişe işler.
-    /// Her iki modda da güncel pencere toplamlarını döndürür.
+    /// Ajan gerçekten yazarken yalnızca diskten yeniden okur; aksi hâlde
+    /// (ajan kayıtlı değil ya da kayıtlı olduğu hâlde susuyor) çekirdek
+    /// sayaçlarını okuyup geçmişe kendisi işler. Her durumda güncel
+    /// pencere toplamlarını döndürür.
     @discardableResult
     func recordCurrentTraffic() -> (today: UInt64, last7: UInt64, last30: UInt64) {
         let now = Date()
 
-        if agentOwnsWrites {
-            persistence.reload()
-        } else {
+        // Ajan kayıtlıyken önce diskten okunuyor: yazdıysa toplamları
+        // ondan alıyoruz, susuyorsa ölçmeyi bu süreç devralıyor. Sıra
+        // önemli — okumadan yazmak ajanın son hâlinin üstüne yazardı, hiç
+        // okumamak da ajanın geri döndüğünü fark etmemizi engellerdi.
+        if agentOwnsWrites { persistence.reload() }
+
+        if !agentOwnsWrites || !persistence.isAgentWritingLive(now: now) {
             persistence.ingest(samples: NetworkInterfaceCounters.physicalSamples(), at: now)
-            // Widget'a taşımak da yazıcının işi — ajan kayıtlıyken bunu
-            // zaten kendisi yapıyor (bkz. GlassDoNetworkAgent/main.swift).
+            // Widget'a taşımak da yazıcının işi — ajan gerçekten
+            // yazarken bunu zaten kendisi yapıyor (bkz.
+            // GlassDoNetworkAgent/main.swift).
             publishToWidgetIfNeeded()
         }
 

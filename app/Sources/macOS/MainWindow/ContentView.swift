@@ -48,13 +48,14 @@ struct ContentView: View {
                     // (bkz. `PanelShelfView`). Kenar paneliyle aynı görünüm,
                     // yalnızca geniş ölçülerle.
                     //
-                    // Rafın kendi başlık şeridi var; pencerenin başlık
-                    // çubuğu için ayrılan güvenli alan onun üstünde boş bir
-                    // bant bırakıyordu. Trafik ışıkları kenar çubuğunun
-                    // üstünde durduğu için bu sütunda o alanı boş tutmanın
-                    // karşılığı yok.
+                    // Güvenli alan yok sayılmıyor: Raf'ın kendi şeridi
+                    // başlık çubuğunun altına girince yazı ve düğmeler
+                    // çubuğun malzemesinin arkasında okunmaz hâle
+                    // geliyordu (kullanıcı bildirdi). Sayfa adı artık
+                    // diğer sayfalardaki gibi üst şeritteki rozette.
                     PanelShelfView(isCompact: false)
-                        .ignoresSafeArea(.container, edges: .top)
+                case .androidDevice:
+                    AndroidTransferView()
                 case .focusHistory:
                     ScrollView {
                         FocusHistoryView()
@@ -81,10 +82,7 @@ struct ContentView: View {
             .toolbar(removing: .title)
             .toolbar {
                 ToolbarItem(placement: .navigation) {
-                    // Raf kendi kimlik satırını zaten çiziyor (bkz.
-                    // `PanelShelfView.titleBlock`) — buradaki rozet üst
-                    // üste ikinci bir "Shelf" başlığı olurdu.
-                    if let entry = selection?.entry, selection != .folders {
+                    if let entry = selection?.entry {
                         PageToolbarBadge(entry: entry, subtitle: pageSubtitle)
                     }
                 }

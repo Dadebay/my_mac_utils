@@ -18,6 +18,8 @@ private extension SidebarSelection {
         case .folders: .folders
         // Odak geçmişi bir ölçer sayfası değil; kullanım sayacı yok.
         case .focusHistory: nil
+        // Telefon sayfasının henüz bir kullanım sayacı yok.
+        case .androidDevice: nil
         // Ayar sayfaları da bir özellik kullanımı sayılmıyor: kullanıcı
         // ayarı değiştirdiğinde ilgili özelliğin sayacı zaten artıyor.
         case .settings: nil
@@ -166,15 +168,14 @@ struct SidebarView: View {
                 Text(list.title)
                     .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
-                    // Kenar çubuğu 200 puntoya kadar daralabiliyor;
-                    // sınırsız bırakılan ad orada ikinci satıra taşıyor ve
-                    // o satır komşularından yüksek kalıyordu. Önce küçülüp
-                    // sonra kısalıyor, satır yüksekliği sabit kalıyor. Pay
-                    // %70: %80'de Rusça "Переключатель окон" hâlâ
-                    // kesiliyordu.
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    // Uzun adlar (Rusça "Использование памяти") tek satıra
+                    // sığmıyor. Önce hafifçe küçülüyor, yine sığmazsa ikinci
+                    // satıra geçiyor: %70'e kadar küçültmek adı okunmaz
+                    // derecede ufaltıyordu, kullanıcı iki satır istedi.
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                     .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 6)
 
@@ -212,9 +213,10 @@ struct SidebarView: View {
                 Text(title)
                     .font(.app(.title, weight: isSelected ? .semibold : .medium))
                     .foregroundStyle(isSelected ? tiers.selectedLabel : tiers.label)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                     .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: 6)
             }

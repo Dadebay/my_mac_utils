@@ -35,6 +35,8 @@ struct PanelShelfView: View {
     @State private var errorMessage: String?
     @State private var isDropTargeted = false
     @State private var isSearching = false
+    /// Izgaranın kullanabildiği genişlik — sütun sayısı buna göre.
+    @State private var contentWidth: CGFloat = 0
 
     @FocusState private var searchFocused: Bool
     @FocusState private var gridFocused: Bool
@@ -176,9 +178,10 @@ struct PanelShelfView: View {
             .padding(.vertical, 10)
         } else {
             HStack(spacing: 10) {
-                titleBlock
-
-                Spacer(minLength: 12)
+                // Sayfa adı üst şeritteki rozette (bkz. `PageToolbarBadge`);
+                // burada ikinci kez yazmak aynı kelimeyi üst üste iki kez
+                // gösterirdi.
+                Spacer(minLength: 0)
 
                 if isSearching {
                     searchField
@@ -437,6 +440,13 @@ struct PanelShelfView: View {
                     list
                 } else {
                     grid
+                        // Sütun sayısı genişlikten geliyor; kaydırma
+                        // görünümünün kendi genişliği ölçülüyor.
+                        .onGeometryChange(for: CGFloat.self) { proxy in
+                            proxy.size.width
+                        } action: { width in
+                            contentWidth = width
+                        }
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -456,12 +466,42 @@ struct PanelShelfView: View {
         }
     }
 
+    /// Izgara iki biçimde: tarihe göre sıralarken gün başlıklarıyla
+    /// bölümlenmiş, diğer sıralamalarda düz. Gün başlığı yalnızca tarih
+    /// sıralamasında anlamlı — ada ya da boyuta göre dizilmiş bir listede
+    /// araya giren "Dün" başlığı sıranın kendisini okunmaz yapardı.
+    @ViewBuilder
     private var grid: some View {
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: metrics.cardMinWidth), spacing: metrics.cardSpacing)],
-            spacing: metrics.cardSpacing
-        ) {
-            ForEach(visibleItems) { item in
+        if dayGroups.isEmpty {
+            plainGrid
+        } else {
+            LazyVStack(alignment: .leading, spacing: metrics.cardSpacing + 10) {
+                ForEach(dayGroups) { group in
+                    VStack(alignment: .leading, spacing: metrics.cardSpacing) {
+                        dayHeader(group)
+                        cardGrid(group.items)
+                    }
+                }
+            }
+            .padding(.horizontal, metrics.gutter)
+            .padding(.vertical, metrics.cardSpacing)
+            .animation(motion, value: visibleItems.map(\.id))
+        }
+    }
+
+    private var plainGrid: some View {
+        cardGrid(visibleItems)
+            .padding(.horizontal, metrics.gutter)
+            .padding(.vertical, metrics.cardSpacing)
+            .animation(motion, value: visibleItems.map(\.id))
+    }
+
+    /// Ana pencerede sabit üç sütun: kartlar pencere genişledikçe
+    /// büyüyor, sayıları artmıyor — önizlemenin okunur kalması sütun
+    /// sayısından önemli. Dar panelde sütun sayısı yine sığdığı kadar.
+    private func cardGrid(_ items: [StorageItem]) -> some View {
+        LazyVGrid(columns: gridColumns, spacing: metrics.cardSpacing) {
+            ForEach(items) { item in
                 ShelfGridCard(
                     item: item,
                     isSelected: selection == item.url,
@@ -473,9 +513,59 @@ struct PanelShelfView: View {
                 )
             }
         }
-        .padding(.horizontal, metrics.gutter)
-        .padding(.vertical, metrics.cardSpacing)
-        .animation(motion, value: visibleItems.map(\.id))
+    }
+
+    private var gridColumns: [GridItem] {
+        guard !isCompact else {
+            return [GridItem(.adaptive(minimum: metrics.cardMinWidth), spacing: metrics.cardSpacing)]
+        }
+        return Array(
+            repeating: GridItem(.flexible(), spacing: metrics.cardSpacing),
+            count: columnCount
+        )
+    }
+
+    /// Sütun sayısı pencereyle birlikte artıyor: dar pencerede üç, geniş
+    /// pencerede beş. `.adaptive` yerine eşikler kullanılıyor çünkü
+    /// adaptive'te sütun sayısının üst sınırı yok — tam ekranda kartlar
+    /// pul boyutuna inip önizlemeyi okunmaz yapıyordu.
+    private var columnCount: Int {
+        switch contentWidth {
+        case ..<950: 3
+        case ..<1250: 4
+        default: 5
+        }
+    }
+
+    private func dayHeader(_ group: ShelfDayGroup) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(group.title)
+                .font(.app(size: metrics.nameSize, weight: .semibold))
+                .foregroundStyle(.primary)
+                .textCase(.uppercase)
+                .kerning(0.5)
+
+            Text(L10n.shelfItemCount(group.items.count))
+                .font(.app(size: metrics.metaSize))
+                .monospacedDigit()
+                .foregroundStyle(.tertiary)
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Tarih sıralamasında günlere bölünmüş öğeler; başka sıralamada boş.
+    private var dayGroups: [ShelfDayGroup] {
+        guard !isCompact, sort == .recent || sort == .oldest else { return [] }
+        let calendar = Calendar.current
+        // `visibleItems` zaten sıralı; gruplama bu sırayı koruyor, yani
+        // grup içindeki sıra kullanıcının seçtiği sıralama.
+        let grouped = Dictionary(grouping: visibleItems) {
+            calendar.startOfDay(for: $0.modifiedAt)
+        }
+        return grouped
+            .map { ShelfDayGroup(id: $0.key, title: ShelfFormat.dayTitle(for: $0.key), items: $0.value) }
+            .sorted { sort == .oldest ? $0.id < $1.id : $0.id > $1.id }
     }
 
     private var list: some View {
@@ -828,6 +918,14 @@ enum ShelfSort: String, CaseIterable, Identifiable {
     }
 }
 
+/// Aynı güne düşen raf öğeleri.
+struct ShelfDayGroup: Identifiable {
+    /// Günün başlangıcı — hem kimlik hem sıralama anahtarı.
+    let id: Date
+    let title: String
+    let items: [StorageItem]
+}
+
 // MARK: - Renkler
 
 /// Raf yüzeylerinin renkleri tek yerde. Sabit onaltılık değerler yerine
@@ -989,6 +1087,32 @@ struct ShelfThumbnail: View {
 /// kayardı.
 @MainActor
 enum ShelfFormat {
+    /// Gün başlığı: bugün ve dün adlarıyla, bu haftanın günleri gün
+    /// adıyla, daha eskiler tarihle. Ham tarih her satırda aynı biçimde
+    /// dururken "dün" ile "geçen salı" arasındaki fark okunmuyordu.
+    static func dayTitle(for day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return L10n.shelfGroupToday }
+        if calendar.isDateInYesterday(day) { return L10n.shelfGroupYesterday }
+
+        let formatter = DateFormatter()
+        // Uygulamanın kendi dili sistem dilinden farklı olabiliyor; gün
+        // adı ile arayüzün geri kalanı aynı dilde olmalı.
+        formatter.locale = Locale(identifier: L10n.language.rawValue)
+        let days = calendar.dateComponents(
+            [.day], from: day, to: calendar.startOfDay(for: .now)
+        ).day ?? 0
+
+        if days < 7 {
+            formatter.setLocalizedDateFormatFromTemplate("EEEE")
+        } else if calendar.isDate(day, equalTo: .now, toGranularity: .year) {
+            formatter.setLocalizedDateFormatFromTemplate("d MMMM")
+        } else {
+            formatter.setLocalizedDateFormatFromTemplate("d MMMM yyyy")
+        }
+        return formatter.string(from: day)
+    }
+
     /// Okunur ad. İki şey yapıyor:
     ///
     /// 1. Uzantıyı atıyor — tür zaten künyede yazıyor.

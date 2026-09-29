@@ -14,6 +14,12 @@
 		<string>V793RH49BX.group.com.dadebay.glassdo</string>
 	</array>
 
+	<!-- Telefon sayfası USB'ye takılı Android cihazları görüyor
+	     (bkz. AndroidDeviceMonitor). Sandbox'ta IOKit üzerinden USB
+	     aygıtlarını listelemek bu izne bağlı. -->
+	<key>com.apple.security.device.usb</key>
+	<true/>
+
 	<!-- Hız testi ve ağ ölçerleri giden bağlantı açıyor. -->
 	<key>com.apple.security.network.client</key>
 	<true/>

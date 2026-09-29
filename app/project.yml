@@ -79,6 +79,20 @@ targets:
     # `SMAppService.agent(plistName:)`'in beklediği tam yerleşim:
     # `Contents/MacOS/<araç>` ve `Contents/Library/LaunchAgents/<label>.plist`.
     postbuildScripts:
+      # Android dosya aktarımı `adb`ye dayanıyor. Müşterilerin makinesinde
+      # Android SDK olmadığı için araç uygulamayla birlikte geliyor;
+      # `AndroidFileService` önce paketin içine bakıyor. Lisans bildirimi
+      # (Apache 2.0) yanında taşınıyor.
+      - name: Embed adb
+        script: |
+          set -e
+          SRC="${SRCROOT}/Vendor/platform-tools"
+          if [ -f "$SRC/adb" ]; then
+            cp "$SRC/adb" "${CODESIGNING_FOLDER_PATH}/Contents/MacOS/adb"
+            chmod +x "${CODESIGNING_FOLDER_PATH}/Contents/MacOS/adb"
+            mkdir -p "${CODESIGNING_FOLDER_PATH}/Contents/Resources"
+            cp "$SRC/NOTICE.txt" "${CODESIGNING_FOLDER_PATH}/Contents/Resources/adb-NOTICE.txt"
+          fi
       - name: Embed Network Agent
         script: |
           set -e

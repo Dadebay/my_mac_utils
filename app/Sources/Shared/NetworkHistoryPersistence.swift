@@ -16,12 +16,32 @@ final class NetworkHistoryPersistence {
     private var lastFlush = Date.distantPast
     private var needsFlush = false
     private let fileURL: URL?
+    /// Bu süreç dosyaya hangi kimlikle yazıyor (bkz. `NetworkHistoryWriter`).
+    private let writer: NetworkHistoryWriter
 
-    init() {
+    init(writer: NetworkHistoryWriter = .app) {
+        self.writer = writer
         fileURL = Self.prepareFileURL()
         accumulator = NetworkUsageAccumulator()
         load()
     }
+
+    /// Ajan şu an gerçekten ölçüyor mu?
+    ///
+    /// Yalnızca "kayıtlı mı" diye sormak yetmiyordu: kayıtlı ama çalışmayan
+    /// bir ajan (onay bekliyor, çöküyor, paketi taşınmış) varken ana
+    /// uygulama da ölçmeyi bıraktığı için gün boyu hiçbir şey sayılmıyordu.
+    /// Nabız dosyada: ajan trafik olmasa da en geç `flushInterval`da bir
+    /// damgasını tazeliyor.
+    func isAgentWritingLive(now: Date) -> Bool {
+        let payload = accumulator.payload
+        guard payload.lastSampleWriter == .agent, let last = payload.lastSampleAt else { return false }
+        return now.timeIntervalSince(last) <= Self.agentHeartbeatTimeout
+    }
+
+    /// Nabız aralığının birkaç katı: ajan meşgulken ya da makine uykudan
+    /// yeni kalkmışken boş yere devralınmasın.
+    private static let agentHeartbeatTimeout: TimeInterval = 120
 
     // MARK: - Dosya konumu
 
@@ -90,7 +110,10 @@ final class NetworkHistoryPersistence {
     @discardableResult
     func ingest(samples: [NetworkInterfaceSample], at date: Date) -> (received: UInt64, sent: UInt64) {
         let namesBefore = Set(accumulator.payload.baselines.keys)
-        let delta = accumulator.ingest(samples: samples, at: date)
+        let delta = accumulator.ingest(samples: samples, at: date, writer: writer)
+        // Nabız: hiç trafik olmasa bile damga düzenli aralıkla diske
+        // inmeli, yoksa sessiz bir gecede ajan ölmüş sanılırdı.
+        if date.timeIntervalSince(lastFlush) >= Self.flushInterval { needsFlush = true }
         // Yeni kurulan bir arayüz çizgisi de kalıcı olmalı — diske
         // yazılmazsa bir sonraki açılış "ilk örnek" sanır.
         if delta.received > 0 || delta.sent > 0

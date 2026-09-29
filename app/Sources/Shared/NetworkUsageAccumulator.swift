@@ -12,6 +12,16 @@ struct NetworkInterfaceBaseline: Codable, Equatable, Sendable {
     var lastSeen: Date
 }
 
+/// Dosyaya en son kimin yazdığı.
+///
+/// Ajan kayıtlıyken ana uygulama yazmayı ona bırakıyor. Bırakmanın koşulu
+/// ajanın *çalışıyor* olması; yalnızca "kayıtlı" olması yetmiyor (bkz.
+/// `NetworkHistoryStore`). Ana uygulama devraldığında damgayı kendi adıyla
+/// atıyor ki bir sonraki turda kendi yazdığını ajanın nabzı sanmasın.
+enum NetworkHistoryWriter: String, Codable, Sendable {
+    case app, agent
+}
+
 struct NetworkDayTotal: Codable, Equatable, Sendable {
     var received: UInt64 = 0
     var sent: UInt64 = 0
@@ -35,9 +45,19 @@ struct NetworkUsagePayload: Codable, Equatable, Sendable {
     /// yeni çizgiyi kurar; iki güne yayılmış bir deltayı körlemesine tek güne
     /// yazmaktansa birkaç saniyeyi eksik saymak güvenli.
     var lastSampleDay: String?
+    /// Son örneğin anı ve onu işleyen süreç — ajanın nabzı.
+    ///
+    /// Ana uygulama, ajan kayıtlıyken ölçmeyi bırakıyordu. Ajan kayıtlı
+    /// olup da çalışmıyorsa (onay bekliyor, çöküyor, ya da uygulama
+    /// paketi taşınmış/silinmiş olduğu için `launchd` başlatamıyor) kimse
+    /// ölçmüyordu ve "Bugün" gün boyu 0 bayt kalıyordu — kullanıcı
+    /// bildirdi. Bu iki alan sayesinde ana uygulama ajanın sustuğunu
+    /// görüp ölçmeyi devralabiliyor.
+    var lastSampleAt: Date?
+    var lastSampleWriter: NetworkHistoryWriter?
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, days, baselines, lastSampleDay
+        case schemaVersion, days, baselines, lastSampleDay, lastSampleAt, lastSampleWriter
     }
 
     init() {}
@@ -53,6 +73,10 @@ struct NetworkUsagePayload: Codable, Equatable, Sendable {
             [String: NetworkInterfaceBaseline].self, forKey: .baselines
         ) ?? [:]
         lastSampleDay = try container.decodeIfPresent(String.self, forKey: .lastSampleDay)
+        lastSampleAt = try container.decodeIfPresent(Date.self, forKey: .lastSampleAt)
+        lastSampleWriter = try container.decodeIfPresent(
+            NetworkHistoryWriter.self, forKey: .lastSampleWriter
+        )
     }
 
     /// v1 → v2 geçişi.
@@ -127,7 +151,7 @@ struct NetworkUsageAccumulator {
     ///    delta 0. (Eski kod burada ham değerin tamamını ekliyordu.)
     @discardableResult
     mutating func ingest(
-        samples: [NetworkInterfaceSample], at date: Date
+        samples: [NetworkInterfaceSample], at date: Date, writer: NetworkHistoryWriter = .app
     ) -> (received: UInt64, sent: UInt64) {
         let key = dayKey(for: date)
         // Gün değiştiyse bu örnek yalnız yeni günün çizgisini kurar.
@@ -152,6 +176,8 @@ struct NetworkUsageAccumulator {
         }
 
         payload.lastSampleDay = key
+        payload.lastSampleAt = date
+        payload.lastSampleWriter = writer
 
         guard !crossedDayBoundary else {
             pruneBaselines(now: date)
