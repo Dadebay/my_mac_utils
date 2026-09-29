@@ -1,0 +1,20 @@
+#!/bin/bash
+# Kurulum biter bitmez uygulamayı açar.
+#
+# Kurulum root olarak çalışıyor; uygulamayı root olarak açmak pencereyi
+# yanlış oturumda oluşturur ve ayarlar root'un klasörüne yazılır. Bu
+# yüzden ekranda oturum açmış olan kullanıcıya geçiliyor.
+set -e
+
+APP="/Applications/GlassDo.app"
+CONSOLE_USER=$(stat -f "%Su" /dev/console)
+CONSOLE_UID=$(id -u "$CONSOLE_USER")
+
+if [ -d "$APP" ] && [ "$CONSOLE_USER" != "root" ]; then
+  # `launchctl asuser` uygulamayı kullanıcının kendi oturumunda başlatıyor;
+  # `sudo -u` tek başına pencere sunucusuna bağlanamıyor.
+  launchctl asuser "$CONSOLE_UID" sudo -u "$CONSOLE_USER" \
+    open -a "$APP" >/dev/null 2>&1 || true
+fi
+
+exit 0
