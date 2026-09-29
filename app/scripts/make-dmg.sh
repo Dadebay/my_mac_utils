@@ -105,9 +105,70 @@ cp -R "$APP_PATH" "$STAGING/$APP_NAME.app"
 # Kullanıcı sürükleyip bıraksın diye Uygulamalar kısayolu.
 ln -s /Applications "$STAGING/Applications"
 
-hdiutil create -volname "$APP_NAME $VERSION" -srcfolder "$STAGING" \
-  -ov -format UDZO "$DMG_PATH" >/dev/null
+# Arka plan görseli ve simge yerleşimi, pencere açılır açılmaz "neyi
+# nereye sürükleyeceğim" sorusunu cevaplasın diye. Görünüm ayarları
+# yalnızca yazılabilir bir imajda yapılabiliyor: önce UDRW üretiliyor,
+# Finder'da düzenleniyor, sonra sıkıştırılmış UDZO'ya çevriliyor.
+VOLNAME="$APP_NAME $VERSION"
+RW_DMG="$BUILD_DIR/$APP_NAME-rw.dmg"
+MOUNT_POINT="/Volumes/$VOLNAME"
+BACKGROUND="Resources/dmg/background.tiff"
+
+rm -f "$RW_DMG"
+hdiutil create -volname "$VOLNAME" -srcfolder "$STAGING" \
+  -ov -format UDRW "$RW_DMG" >/dev/null
 rm -rf "$STAGING"
+
+osascript -e "tell application \"Finder\" to close (every window whose name is \"$VOLNAME\")" >/dev/null 2>&1 || true
+hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
+sleep 1
+hdiutil attach "$RW_DMG" -nobrowse -quiet
+sleep 1
+
+if [ -f "$BACKGROUND" ]; then
+  mkdir -p "$MOUNT_POINT/.background"
+  cp "$BACKGROUND" "$MOUNT_POINT/.background/background.tiff"
+fi
+
+# Finder'ı sürmek otomasyon izni istiyor; verilmezse pencere düzensiz
+# kalır ama DMG yine de çalışır — bu yüzden hata betiği durdurmuyor.
+osascript <<OSA >/dev/null 2>&1 || echo "==> UYARI: Finder düzeni ayarlanamadı (otomasyon izni?)"
+tell application "Finder"
+  tell disk "$VOLNAME"
+    open
+    delay 1
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {240, 140, 880, 540}
+    delay 1
+    set opts to the icon view options of container window
+    set arrangement of opts to not arranged
+    set icon size of opts to 112
+    set text size of opts to 12
+    set label position of opts to bottom
+    try
+      set background picture of opts to file ".background:background.tiff"
+    end try
+    set position of item "$APP_NAME.app" of container window to {160, 200}
+    set position of item "Applications" of container window to {480, 200}
+    update without registering applications
+    delay 3
+  end tell
+end tell
+OSA
+
+# Pencere AppleScript'in İÇİNDE kapatılmıyor: o sırada kapatınca Finder
+# görünüm ayarlarını `.DS_Store`a yazmadan çıkıyor ve imaj eski
+# pencere boyutuyla açılıyordu. Dışarıdan kapatıp yazmasını bekliyoruz.
+osascript -e "tell application \"Finder\" to close (every window whose name is \"$VOLNAME\")" >/dev/null 2>&1 || true
+sleep 2
+sync
+hdiutil detach "$MOUNT_POINT" -quiet || hdiutil detach "$MOUNT_POINT" -force -quiet
+
+rm -f "$DMG_PATH"
+hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG_PATH" >/dev/null
+rm -f "$RW_DMG"
 
 if [ -n "$DEV_ID" ]; then
   codesign --force --sign "$DEV_ID" "$DMG_PATH"
