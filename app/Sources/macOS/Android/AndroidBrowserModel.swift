@@ -20,6 +20,11 @@ final class AndroidBrowserModel {
     /// Süren aktarma varsa açıklaması — düğmeler bu sırada kilitleniyor.
     private(set) var busyMessage: String?
 
+    /// Çekilmiş önizlemeler, yol başına. Klasör değişince boşalıyor:
+    /// başka klasördeki resimleri bellekte tutmanın karşılığı yok.
+    private(set) var thumbnails: [String: NSImage] = [:]
+    private var pendingThumbnails: Set<String> = []
+
     private let service: AndroidFileService
 
     init(serial: String) {
@@ -39,7 +44,27 @@ final class AndroidBrowserModel {
 
     var canGoUp: Bool { path != "/" }
 
+    /// Izgara görünümünde resimlerin önizlemesi isteniyor. Aynı dosya için
+    /// ikinci kez çekim başlatılmıyor.
+    func requestThumbnail(for file: AndroidFile) {
+        guard file.isImage, thumbnails[file.path] == nil, !pendingThumbnails.contains(file.path)
+        else { return }
+        pendingThumbnails.insert(file.path)
+
+        _Concurrency.Task { @MainActor in
+            let image = try? await service.thumbnail(for: file)
+            pendingThumbnails.remove(file.path)
+            // Kullanıcı bu arada başka klasöre geçtiyse görüntüyü ekleme.
+            guard file.path.hasPrefix(path) else { return }
+            if let image { thumbnails[file.path] = image }
+        }
+    }
+
     func load(path newPath: String? = nil) {
+        if let newPath, newPath != path {
+            thumbnails = [:]
+            pendingThumbnails = []
+        }
         if let newPath { path = newPath }
         isLoading = true
         errorMessage = nil

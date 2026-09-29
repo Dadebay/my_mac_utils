@@ -203,6 +203,9 @@ struct AndroidTransferView: View {
 private struct AndroidFileBrowser: View {
     @Bindable var model: AndroidBrowserModel
     @State private var isDropTarget = false
+    /// Yerleşim tercihi kalıcı: fotoğraf klasörlerinde ızgara, belge
+    /// klasörlerinde liste isteniyor ve seçim her açılışta sıfırlanmamalı.
+    @AppStorage("android.browser.usesGrid") private var usesGrid = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -276,6 +279,17 @@ private struct AndroidFileBrowser: View {
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
 
+            // Izgara/liste: resim klasörlerinde önizleme olmadan hangi
+            // dosyanın ne olduğu anlaşılmıyor.
+            Picker("", selection: $usesGrid) {
+                Image(systemName: "square.grid.2x2").tag(true)
+                Image(systemName: "list.bullet").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help(L10n.androidLayoutHelp)
+
             Button(action: model.chooseFilesToUpload) {
                 Label(L10n.androidSend, systemImage: "arrow.up.doc")
             }
@@ -288,13 +302,35 @@ private struct AndroidFileBrowser: View {
 
     private var fileList: some View {
         ScrollView {
-            LazyVStack(spacing: 1) {
-                ForEach(model.files) { file in
-                    AndroidFileRow(
-                        file: file,
-                        onOpen: { model.open(file) },
-                        onDownload: { model.download(file) }
-                    )
+            Group {
+                if usesGrid {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 132), spacing: 10)],
+                        spacing: 10
+                    ) {
+                        ForEach(model.files) { file in
+                            AndroidFileTile(
+                                file: file,
+                                thumbnail: model.thumbnails[file.path],
+                                onOpen: { model.open(file) },
+                                onDownload: { model.download(file) }
+                            )
+                            // Önizleme yalnızca kart ekrana girince
+                            // çekiliyor: klasördeki her fotoğrafı peşinen
+                            // indirmek telefonu da ağı da boşuna yorardı.
+                            .onAppear { model.requestThumbnail(for: file) }
+                        }
+                    }
+                } else {
+                    LazyVStack(spacing: 1) {
+                        ForEach(model.files) { file in
+                            AndroidFileRow(
+                                file: file,
+                                onOpen: { model.open(file) },
+                                onDownload: { model.download(file) }
+                            )
+                        }
+                    }
                 }
 
                 if model.files.isEmpty, !model.isLoading, model.errorMessage == nil {
@@ -449,6 +485,101 @@ private struct AndroidFileRow: View {
     private func icon(for name: String) -> String {
         switch (name as NSString).pathExtension.lowercased() {
         case "jpg", "jpeg", "png", "heic", "gif", "webp": "photo"
+        case "mp4", "mov", "mkv", "avi", "3gp": "film"
+        case "mp3", "wav", "m4a", "ogg", "flac": "music.note"
+        case "pdf": "doc.richtext"
+        case "zip", "rar", "7z", "tar", "gz": "doc.zipper"
+        case "apk": "shippingbox"
+        case "txt", "md", "json", "xml", "csv": "doc.text"
+        default: "doc"
+        }
+    }
+}
+
+/// Izgara görünümündeki tek kart: üstte önizleme, altında ad ve boyut.
+private struct AndroidFileTile: View {
+    let file: AndroidFile
+    let thumbnail: NSImage?
+    let onOpen: () -> Void
+    let onDownload: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.primary.opacity(0.06))
+
+                if let thumbnail {
+                    // Tamamı görünüyor, kırpılmıyor: telefon ekran
+                    // görüntüleri dik ve dar; kareye doldurulunca üstü ile
+                    // altı kesiliyor, hangi ekran olduğu anlaşılmıyordu.
+                    Image(nsImage: thumbnail)
+                        .resizable()
+                        .interpolation(.high)
+                        .aspectRatio(contentMode: .fit)
+                        .padding(3)
+                } else if file.isImage {
+                    // Resim çekilene kadar bekleme göstergesi: boş bir kutu
+                    // "önizleme yok" gibi okunuyordu.
+                    ProgressView().controlSize(.small)
+                } else {
+                    Image(systemName: file.isOpenable ? "folder.fill" : icon)
+                        .font(.system(size: 26, weight: .light))
+                        .foregroundStyle(file.isOpenable ? Color.accentColor : Color.secondary)
+                }
+
+                if isHovering, !file.isOpenable {
+                    VStack {
+                        HStack {
+                            Spacer(minLength: 0)
+                            Button(action: onDownload) {
+                                Image(systemName: "arrow.down.circle.fill")
+                                    .font(.system(size: 15))
+                                    .symbolRenderingMode(.palette)
+                                    .foregroundStyle(.white, .black.opacity(0.55))
+                            }
+                            .buttonStyle(.plain)
+                            .help(L10n.androidDownloadHelp)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(6)
+                }
+            }
+            .frame(height: 124)
+            .clipped()
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(file.name)
+                    .font(.app(.micro, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text(file.isOpenable ? file.modified : SystemFormat.bytes(file.size))
+                    .font(.app(.micro))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .padding(.top, 6)
+        }
+        .padding(6)
+        .background {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(Color.primary.opacity(isHovering ? 0.07 : 0))
+        }
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+        .onTapGesture(count: 2) { onOpen() }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(file.name)
+    }
+
+    private var icon: String {
+        switch (file.name as NSString).pathExtension.lowercased() {
         case "mp4", "mov", "mkv", "avi", "3gp": "film"
         case "mp3", "wav", "m4a", "ogg", "flac": "music.note"
         case "pdf": "doc.richtext"

@@ -200,6 +200,9 @@ public enum L10n {
     public static func androidStorageUsedOfTotal(_ used: String, _ total: String) -> String {
         s("\(used) / \(total) dolu", "\(used) of \(total) used", "\(used) из \(total) занято")
     }
+    public static var androidLayoutHelp: String {
+        s("Izgara ya da liste", "Grid or list", "Сетка или список")
+    }
     public static var androidDownloadHelp: String {
         s("Mac'e indir", "Download to Mac", "Скачать на Mac")
     }

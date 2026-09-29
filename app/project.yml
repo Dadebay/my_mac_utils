@@ -58,7 +58,13 @@ targets:
     dependencies:
       - target: GlassDoKit
       - target: GlassDoWidgets
+      # `embed: false`: ajan `Contents/Resources`'a kendiliğinden
+      # kopyalanmasın. Zaten "Embed Network Agent" adımıyla
+      # `Contents/MacOS`'a konuyor; ikinci kopya hem gereksiz hem de
+      # imzasız kalıyor ve noterleme onu reddediyordu ("The binary is not
+      # signed with a valid Developer ID certificate").
       - target: GlassDoNetworkAgent
+        embed: false
       - package: Firebase
         product: FirebaseCore
       - package: Firebase
@@ -109,14 +115,15 @@ targets:
         # öğeleri (odak halkası, metin seçimi) için. macOS bunu yalnızca
         # kullanıcının vurgu rengi "Çok renkli" iken uygular.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-      configs:
-        # Mac App Store App Sandbox zorunlu tutuyor, ama sandbox pencere
-        # değiştirici ve sistem ölçerlerinin dayandığı API'leri kapatıyor.
-        # Sandbox yalnızca Release'e uygulanıyor: günlük geliştirme
-        # (Debug) bütün özellikler açık şekilde sürüyor, mağaza yapısı ise
-        # gerçekte neyin ayakta kaldığını ölçülebilir kılıyor.
-        Release:
-          CODE_SIGN_ENTITLEMENTS: Config/GlassDo-AppStore.entitlements
+      # Sandbox artık hiçbir yapılandırmada açık değil.
+      #
+      # Uygulama web sitesinden doğrudan dağıtılıyor (Developer ID +
+      # noter onayı), Mac App Store'a gönderilmiyor. Sandbox ise bu
+      # uygulamanın varlık sebebi olan şeyleri kapatıyor: başka süreçleri
+      # kapatma (bellek ve işlemci listelerindeki ×), pencere değiştiricinin
+      # uygulamadan çıkması ve telefon sayfasının `adb`yi çalıştırması.
+      # Mağaza sürümü gerekirse `Config/GlassDo-AppStore.entitlements`
+      # yerinde duruyor.
     info:
       path: Sources/macOS/Info.plist
       properties:

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import GlassDoKit
 
@@ -15,6 +16,13 @@ struct AndroidFile: Identifiable, Equatable {
     /// Bağlantılar da klasör gibi açılmayı deniyor: hedefin klasör olup
     /// olmadığını `ls` söylemiyor, denemek tek yol.
     var isOpenable: Bool { isDirectory || linkTarget != nil }
+
+    /// Önizlemesi gösterilebilecek bir resim mi.
+    var isImage: Bool {
+        guard !isOpenable else { return false }
+        return ["jpg", "jpeg", "png", "heic", "heif", "gif", "webp", "bmp"]
+            .contains((name as NSString).pathExtension.lowercased())
+    }
 }
 
 /// Telefonun depolama durumu.
@@ -153,6 +161,38 @@ struct AndroidFileService: Sendable {
         guard !output.contains("Failure"), !output.contains("Error:") else {
             throw AndroidFileError.failed(output.trimmingCharacters(in: .whitespacesAndNewlines))
         }
+    }
+
+    /// Bir resmin önizlemesi.
+    ///
+    /// Telefonda küçük resim üretmenin yolu yok; dosyanın kendisi geçici
+    /// bir klasöre çekilip burada küçültülüyor. Çekilen kopya hemen
+    /// siliniyor — bir klasör dolusu fotoğrafın tam boyunu diskte
+    /// tutmanın anlamı yok.
+    func thumbnail(for file: AndroidFile, maxPixel: CGFloat = 320) async throws -> NSImage? {
+        // Çok büyük dosyayı önizleme için çekmek dakikalar sürebilir.
+        guard file.isImage, file.size <= 25 * 1024 * 1024 else { return nil }
+
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "GlassDoAndroidPreview", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let local = directory.appending(path: UUID().uuidString + "-" + file.name)
+        defer { try? FileManager.default.removeItem(at: local) }
+
+        _ = try await run(["pull", "-a", file.path, local.path])
+        guard let image = NSImage(contentsOf: local) else { return nil }
+
+        let size = image.size
+        guard size.width > 0, size.height > 0 else { return nil }
+        let scale = min(maxPixel / max(size.width, size.height), 1)
+        guard scale < 1 else { return image }
+
+        let target = NSSize(width: size.width * scale, height: size.height * scale)
+        let resized = NSImage(size: target)
+        resized.lockFocus()
+        image.draw(in: NSRect(origin: .zero, size: target))
+        resized.unlockFocus()
+        return resized
     }
 
     /// Telefonun depolama durumu.

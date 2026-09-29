@@ -69,6 +69,26 @@ if [ -n "$DEV_ID" ]; then
       --entitlements "Config/GlassDoNetworkAgent.entitlements" --sign "$DEV_ID" "$item"
   done < <(find "$APP_PATH/Contents/Library" -type f -perm +111 -print0 2>/dev/null)
 
+  # `Contents/MacOS` içindeki yardımcı çalıştırılabilirler: ağ ajanı ve
+  # gömülü `adb`. Her biri kendi imzasını almadan uygulama imzalanamıyor
+  # ("code object is not signed at all") ve noterleme de reddediyor.
+  # Uygulamanın kendi çalıştırılabiliri hariç — o en sonda, paketin
+  # tamamıyla birlikte imzalanıyor.
+  while IFS= read -r -d '' item; do
+    name="$(basename "$item")"
+    [ "$name" = "$SCHEME" ] && continue
+
+    case "$name" in
+      GlassDoNetworkAgent*)
+        codesign --force --options runtime --timestamp \
+          --entitlements "Config/GlassDoNetworkAgent.entitlements" --sign "$DEV_ID" "$item"
+        ;;
+      *)
+        codesign --force --options runtime --timestamp --sign "$DEV_ID" "$item"
+        ;;
+    esac
+  done < <(find "$APP_PATH/Contents/MacOS" -type f -perm +111 -print0 2>/dev/null)
+
   codesign --force --options runtime --timestamp \
     --entitlements "Config/GlassDo.entitlements" --sign "$DEV_ID" "$APP_PATH"
 
