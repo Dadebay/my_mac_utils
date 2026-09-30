@@ -67,7 +67,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="build-${{ github.run_number }}"
+          # `--prerelease`: bu derleme imzasız. Web sitesinin indirme
+          # düğmesi `releases/latest/download/GlassDo.pkg`'e gidiyor ve
+          # "latest" GitHub'da ön sürüm olmayan en yeni yayın. Bu bayrak
+          # olmasaydı `main`'e her push imzasız bir zip'i "en son sürüm"
+          # yapar, elle yüklenen imzalı ve noterli paket gölgede kalırdı —
+          # düğme 404 verirdi çünkü bu yayında `GlassDo.pkg` yok.
           gh release create "$TAG" \
             "$GITHUB_WORKSPACE/GlassDo-macOS.zip" \
+            --prerelease \
             --title "Build ${{ github.run_number }}" \
             --notes-file "$GITHUB_WORKSPACE/notes.md"
