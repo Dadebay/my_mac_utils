@@ -91,6 +91,7 @@ struct PanelShelfView: View {
             maxHeight: .infinity,
             alignment: .top
         )
+        .toolbar { if !isCompact { windowToolbar } }
         .shelfSurfaceFrame(isCompact: isCompact)
         // Bırakma hedefi bütün yüzey: kullanıcı dosyayı ızgaranın boşluğuna
         // da bırakabilmeli, yalnızca kartların üstüne değil.
@@ -176,31 +177,44 @@ struct PanelShelfView: View {
             }
             .padding(.horizontal, metrics.gutter)
             .padding(.vertical, 10)
-        } else {
-            HStack(spacing: 10) {
-                // Sayfa adı üst şeritteki rozette (bkz. `PageToolbarBadge`);
-                // burada ikinci kez yazmak aynı kelimeyi üst üste iki kez
-                // gösterirdi.
-                Spacer(minLength: 0)
-
-                if isSearching {
-                    searchField
-                        .frame(maxWidth: 240)
-                        .transition(.opacity)
-                } else {
-                    countLabel
-                    searchButton
-                }
-
-                layoutToggle
-                sortMenu
-                overflowMenu
-            }
-            .padding(.horizontal, metrics.gutter)
-            .padding(.top, 8)
-            .padding(.bottom, 10)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isSearching)
         }
+        // Ana pencerede denetimler sayfanın içinde değil, pencerenin kendi
+        // araç çubuğunda (bkz. `windowToolbar`): sayfa başlığının hemen
+        // altında ikinci bir şerit, üst şeridin yaptığı işi tekrar
+        // ediyordu.
+    }
+
+    /// Ana penceredeki denetimler: pencere araç çubuğunun sağ ucunda.
+    ///
+    /// SwiftUI'da araç çubuğu öğelerini sayfanın kendisi bildirebiliyor;
+    /// bu sayede arama, düzen ve sıralama durumu burada, ait olduğu yerde
+    /// kalıyor — üst pencereye taşınması gerekmiyor.
+    @ToolbarContentBuilder
+    private var windowToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .primaryAction) {
+            if isSearching {
+                searchField
+                    .frame(width: 220)
+            } else {
+                countLabel
+                searchButton
+            }
+
+            layoutToggle
+            sortMenu
+            overflowMenu
+        }
+        /*
+         * Öğelerin altındaki ortak cam hap kaldırıldı.
+         *
+         * macOS 26 araç çubuğu öğelerini varsayılan olarak tek bir cam
+         * yüzeyin üstünde toplıyor. Burada iki sorun çıkarıyordu: pencerenin
+         * kendi zemini üzerinde ikinci bir yüzey gereksiz bir katman, ve o
+         * yüzey açık bir malzeme olarak kabul edildiği için içindeki
+         * `.primary` ikonlar siyaha çözülüyordu — sıralama ve "…" ikonları
+         * bu yüzden koyu görünüyordu.
+         */
+        .sharedBackgroundVisibility(.hidden)
     }
 
     /// Ana penceredeki "neredeyim" rozetiyle aynı renk çifti (bkz.
@@ -236,7 +250,7 @@ struct PanelShelfView: View {
         Text(L10n.shelfItemCount(items.count))
             .font(.app(.bodyLarge))
             .monospacedDigit()
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(.secondary)
             .contentTransition(reduceMotion ? .identity : .numericText())
     }
 
@@ -309,7 +323,10 @@ struct PanelShelfView: View {
     ) -> some View {
         Button(action: action) {
             HugeIcon(name: icon, size: 13)
-                .foregroundStyle(isOn ? Color.primary : Color.secondary)
+                /* Seçili olmayan da okunur kalıyor: `.secondary` koyu
+                   zeminde devre dışı gibi görünüyordu. Ayrımı artık
+                   arkadaki hap şekli taşıyor. */
+                .foregroundStyle(isOn ? Color.primary : Color.primary.opacity(0.62))
                 .frame(width: 24, height: 20)
                 .background {
                     RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
@@ -336,7 +353,7 @@ struct PanelShelfView: View {
             .pickerStyle(.inline)
         } label: {
             HugeIcon(name: .sort, size: 14)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -366,7 +383,7 @@ struct PanelShelfView: View {
             Text(L10n.shelfClearHint)
         } label: {
             HugeIcon(name: .more, size: 14)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
@@ -381,7 +398,10 @@ struct PanelShelfView: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                // Tam kontrast: bu ikonlar sayfanın eylemleri, ikincil
+                // bilgi değil. `.secondary` koyu zeminde griye düşüyor ve
+                // devre dışıymış gibi okunuyordu.
+                .foregroundStyle(.primary)
                 .frame(width: 22, height: 22)
                 .contentShape(Rectangle())
         }

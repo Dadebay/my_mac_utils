@@ -161,7 +161,30 @@ struct AndroidTransferView: View {
 
     // MARK: - Durum ekranları
 
+    /// Durum ekranları kaydırılabilir bir kabın içinde.
+    ///
+    /// Sarmalayan görünüm olmadan sayfanın *en küçük* yüksekliği patlıyor:
+    /// `fixedSize(vertical:)` taşıyan bir metin, minimum ölçülürken sıfır
+    /// genişlik önerisiyle kelime kelime sarılıyor ve yüzlerce piksellik
+    /// bir alt sınır bildiriyor. Pencere `.windowResizability(.contentMinSize)`
+    /// ile kurulu olduğundan bu alt sınır pencereye dayatılıyor; pencere
+    /// büyüyemeyince içerik iki ucundan kırpılıyor — kenar çubuğunun
+    /// başlığı üstte, ilerleme şeridi altta kayboluyordu.
+    ///
+    /// `ScrollView`'ın kendi minimumu küçük olduğu için zincir orada
+    /// kesiliyor. Sayfanın geri kalanı (Genel Bakış, Ağ, Ayarlar, Raf)
+    /// zaten aynı deseni kullanıyor.
+    private func stateScreen<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var emptyState: some View {
+        stateScreen {
         VStack(spacing: 10) {
             Image(systemName: "cable.connector")
                 .font(.system(size: 30, weight: .light))
@@ -174,27 +197,29 @@ struct AndroidTransferView: View {
                 .font(.app(.body))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                // Genişlik önce sınırlanıyor, sarma ölçümü sonra.
                 .frame(maxWidth: 380)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 
     private func message(symbol: String, title: String, detail: String) -> some View {
-        VStack(spacing: 9) {
-            Image(systemName: symbol)
-                .font(.system(size: 26, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text(title).font(.app(.title, weight: .semibold))
-            Text(detail)
-                .font(.app(.body))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 420)
+        stateScreen {
+            VStack(spacing: 9) {
+                Image(systemName: symbol)
+                    .font(.system(size: 26, weight: .light))
+                    .foregroundStyle(.tertiary)
+                Text(title).font(.app(.title, weight: .semibold))
+                Text(detail)
+                    .font(.app(.body))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(20)
     }
 }
 
