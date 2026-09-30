@@ -14,6 +14,10 @@
 # Sonraki çalıştırmalar hem paketleri hem derleme çıktısını yeniden
 # kullanıyor.
 
+# macOS'un /bin/bash'i 3.2 (2007). Betik ona uyumlu kalmalı: Linux'taki
+# bash 5'te geçen bir yapı (ör. `$( … )` içinde `case`) orada sözdizimi
+# hatası verebiliyor. Değişiklikten sonra 3.2 ile `bash -n` denetlenmeli.
+
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -102,9 +106,13 @@ if [ -n "$BUNDLE_ID" ]; then
         # Derleme ara çıktıları (Xcode'un kendi DerivedData'sı, kurulum
         # paketinin Release derlemesi) her derlemede yeniden oluşuyor;
         # onları saymak uyarıyı anlamsız kılardı.
-        case "$real" in
-          */DerivedData/*|*/build-release/*) continue ;;
-        esac
+        #
+        # `case` değil `if`: macOS'un /bin/bash'i 3.2 ve `$( … )` içindeki
+        # bir `case` deseninin `)`'ini komut yerine koymanın kapanışı
+        # sanıyor ("syntax error near unexpected token `;;'").
+        if [[ "$real" == */DerivedData/* || "$real" == */build-release/* ]]; then
+          continue
+        fi
         echo "$real"
       done)
   if [ -n "$OTHERS" ]; then
