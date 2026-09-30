@@ -768,6 +768,34 @@ struct WindowSwitcherSettingsSection: View {
             ),
             isWarning: true
           )
+        } else if !accessibilityGranted {
+          // En sık görülen durum: Sistem Ayarları'nda "GlassDo" açık
+          // görünüyor ama izin başka bir kopyaya ait. Kurulum paketi
+          // uygulamayı /Applications/GlassDo.app olarak kuruyor ve
+          // "Developer ID Application" ile imzalıyor; `scripts/run.sh`'nin
+          // derlediği GlassDo-macOS.app ise "Apple Development" ile imzalı.
+          // Paket kimliği aynı olduğu için listede tek satır görünüyor,
+          // macOS ise izni imzaya bağladığı için çalışan kopyayı
+          // tanımıyor. Kart hangi kopyanın çalıştığını söylemezse
+          // kullanıcı "açık ama çalışmıyor" ile baş başa kalıyordu.
+          permissionNote(
+            L10n.s(
+              "Çalışan kopya: \(runningCopyName) (\(runningCopyFolder)). Listede GlassDo açık görünüyorsa izin büyük ihtimalle başka bir kopyaya ait (ör. /Applications'a kurulan GlassDo.app). Listeden − ile kaldır, sonra İzin İste'ye bas — ya da + ile bu kopyayı ekle.",
+              "Running copy: \(runningCopyName) (\(runningCopyFolder)). If GlassDo already looks enabled in the list, the permission most likely belongs to another copy (e.g. the GlassDo.app installed in /Applications). Remove it with −, then press Request Access — or add this copy with +.",
+              "Запущенная копия: \(runningCopyName) (\(runningCopyFolder)). Если GlassDo в списке уже включён, разрешение, скорее всего, принадлежит другой копии (например, GlassDo.app, установленной в /Applications). Удалите её кнопкой −, затем нажмите «Запросить доступ» — или добавьте эту копию кнопкой +."
+            ),
+            isWarning: true
+          )
+
+          Button {
+            NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL])
+          } label: {
+            Text(L10n.s("Bu kopyayı Finder'da göster", "Show this copy in Finder", "Показать эту копию в Finder"))
+              .font(.app(.body, weight: .medium))
+          }
+          .buttonStyle(.plain)
+          .foregroundStyle(Color.appAccent)
+          .padding(.bottom, 4)
         } else if accessibilityGranted, !screenRecordingGranted {
           permissionNote(
             L10n.s(
@@ -781,6 +809,22 @@ struct WindowSwitcherSettingsSection: View {
       }
     }
     .onAppear(perform: refreshPermissions)
+    // Kullanıcı izni Sistem Ayarları'nda verip geri döndüğünde yakalayıcı
+    // kendiliğinden kuruluyordu ama kart ↻'ye basılana kadar ✗ göstermeye
+    // devam ediyordu — "verdim ama hâlâ yok diyor".
+    .onReceive(
+      NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+    ) { _ in
+      refreshPermissions()
+    }
+  }
+
+  /// Çalışan uygulamanın dosya adı — Sistem Ayarları listesinde görünen ad.
+  private var runningCopyName: String { Bundle.main.bundleURL.lastPathComponent }
+
+  /// Çalışan kopyanın klasörü, ev dizini `~` ile kısaltılmış.
+  private var runningCopyFolder: String {
+    (Bundle.main.bundleURL.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
   }
 
   private func refreshPermissions() {
