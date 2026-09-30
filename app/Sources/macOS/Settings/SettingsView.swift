@@ -768,6 +768,33 @@ struct WindowSwitcherSettingsSection: View {
             ),
             isWarning: true
           )
+        } else if let other = otherInstalledCopies.first {
+          // Aynı paket kimliğinde ikinci bir kopya: izin sorunlarının en
+          // kafa karıştırıcı kaynağı. macOS ikisini tek uygulama sayıyor;
+          // izin birinin imzasına bağlanıyor, Ekran Kaydı sonrası
+          // "Çık ve Yeniden Aç" ise uygulamayı kimlikten bulup çoğu zaman
+          // ötekini açıyor. Kullanıcı izni verip yeniden açtığında
+          // karşısına izinsiz kopya çıkıyor: "kapat aç yapınca izinler
+          // gidiyor". İzinler yerindeyken de gösteriliyor, çünkü bir
+          // sonraki yeniden açılış yine yanlış kopyayı başlatabilir.
+          permissionNote(
+            L10n.s(
+              "Bu Mac'te GlassDo'nun iki kopyası var: bu (\(runningCopyName)) ve \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS ikisini aynı uygulama sayıyor: izin birine verilip öteki açılıyor, \"Çık ve Yeniden Aç\" çoğu zaman öteki kopyayı başlatıyor. Kullanmadığın kopyayı Çöp Kutusu'na at, sonra izinleri yeniden ver.",
+              "There are two copies of GlassDo on this Mac: this one (\(runningCopyName)) and \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS treats them as the same app: permission goes to one while the other opens, and \"Quit & Reopen\" often launches the other copy. Move the copy you don't use to the Trash, then grant the permissions again.",
+              "На этом Mac две копии GlassDo: эта (\(runningCopyName)) и \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS считает их одним приложением: разрешение выдаётся одной, а открывается другая, и «Завершить и открыть снова» часто запускает другую копию. Переместите неиспользуемую копию в Корзину и выдайте разрешения заново."
+            ),
+            isWarning: true
+          )
+
+          Button {
+            NSWorkspace.shared.activateFileViewerSelecting([other])
+          } label: {
+            Text(L10n.s("Öteki kopyayı Finder'da göster", "Show the other copy in Finder", "Показать другую копию в Finder"))
+              .font(.app(.body, weight: .medium))
+          }
+          .buttonStyle(.plain)
+          .foregroundStyle(Color.appAccent)
+          .padding(.bottom, 4)
         } else if !accessibilityGranted {
           // En sık görülen durum: Sistem Ayarları'nda "GlassDo" açık
           // görünüyor ama izin başka bir kopyaya ait. Kurulum paketi
@@ -821,6 +848,25 @@ struct WindowSwitcherSettingsSection: View {
 
   /// Çalışan uygulamanın dosya adı — Sistem Ayarları listesinde görünen ad.
   private var runningCopyName: String { Bundle.main.bundleURL.lastPathComponent }
+
+  /// Aynı paket kimliğine sahip, bu kopya dışındaki uygulamalar.
+  ///
+  /// Derleme ara çıktıları (Xcode'un DerivedData'sı, kurulum paketinin
+  /// `build-release`'i) sayılmıyor: her derlemede yeniden oluşuyorlar,
+  /// sayılsalar uyarı sürekli yanar, anlamını yitirirdi. `run.sh`'nin
+  /// `build-debug`'ı ise sayılıyor — /Applications kopyası çalışırken
+  /// karışıklığın öbür tarafı tam da o.
+  private var otherInstalledCopies: [URL] {
+    guard let identifier = Bundle.main.bundleIdentifier else { return [] }
+    let running = Bundle.main.bundleURL.resolvingSymlinksInPath().standardizedFileURL
+    return NSWorkspace.shared.urlsForApplications(withBundleIdentifier: identifier)
+      .map { $0.resolvingSymlinksInPath().standardizedFileURL }
+      .filter { url in
+        url != running
+          && !url.path.contains("/DerivedData/")
+          && !url.path.contains("/build-release/")
+      }
+  }
 
   /// Çalışan kopyanın klasörü, ev dizini `~` ile kısaltılmış.
   private var runningCopyFolder: String {

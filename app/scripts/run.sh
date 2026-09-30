@@ -81,6 +81,44 @@ fi
 
 [ -d "$APP_PATH" ] || { echo "Uygulama bulunamadı: $APP_PATH"; exit 1; }
 
+# Aynı paket kimliğine sahip başka bir kopya (ör. kurulum paketinin
+# /Applications'a koyduğu GlassDo.app) varsa macOS ikisini tek uygulama
+# sayıyor ve karıştırıyor:
+#  - İzinler imzaya bağlı. Kurulan kopya "Developer ID", bu derleme
+#    "Apple Development" ile imzalı; birine verilen izin ötekinde yok.
+#  - Ekran Kaydı izni sonrası "Çık ve Yeniden Aç", Dock, bildirimler ve
+#    oturum açılışı uygulamayı dosya yolundan değil kimlikten buluyor ve
+#    çoğu zaman /Applications'takini açıyor. Kullanıcı bu derlemeye izin
+#    verip "yeniden aç" diyor, karşısına izinsiz öteki kopya çıkıyor.
+# Betik bunu çözemez ama sessiz de kalmamalı.
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true)
+if [ -n "$BUNDLE_ID" ]; then
+  BUILT_REAL=$(cd "$APP_PATH" && pwd -P)
+  OTHERS=$(mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'" 2>/dev/null \
+    | while IFS= read -r copy; do
+        [ -d "$copy" ] || continue
+        real=$(cd "$copy" && pwd -P)
+        [ "$real" = "$BUILT_REAL" ] && continue
+        # Derleme ara çıktıları (Xcode'un kendi DerivedData'sı, kurulum
+        # paketinin Release derlemesi) her derlemede yeniden oluşuyor;
+        # onları saymak uyarıyı anlamsız kılardı.
+        case "$real" in
+          */DerivedData/*|*/build-release/*) continue ;;
+        esac
+        echo "$real"
+      done)
+  if [ -n "$OTHERS" ]; then
+    echo
+    echo "UYARI: Bu Mac'te GlassDo'nun başka bir kopyası daha var:"
+    echo "$OTHERS" | sed 's/^/    /'
+    echo "  macOS ikisini aynı uygulama sayıyor: izinler birine verilip"
+    echo "  ötekisi açılıyor, \"Çık ve Yeniden Aç\" kurulu kopyayı başlatıyor."
+    echo "  Geliştirirken o kopyayı Çöp Kutusu'na at, sonra izinleri sıfırla:"
+    echo "    tccutil reset Accessibility $BUNDLE_ID"
+    echo "    tccutil reset ScreenCapture $BUNDLE_ID"
+  fi
+fi
+
 if [ "$MODE" = "build" ]; then
   echo "Hazır: $APP_PATH"
   exit 0
