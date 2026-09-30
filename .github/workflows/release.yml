@@ -1,7 +1,8 @@
 name: Release
 
 # `main`'e her push'ta uygulamayı derler ve GitHub Releases'e yeni bir
-# indirilebilir sürüm olarak ekler. `workflow_dispatch` elle de tetikleyebilmek
+# indirilebilir sürüm olarak ekler (hem .zip hem de çift tıklanabilir
+# .pkg kurulum sihirbazı). `workflow_dispatch` elle de tetikleyebilmek
 # için var.
 on:
   push:
@@ -21,9 +22,9 @@ jobs:
         run: brew install xcodegen
 
       - name: Xcode projesini üret
-        # Proje `mac_utils/app` altında: depo üç ayrı ürüne bölündü
+        # Proje `app/` altında: depo üç ayrı ürüne bölündü
         # (uygulama / website / admin), bkz. mac_utils/README.md.
-        working-directory: mac_utils/app
+        working-directory: app
         run: xcodegen generate
 
       - name: Derle (imzasız)
@@ -31,8 +32,8 @@ jobs:
         # kurulmadan tek yapılabilecek imzasız ("ad-hoc") derleme. Bu yüzden
         # App Group'a bağlı widget senkronizasyonu bu build'de çalışmaz;
         # tam imzalı/notarize dağıtım için ayrı bir Developer ID kurulumu
-        # gerekir.
-        working-directory: mac_utils/app
+        # gerekir (bkz. scripts/make-pkg.sh, yerelde sertifika varsa imzalar).
+        working-directory: app
         run: |
           xcodebuild \
             -project GlassDo.xcodeproj \
@@ -42,11 +43,62 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      - name: Sürüm numarasını oku
+        id: version
+        run: |
+          APP_PATH="app/build/Build/Products/Release/GlassDo-macOS.app"
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP_PATH/Contents/Info.plist")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Uygulamayı zip'le
         run: |
-          cd mac_utils/app/build/Build/Products/Release
+          cd app/build/Build/Products/Release
           ditto -c -k --sequesterRsrc --keepParent \
             GlassDo-macOS.app "$GITHUB_WORKSPACE/GlassDo-macOS.zip"
+
+      - name: .pkg kurulum paketi oluştur (imzasız)
+        # `scripts/make-pkg.sh` ile aynı adımlar (pkgbuild + productbuild),
+        # ama zaten yukarıda imzasız derlenmiş uygulamayı yeniden kullanıyor —
+        # CI'da Developer ID sertifikası olmadığı için paket de imzasız
+        # çıkıyor; yerel makinede sertifika varsa `scripts/make-pkg.sh`
+        # onu bulup imzalıyor.
+        run: |
+          APP_PATH="app/build/Build/Products/Release/GlassDo-macOS.app"
+          VERSION="${{ steps.version.outputs.version }}"
+          BUNDLE_ID="com.dadebay.GlassDo-macOS"
+          STAGING="pkg-root"
+
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING"
+          cp -R "$APP_PATH" "$STAGING/GlassDo.app"
+
+          pkgbuild --root "$STAGING" \
+            --identifier "$BUNDLE_ID" \
+            --version "$VERSION" \
+            --install-location "/Applications" \
+            --scripts app/scripts/pkg-scripts \
+            component.pkg
+
+          cat > distribution.xml <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <installer-gui-script minSpecVersion="2">
+              <title>GlassDo $VERSION</title>
+              <welcome file="welcome.html" mime-type="text/html"/>
+              <conclusion file="conclusion.html" mime-type="text/html"/>
+              <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+              <volume-check>
+                  <allowed-os-versions><os-version min="26.0"/></allowed-os-versions>
+              </volume-check>
+              <pkg-ref id="$BUNDLE_ID"/>
+              <choices-outline><line choice="default"/></choices-outline>
+              <choice id="default" title="GlassDo"><pkg-ref id="$BUNDLE_ID"/></choice>
+              <pkg-ref id="$BUNDLE_ID" version="$VERSION" onConclusion="none">component.pkg</pkg-ref>
+          </installer-gui-script>
+          XML
+
+          productbuild --distribution distribution.xml \
+            --package-path . --resources app/Resources/pkg \
+            "$GITHUB_WORKSPACE/GlassDo-$VERSION.pkg"
 
       - name: Release notu yaz
         run: |
@@ -54,8 +106,13 @@ jobs:
           Otomatik derleme — commit \`${GITHUB_SHA::7}\`.
 
           Bu build imzasız ve notarize edilmemiş: ilk açılışta Gatekeeper
-          uyarı verir. Finder'da uygulamaya sağ tık → Aç ile geçebilir, ya da
-          terminalde şunu çalıştırabilirsin:
+          uyarı verir.
+
+          - \`GlassDo-${{ steps.version.outputs.version }}.pkg\`: çift tıkla,
+            kurulum sihirbazını takip et.
+          - \`GlassDo-macOS.zip\`: aç, Finder'da uygulamaya sağ tık → Aç ile geç.
+
+          Terminalde de şunu çalıştırabilirsin:
 
           \`\`\`
           xattr -cr GlassDo-macOS.app
@@ -69,5 +126,6 @@ jobs:
           TAG="build-${{ github.run_number }}"
           gh release create "$TAG" \
             "$GITHUB_WORKSPACE/GlassDo-macOS.zip" \
+            "$GITHUB_WORKSPACE/GlassDo-${{ steps.version.outputs.version }}.pkg" \
             --title "Build ${{ github.run_number }}" \
             --notes-file "$GITHUB_WORKSPACE/notes.md"
