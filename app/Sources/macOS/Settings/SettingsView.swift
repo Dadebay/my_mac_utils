@@ -865,6 +865,12 @@ struct WindowSwitcherSettingsSection: View {
         url != running
           && !url.path.contains("/DerivedData/")
           && !url.path.contains("/build-release/")
+          // Çöp Kutusu'na atılan kopya diskte duruyor ve LaunchServices
+          // onu hâlâ kayıtlı tutabiliyor; uyarının istediği şeyi yapan
+          // kullanıcıya uyarı göstermeye devam etmek olmazdı.
+          && !url.path.contains("/.Trash/")
+          // Silinmiş ama kaydı henüz temizlenmemiş kopyalar.
+          && FileManager.default.fileExists(atPath: url.path)
       }
   }
 

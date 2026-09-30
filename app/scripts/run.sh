@@ -110,7 +110,9 @@ if [ -n "$BUNDLE_ID" ]; then
         # `case` değil `if`: macOS'un /bin/bash'i 3.2 ve `$( … )` içindeki
         # bir `case` deseninin `)`'ini komut yerine koymanın kapanışı
         # sanıyor ("syntax error near unexpected token `;;'").
-        if [[ "$real" == */DerivedData/* || "$real" == */build-release/* ]]; then
+        # Çöp Kutusu'ndaki kopya da sayılmıyor: kullanıcı zaten uyarının
+        # istediğini yapmış.
+        if [[ "$real" == */DerivedData/* || "$real" == */build-release/* || "$real" == */.Trash/* ]]; then
           continue
         fi
         echo "$real"
