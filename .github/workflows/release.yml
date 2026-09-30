@@ -96,9 +96,12 @@ jobs:
           </installer-gui-script>
           XML
 
+          # Sabit dosya adı: site "/releases/latest/download/GlassDo-macOS.pkg"
+          # adresine doğrudan bağlanıyor, bu yüzden ad sürüm numarasıyla
+          # değişmemeli (bkz. mac_utils_website/src/i18n/ui.ts).
           productbuild --distribution distribution.xml \
             --package-path . --resources app/Resources/pkg \
-            "$GITHUB_WORKSPACE/GlassDo-$VERSION.pkg"
+            "$GITHUB_WORKSPACE/GlassDo-macOS.pkg"
 
       - name: Release notu yaz
         run: |
@@ -108,8 +111,8 @@ jobs:
           Bu build imzasız ve notarize edilmemiş: ilk açılışta Gatekeeper
           uyarı verir.
 
-          - \`GlassDo-${{ steps.version.outputs.version }}.pkg\`: çift tıkla,
-            kurulum sihirbazını takip et.
+          - \`GlassDo-macOS.pkg\` (v${{ steps.version.outputs.version }}): çift
+            tıkla, kurulum sihirbazını takip et.
           - \`GlassDo-macOS.zip\`: aç, Finder'da uygulamaya sağ tık → Aç ile geç.
 
           Terminalde de şunu çalıştırabilirsin:
@@ -126,6 +129,6 @@ jobs:
           TAG="build-${{ github.run_number }}"
           gh release create "$TAG" \
             "$GITHUB_WORKSPACE/GlassDo-macOS.zip" \
-            "$GITHUB_WORKSPACE/GlassDo-${{ steps.version.outputs.version }}.pkg" \
-            --title "Build ${{ github.run_number }}" \
+            "$GITHUB_WORKSPACE/GlassDo-macOS.pkg" \
+            --title "Build ${{ github.run_number }} (v${{ steps.version.outputs.version }})" \
             --notes-file "$GITHUB_WORKSPACE/notes.md"
