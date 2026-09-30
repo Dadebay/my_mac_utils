@@ -96,11 +96,21 @@ fi
 #    verip "yeniden aç" diyor, karşısına izinsiz öteki kopya çıkıyor.
 # Betik bunu çözemez ama sessiz de kalmamalı.
 BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true)
+DUPLICATE_COPY_FOUND=0
 if [ -n "$BUNDLE_ID" ]; then
   BUILT_REAL=$(cd "$APP_PATH" && pwd -P)
-  OTHERS=$(mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'" 2>/dev/null \
+  # Spotlight derleme klasörlerini ve yeni kurulmuş uygulamaları hemen
+  # indekslemeyebilir. Dağıtım betiklerinin sabit hedefi olan
+  # /Applications/GlassDo.app ayrıca açıkça denetleniyor; `awk` iki
+  # kaynağın aynı yolu döndürmesini tekilleştiriyor.
+  OTHERS=$({
+      [ -d "/Applications/GlassDo.app" ] && echo "/Applications/GlassDo.app"
+      mdfind "kMDItemCFBundleIdentifier == '$BUNDLE_ID'" 2>/dev/null || true
+    } | awk '!seen[$0]++' \
     | while IFS= read -r copy; do
         [ -d "$copy" ] || continue
+        copy_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$copy/Contents/Info.plist" 2>/dev/null || true)
+        [ "$copy_id" = "$BUNDLE_ID" ] || continue
         real=$(cd "$copy" && pwd -P)
         [ "$real" = "$BUILT_REAL" ] && continue
         # Derleme ara çıktıları (Xcode'un kendi DerivedData'sı, kurulum
@@ -118,12 +128,19 @@ if [ -n "$BUNDLE_ID" ]; then
         echo "$real"
       done)
   if [ -n "$OTHERS" ]; then
+    DUPLICATE_COPY_FOUND=1
     echo
-    echo "UYARI: Bu Mac'te GlassDo'nun başka bir kopyası daha var:"
+    if [ "$MODE" = "build" ]; then
+      echo "UYARI: Bu Mac'te GlassDo'nun başka bir kopyası daha var:"
+    else
+      echo "HATA: Bu Mac'te GlassDo'nun başka bir kopyası daha var:"
+    fi
     echo "$OTHERS" | sed 's/^/    /'
     echo "  macOS ikisini aynı uygulama sayıyor: izinler birine verilip"
     echo "  ötekisi açılıyor, \"Çık ve Yeniden Aç\" kurulu kopyayı başlatıyor."
-    echo "  Geliştirirken o kopyayı Çöp Kutusu'na at, sonra izinleri sıfırla:"
+    echo "  İzin döngüsünü önlemek için geliştirme kopyası bu durumda"
+    echo "  başlatılmayacak. Geliştirirken diğer kopyaları Çöp Kutusu'na"
+    echo "  taşı, sonra izinleri bir kez sıfırla:"
     echo "    tccutil reset Accessibility $BUNDLE_ID"
     echo "    tccutil reset ScreenCapture $BUNDLE_ID"
   fi
@@ -132,6 +149,14 @@ fi
 if [ "$MODE" = "build" ]; then
   echo "Hazır: $APP_PATH"
   exit 0
+fi
+
+# Aynı kimlikte iki uygulamadan hangisinin yeniden açılacağını macOS seçiyor.
+# Bu durumda uygulamayı yine de başlatmak, kullanıcıya çalışmayacak bir izin
+# akışı sunmak demek. `--build` yukarıda özellikle serbest: CI ve yalnızca
+# derleme alan iş akışları diskteki kurulu kopyadan etkilenmemeli.
+if [ "$DUPLICATE_COPY_FOUND" -eq 1 ]; then
+  exit 3
 fi
 
 # ⌘Q ve Dock'taki "Çık" uygulamayı kapatmıyor, arka plana alıyor (bkz.

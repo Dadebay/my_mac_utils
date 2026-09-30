@@ -724,15 +724,21 @@ struct WindowSwitcherSettingsSection: View {
         )
 
         HStack(spacing: 14) {
-          Button {
-            controller.requestPermissionsAndStart(userInitiated: true)
-            refreshPermissions()
-          } label: {
-            Text(L10n.s("İzin İste", "Request Access", "Запросить доступ"))
-              .font(.app(.bodyLarge, weight: .medium))
+          // Aynı paket kimliğinde ikinci bir kopya varken macOS isteği
+          // çalışan ikiliye değil öteki kopyanın TCC kaydına bağlayabiliyor.
+          // Bu düğmeyi o durumda göstermek, her basışta aynı sistem
+          // penceresini açan ama hiçbir şeyi düzeltmeyen bir döngüydü.
+          if otherInstalledCopies.isEmpty {
+            Button {
+              controller.requestPermissionsAndStart(userInitiated: true)
+              refreshPermissions()
+            } label: {
+              Text(L10n.s("İzin İste", "Request Access", "Запросить доступ"))
+                .font(.app(.bodyLarge, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.appAccent)
           }
-          .buttonStyle(.plain)
-          .foregroundStyle(Color.appAccent)
 
           Button {
             controller.openAccessibilitySettings()
@@ -768,7 +774,7 @@ struct WindowSwitcherSettingsSection: View {
             ),
             isWarning: true
           )
-        } else if let other = otherInstalledCopies.first {
+        } else if !otherInstalledCopies.isEmpty {
           // Aynı paket kimliğinde ikinci bir kopya: izin sorunlarının en
           // kafa karıştırıcı kaynağı. macOS ikisini tek uygulama sayıyor;
           // izin birinin imzasına bağlanıyor, Ekran Kaydı sonrası
@@ -779,22 +785,30 @@ struct WindowSwitcherSettingsSection: View {
           // sonraki yeniden açılış yine yanlış kopyayı başlatabilir.
           permissionNote(
             L10n.s(
-              "Bu Mac'te GlassDo'nun iki kopyası var: bu (\(runningCopyName)) ve \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS ikisini aynı uygulama sayıyor: izin birine verilip öteki açılıyor, \"Çık ve Yeniden Aç\" çoğu zaman öteki kopyayı başlatıyor. Kullanmadığın kopyayı Çöp Kutusu'na at, sonra izinleri yeniden ver.",
-              "There are two copies of GlassDo on this Mac: this one (\(runningCopyName)) and \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS treats them as the same app: permission goes to one while the other opens, and \"Quit & Reopen\" often launches the other copy. Move the copy you don't use to the Trash, then grant the permissions again.",
-              "На этом Mac две копии GlassDo: эта (\(runningCopyName)) и \((other.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath)/\(other.lastPathComponent). macOS считает их одним приложением: разрешение выдаётся одной, а открывается другая, и «Завершить и открыть снова» часто запускает другую копию. Переместите неиспользуемую копию в Корзину и выдайте разрешения заново."
+              "Bu Mac'te aynı kimliği kullanan başka GlassDo kopyaları var: \(otherInstalledCopyPaths). macOS izinleri kopyalar arasında karıştırıyor ve \"Çık ve Yeniden Aç\" yanlış olanı başlatabiliyor. Yalnızca kullanacağın kopyayı bırak, diğerlerini Çöp Kutusu'na taşı, sonra izinleri yeniden ver.",
+              "Other GlassDo copies with the same identity exist on this Mac: \(otherInstalledCopyPaths). macOS can mix permissions between them, and \"Quit & Reopen\" may launch the wrong one. Keep only the copy you use, move the others to the Trash, then grant the permissions again.",
+              "На этом Mac есть другие копии GlassDo с тем же идентификатором: \(otherInstalledCopyPaths). macOS может путать разрешения между ними, а «Завершить и открыть снова» — запускать не ту копию. Оставьте только используемую копию, остальные переместите в Корзину и выдайте разрешения заново."
             ),
             isWarning: true
           )
 
-          Button {
-            NSWorkspace.shared.activateFileViewerSelecting([other])
-          } label: {
-            Text(L10n.s("Öteki kopyayı Finder'da göster", "Show the other copy in Finder", "Показать другую копию в Finder"))
+          ForEach(otherInstalledCopies, id: \.path) { other in
+            Button {
+              NSWorkspace.shared.activateFileViewerSelecting([other])
+            } label: {
+              Text(
+                L10n.s(
+                  "Finder'da göster: \(other.lastPathComponent)",
+                  "Show in Finder: \(other.lastPathComponent)",
+                  "Показать в Finder: \(other.lastPathComponent)"
+                )
+              )
               .font(.app(.body, weight: .medium))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.appAccent)
+            .padding(.bottom, 4)
           }
-          .buttonStyle(.plain)
-          .foregroundStyle(Color.appAccent)
-          .padding(.bottom, 4)
         } else if !accessibilityGranted {
           // En sık görülen durum: Sistem Ayarları'nda "GlassDo" açık
           // görünüyor ama izin başka bir kopyaya ait. Kurulum paketi
@@ -872,6 +886,15 @@ struct WindowSwitcherSettingsSection: View {
           // Silinmiş ama kaydı henüz temizlenmemiş kopyalar.
           && FileManager.default.fileExists(atPath: url.path)
       }
+  }
+
+  /// Uyarıda tek kopya gösterilirse kullanıcı onu kaldırdıktan sonra
+  /// LaunchServices'e kayıtlı üçüncü kopya aynı sorunu sürdürür. Bu yüzden
+  /// bütün çakışan yollar tek seferde görünür.
+  private var otherInstalledCopyPaths: String {
+    otherInstalledCopies
+      .map { ($0.path as NSString).abbreviatingWithTildeInPath }
+      .joined(separator: ", ")
   }
 
   /// Çalışan kopyanın klasörü, ev dizini `~` ile kısaltılmış.
