@@ -127,8 +127,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="build-${{ github.run_number }}"
+          # `--prerelease`: bu derleme imzasız ve noterlenmemiş. İşaretsiz
+          # bırakılırsa her push'ta "en son sürüm" o oluyor ve sitenin
+          # indirme düğmesi (releases/latest/download/GlassDo.pkg) elle
+          # yüklenen imzalı paketi atlayıp buraya düşüyordu.
           gh release create "$TAG" \
             "$GITHUB_WORKSPACE/GlassDo-macOS.zip" \
             "$GITHUB_WORKSPACE/GlassDo-macOS.pkg" \
             --title "Build ${{ github.run_number }} (v${{ steps.version.outputs.version }})" \
+            --prerelease \
             --notes-file "$GITHUB_WORKSPACE/notes.md"
