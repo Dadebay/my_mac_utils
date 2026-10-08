@@ -390,7 +390,8 @@ private struct MenuBarContentView: View {
         .task {
             stats.start()
             cpuLine = L10n.menuBarCPULine(stats.cpu.usage)
-            memoryLine = L10n.menuBarMemoryLine(stats.memory.used, stats.memory.total)
+            let memory = SystemSampler.memoryStats()
+            memoryLine = L10n.menuBarMemoryLine(memory.used, memory.total)
         }
         .onDisappear {
             stats.stop()

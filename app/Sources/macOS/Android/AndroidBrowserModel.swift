@@ -19,6 +19,14 @@ final class AndroidBrowserModel {
     private(set) var storage: AndroidStorage?
     /// Süren aktarma varsa açıklaması — düğmeler bu sırada kilitleniyor.
     private(set) var busyMessage: String?
+    /// Süren aktarmanın baytları — kaç MB'ın geçtiği buradan okunuyor.
+    private(set) var transfer: AndroidTransfer?
+    /// Biten işin tek satırlık sonucu ("… kuruldu", "… gönderildi").
+    /// Kurulan bir APK telefonda dosya olarak görünmüyor; sessiz kalınca
+    /// kullanıcı hiçbir şey olmadı sanıyordu.
+    private(set) var statusMessage: String?
+
+    func dismissStatus() { statusMessage = nil }
 
     /// Çekilmiş önizlemeler, yol başına. Klasör değişince boşalıyor:
     /// başka klasördeki resimleri bellekte tutmanın karşılığı yok.
@@ -110,16 +118,48 @@ final class AndroidBrowserModel {
 
         guard panel.runModal() == .OK, let destination = panel.url else { return }
         busyMessage = L10n.androidDownloading(file.name)
+        statusMessage = nil
+        transfer = AndroidTransfer(name: file.name, done: 0, total: file.size)
 
         _Concurrency.Task { @MainActor in
+            let target = destination.appending(path: file.name)
             do {
-                try await service.pull(file, to: destination.appending(path: file.name))
-                NSWorkspace.shared.activateFileViewerSelecting([destination.appending(path: file.name)])
+                try await service.pull(file, to: target) { [weak self] progress in
+                    self?.transfer = progress
+                }
+                statusMessage = L10n.androidSavedTo(file.name, destination.lastPathComponent)
+                NSWorkspace.shared.activateFileViewerSelecting([target])
             } catch {
                 errorMessage = error.localizedDescription
             }
             busyMessage = nil
+            transfer = nil
         }
+    }
+
+    /// Sürükleyip bırakmak için: dosyayı geçici bir klasöre indirir ve
+    /// yerel kopyanın yolunu döndürür. Finder'a bırakılan öğe bu kopya.
+    func stageForDrag(_ file: AndroidFile) async throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "GlassDoAndroidDrag/\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let target = directory.appending(path: file.name)
+
+        await MainActor.run {
+            busyMessage = L10n.androidDownloading(file.name)
+            transfer = AndroidTransfer(name: file.name, done: 0, total: file.size)
+        }
+        defer {
+            _Concurrency.Task { @MainActor in
+                busyMessage = nil
+                transfer = nil
+            }
+        }
+
+        try await service.pull(file, to: target) { [weak self] progress in
+            self?.transfer = progress
+        }
+        return target
     }
 
     /// Mac'ten sürüklenen ya da seçilen dosyaları bulunulan klasöre yükler.
@@ -129,24 +169,57 @@ final class AndroidBrowserModel {
             ? L10n.androidUploading(urls[0].lastPathComponent)
             : L10n.androidUploadingCount(urls.count)
 
+        statusMessage = nil
+
         _Concurrency.Task { @MainActor in
+            var installed: [String] = []
+            var copied: [String] = []
             do {
                 for url in urls {
                     // APK'ler yüklenmek yerine kuruluyor: telefona kopyalanan
                     // bir APK kendiliğinden kurulmuyor, kullanıcı da bunu
-                    // bekliyor.
+                    // bekliyor. Kurulan paket klasörde görünmediği için
+                    // sonucu ayrıca söylemek gerekiyor.
                     if url.pathExtension.lowercased() == "apk" {
+                        busyMessage = L10n.androidInstalling(url.lastPathComponent)
+                        transfer = AndroidTransfer(
+                            name: url.lastPathComponent, done: nil,
+                            total: (try? FileManager.default.attributesOfItem(
+                                atPath: url.path)[.size] as? UInt64) ?? nil
+                        )
                         try await service.install(apk: url)
+                        installed.append(url.lastPathComponent)
                     } else {
-                        try await service.push(url, to: path)
+                        busyMessage = L10n.androidUploading(url.lastPathComponent)
+                        try await service.push(url, to: path) { [weak self] progress in
+                            self?.transfer = progress
+                        }
+                        copied.append(url.lastPathComponent)
                     }
                 }
                 load()
+                statusMessage = Self.summary(installed: installed, copied: copied)
             } catch {
                 errorMessage = error.localizedDescription
             }
             busyMessage = nil
+            transfer = nil
         }
+    }
+
+    private static func summary(installed: [String], copied: [String]) -> String? {
+        if !installed.isEmpty, copied.isEmpty {
+            return installed.count == 1
+                ? L10n.androidInstalled(installed[0])
+                : L10n.androidInstalledCount(installed.count)
+        }
+        if installed.isEmpty, !copied.isEmpty {
+            return copied.count == 1
+                ? L10n.androidCopiedOne(copied[0])
+                : L10n.androidCopiedCount(copied.count)
+        }
+        guard !installed.isEmpty else { return nil }
+        return L10n.androidMixedResult(copied.count, installed.count)
     }
 
     func chooseFilesToUpload() {

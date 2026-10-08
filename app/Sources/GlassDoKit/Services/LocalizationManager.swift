@@ -88,8 +88,8 @@ public enum L10n {
         // Bayt biçimleyici bu modülde yok (`SystemFormat` uygulama
         // hedefinde); menü satırı için sistemin kendi biçimleyicisi yeterli.
         let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        formatter.allowedUnits = [.useGB, .useMB]
+        formatter.countStyle = .memory
+        formatter.allowsNonnumericFormatting = false
         let value = "\(formatter.string(fromByteCount: Int64(used))) / \(formatter.string(fromByteCount: Int64(total)))"
         return s("Bellek: \(value)", "Memory: \(value)", "Память: \(value)")
     }
@@ -202,6 +202,46 @@ public enum L10n {
     }
     public static var androidLayoutHelp: String {
         s("Izgara ya da liste", "Grid or list", "Сетка или список")
+    }
+    public static func androidSavedTo(_ name: String, _ folder: String) -> String {
+        s("\(name) → \(folder) klasörüne kaydedildi",
+          "\(name) saved to \(folder)",
+          "\(name) сохранён в \(folder)")
+    }
+    public static func androidInstalling(_ name: String) -> String {
+        s("\(name) kuruluyor…", "Installing \(name)…", "Установка \(name)…")
+    }
+    public static func androidInstalled(_ name: String) -> String {
+        s("\(name) telefona kuruldu", "\(name) installed on the phone",
+          "\(name) установлен на телефон")
+    }
+    public static func androidInstalledCount(_ count: Int) -> String {
+        s("\(count) uygulama kuruldu", "\(count) apps installed",
+          "Установлено приложений: \(count)")
+    }
+    public static func androidCopiedOne(_ name: String) -> String {
+        s("\(name) telefona gönderildi", "\(name) copied to the phone",
+          "\(name) скопирован на телефон")
+    }
+    public static func androidCopiedCount(_ count: Int) -> String {
+        s("\(count) öğe telefona gönderildi", "\(count) items copied to the phone",
+          "Скопировано на телефон: \(count)")
+    }
+    public static func androidMixedResult(_ copied: Int, _ installed: Int) -> String {
+        s("\(copied) öğe gönderildi, \(installed) uygulama kuruldu",
+          "\(copied) items copied, \(installed) apps installed",
+          "Скопировано: \(copied), установлено: \(installed)")
+    }
+    /// Kurulan bir APK klasörde görünmüyor; kullanıcı "gönderdim ama yok"
+    /// diye bildirdi.
+    public static var androidApkHint: String {
+        s("Kurulan uygulama dosya olarak görünmez; telefonun uygulama listesinde.",
+          "An installed app doesn't appear as a file — look in the phone's app list.",
+          "Установленное приложение не отображается файлом — ищите в списке приложений.")
+    }
+    public static var androidDragHint: String {
+        s("Dosyayı Finder'a sürükleyebilirsin", "Drag a file to Finder",
+          "Файл можно перетащить в Finder")
     }
     public static var androidDownloadHelp: String {
         s("Mac'e indir", "Download to Mac", "Скачать на Mac")

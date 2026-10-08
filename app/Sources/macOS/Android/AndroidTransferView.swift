@@ -240,6 +240,10 @@ private struct AndroidFileBrowser: View {
                 errorBar(error)
             }
 
+            if let status = model.statusMessage {
+                statusBar(status)
+            }
+
             Divider().opacity(0.4)
 
             ZStack {
@@ -340,6 +344,7 @@ private struct AndroidFileBrowser: View {
                                 onOpen: { model.open(file) },
                                 onDownload: { model.download(file) }
                             )
+                            .onDrag { dragProvider(for: file) }
                             // Önizleme yalnızca kart ekrana girince
                             // çekiliyor: klasördeki her fotoğrafı peşinen
                             // indirmek telefonu da ağı da boşuna yorardı.
@@ -354,6 +359,7 @@ private struct AndroidFileBrowser: View {
                                 onOpen: { model.open(file) },
                                 onDownload: { model.download(file) }
                             )
+                            .onDrag { dragProvider(for: file) }
                         }
                     }
                 }
@@ -393,15 +399,93 @@ private struct AndroidFileBrowser: View {
     }
 
     private func busyOverlay(_ text: String) -> some View {
-        VStack(spacing: 8) {
-            ProgressView().controlSize(.small)
-            Text(text).font(.app(.body)).foregroundStyle(.secondary)
+        VStack(spacing: 10) {
+            if let fraction = model.transfer?.fraction {
+                ProgressView(value: fraction)
+                    .progressViewStyle(.linear)
+                    .frame(width: 220)
+            } else {
+                ProgressView().controlSize(.small)
+            }
+
+            Text(text).font(.app(.body)).foregroundStyle(.primary)
+
+            // Kaç MB'ın geçtiği: yüzde tek başına "ne kadar kaldı"
+            // sorusunu büyük dosyalarda cevaplamıyor.
+            if let transfer = model.transfer, let total = transfer.total {
+                Text(transfer.done.map {
+                    "\(SystemFormat.bytes($0)) / \(SystemFormat.bytes(total))"
+                } ?? SystemFormat.bytes(total))
+                    .font(.app(.micro))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding(18)
+        .padding(20)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.regularMaterial)
         }
+    }
+
+    /// Biten işin sonucu. Kurulan bir APK klasörde görünmediği için bu
+    /// satır olmadan "gönderdim ama yok" izlenimi doğuyordu.
+    private func statusBar(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.green)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(text)
+                    .font(.app(.micro))
+                    .foregroundStyle(.primary)
+                if text.contains(".apk") || text.lowercased().contains("install")
+                    || text.contains("kuruldu") || text.contains("установ") {
+                    Text(L10n.androidApkHint)
+                        .font(.app(.micro))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer(minLength: 0)
+            Button { model.dismissStatus() } label: {
+                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color.green.opacity(0.12))
+    }
+
+    /// Dosyayı Finder'a (ya da başka bir uygulamaya) sürüklemek için.
+    ///
+    /// Dosya telefonda duruyor, sürükleme başladığında elde bir kopya yok
+    /// ve indirmeyi beklemek sürüklemeyi dondururdu. Bu yüzden söz
+    /// veriliyor: kullanıcı bıraktığı anda sistem dosyayı istiyor,
+    /// indirme o zaman başlıyor ve biter bitmez kopya teslim ediliyor.
+    private func dragProvider(for file: AndroidFile) -> NSItemProvider {
+        let provider = NSItemProvider()
+        provider.suggestedName = file.name
+        guard !file.isOpenable else { return provider }
+
+        let type = UTType(filenameExtension: (file.name as NSString).pathExtension) ?? .data
+        provider.registerFileRepresentation(
+            forTypeIdentifier: type.identifier, fileOptions: [], visibility: .all
+        ) { completion in
+            _Concurrency.Task { @MainActor in
+                do {
+                    let url = try await model.stageForDrag(file)
+                    // `false`: kopya bizim geçici klasörümüzde kalıyor,
+                    // sistem onu taşımıyor.
+                    completion(url, false, nil)
+                } catch {
+                    completion(nil, false, error)
+                }
+            }
+            return nil
+        }
+        return provider
     }
 
     /// Sürüklenen öğelerin yollarını çözüp yüklemeye veriyor.

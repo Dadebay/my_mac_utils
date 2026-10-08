@@ -37,6 +37,19 @@ struct AndroidStorage: Equatable {
     }
 }
 
+/// Süren bir aktarmanın durumu.
+struct AndroidTransfer: Equatable {
+    let name: String
+    /// Şimdiye kadar aktarılan bayt. Toplam bilinmiyorsa (kurulum) `nil`.
+    var done: UInt64?
+    var total: UInt64?
+
+    var fraction: Double? {
+        guard let done, let total, total > 0 else { return nil }
+        return min(Double(done) / Double(total), 1)
+    }
+}
+
 enum AndroidFileError: LocalizedError {
     case adbMissing
     case failed(String)
@@ -144,18 +157,66 @@ struct AndroidFileService: Sendable {
     // MARK: - Aktarma
 
     /// Telefondan Mac'e.
-    func pull(_ file: AndroidFile, to destination: URL) async throws {
+    ///
+    /// `adb` ilerleme yüzdesini yalnızca uçbirime yazıyor; çıktısı bir
+    /// boruya gittiğinde hiçbir şey basmıyor. Bu yüzden ilerleme, hedef
+    /// dosyanın büyümesi ölçülerek çıkarılıyor.
+    func pull(
+        _ file: AndroidFile, to destination: URL,
+        onProgress: (@MainActor @Sendable (AndroidTransfer) -> Void)? = nil
+    ) async throws {
+        let watcher = onProgress.map { report in
+            _Concurrency.Task {
+                while !_Concurrency.Task.isCancelled {
+                    try? await _Concurrency.Task.sleep(for: .milliseconds(300))
+                    let done = (try? FileManager.default.attributesOfItem(
+                        atPath: destination.path
+                    )[.size] as? UInt64) ?? nil
+                    let transfer = AndroidTransfer(name: file.name, done: done ?? 0, total: file.size)
+                    await MainActor.run { report(transfer) }
+                }
+            }
+        }
+        defer { watcher?.cancel() }
         _ = try await run(["pull", "-a", file.path, destination.path])
     }
 
     /// Mac'ten telefona.
-    func push(_ source: URL, to remoteDirectory: String) async throws {
+    func push(
+        _ source: URL, to remoteDirectory: String,
+        onProgress: (@MainActor @Sendable (AndroidTransfer) -> Void)? = nil
+    ) async throws {
+        let total = (try? FileManager.default.attributesOfItem(
+            atPath: source.path
+        )[.size] as? UInt64) ?? nil
+        let name = source.lastPathComponent
+        let remote = remoteDirectory.hasSuffix("/")
+            ? remoteDirectory + name
+            : remoteDirectory + "/" + name
+
+        let watcher = onProgress.map { report in
+            _Concurrency.Task {
+                while !_Concurrency.Task.isCancelled {
+                    try? await _Concurrency.Task.sleep(for: .milliseconds(500))
+                    // Telefondaki dosyanın büyümesi: yerelde olduğu gibi
+                    // doğrudan okunamıyor, cihaza sorulması gerekiyor.
+                    let output = try? await run(["shell", "stat", "-c", "%s", shellQuoted(remote)])
+                    let done = output.flatMap { UInt64($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+                    let transfer = AndroidTransfer(name: name, done: done ?? 0, total: total)
+                    await MainActor.run { report(transfer) }
+                }
+            }
+        }
+        defer { watcher?.cancel() }
         _ = try await run(["push", source.path, remoteDirectory])
     }
 
     /// APK kurulumu. `-r` var olan uygulamanın üstüne yazıyor: aynı
     /// uygulamanın yeni sürümünü kurmak en sık kullanım.
     func install(apk: URL) async throws {
+        // Kurulum sırasında `adb` önce paketi cihaza kopyalıyor; o kopyanın
+        // yeri cihazdan cihaza değiştiği için ilerleme ölçülemiyor,
+        // yalnızca "sürüyor" bilgisi verilebiliyor.
         let output = try await run(["install", "-r", apk.path])
         // `adb install` hatayı sıfır çıkış koduyla da bildirebiliyor.
         guard !output.contains("Failure"), !output.contains("Error:") else {
