@@ -399,32 +399,85 @@ private struct AndroidFileBrowser: View {
     }
 
     private func busyOverlay(_ text: String) -> some View {
-        VStack(spacing: 10) {
-            if let fraction = model.transfer?.fraction {
+        let batch = model.batch
+        let current = model.transfer
+
+        return VStack(alignment: .leading, spacing: 9) {
+            // Başlık satırı: ne yapıldığı ve toplu gönderimde kaçıncı
+            // dosyada olduğumuz. Tek dosyada sayaç gösterilmiyor.
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(text)
+                    .font(.app(.body, weight: .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Spacer(minLength: 8)
+
+                if let batch, batch.isMultiple {
+                    Text(L10n.androidFileCounter(batch.index, batch.count))
+                        .font(.app(.micro, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Çubuk toplamı gösteriyor: her dosyada sıfırlanan bir çubuk
+            // on dosyalık gönderimde ilerleme hissi vermiyordu.
+            if let fraction = batch?.fraction(adding: current?.done) ?? current?.fraction {
                 ProgressView(value: fraction)
                     .progressViewStyle(.linear)
-                    .frame(width: 220)
             } else {
-                ProgressView().controlSize(.small)
+                ProgressView().progressViewStyle(.linear)
             }
 
-            Text(text).font(.app(.body)).foregroundStyle(.primary)
-
-            // Kaç MB'ın geçtiği: yüzde tek başına "ne kadar kaldı"
-            // sorusunu büyük dosyalarda cevaplamıyor.
-            if let transfer = model.transfer, let total = transfer.total {
-                Text(transfer.done.map {
-                    "\(SystemFormat.bytes($0)) / \(SystemFormat.bytes(total))"
-                } ?? SystemFormat.bytes(total))
+            // Alt satır: solda toplam, sağda süren dosyanın kendi durumu.
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                if let batch, batch.totalBytes > 0 {
+                    Text(L10n.androidTotalProgress(
+                        SystemFormat.bytes(batch.doneBytes(adding: current?.done)),
+                        SystemFormat.bytes(batch.totalBytes)
+                    ))
                     .font(.app(.micro))
                     .monospacedDigit()
+                    .foregroundStyle(.primary)
+                }
+
+                Spacer(minLength: 6)
+
+                if let current, let total = current.total, batch?.isMultiple == true {
+                    Text(current.done.map {
+                        "\(SystemFormat.bytes($0)) / \(SystemFormat.bytes(total))"
+                    } ?? SystemFormat.bytes(total))
+                        .font(.app(.micro))
+                        .monospacedDigit()
+                        .foregroundStyle(.tertiary)
+                } else if batch == nil || batch?.totalBytes == 0,
+                          let current, let total = current.total {
+                    Text(current.done.map {
+                        "\(SystemFormat.bytes($0)) / \(SystemFormat.bytes(total))"
+                    } ?? SystemFormat.bytes(total))
+                        .font(.app(.micro))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Toplu gönderimde sıradaki dosyanın adı; başlık satırı
+            // "3 / 10" ile dolu olduğu için ad buraya düşüyor.
+            if let current, batch?.isMultiple == true {
+                Text(current.name)
+                    .font(.app(.micro))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
         }
-        .padding(20)
+        .frame(width: 300)
+        .padding(16)
         .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.regularMaterial)
+                .shadow(color: .black.opacity(0.22), radius: 14, y: 4)
         }
     }
 

@@ -21,6 +21,9 @@ final class AndroidBrowserModel {
     private(set) var busyMessage: String?
     /// Süren aktarmanın baytları — kaç MB'ın geçtiği buradan okunuyor.
     private(set) var transfer: AndroidTransfer?
+    /// Birden çok dosya gönderilirken toplam durum: kaçıncı dosyadayız ve
+    /// hepsinin kaç baytı geçti.
+    private(set) var batch: AndroidBatch?
     /// Biten işin tek satırlık sonucu ("… kuruldu", "… gönderildi").
     /// Kurulan bir APK telefonda dosya olarak görünmüyor; sessiz kalınca
     /// kullanıcı hiçbir şey olmadı sanıyordu.
@@ -165,17 +168,27 @@ final class AndroidBrowserModel {
     /// Mac'ten sürüklenen ya da seçilen dosyaları bulunulan klasöre yükler.
     func upload(_ urls: [URL]) {
         guard !urls.isEmpty else { return }
-        busyMessage = urls.count == 1
-            ? L10n.androidUploading(urls[0].lastPathComponent)
-            : L10n.androidUploadingCount(urls.count)
-
         statusMessage = nil
+
+        // Toplam boyut baştan biliniyor: tek dosyanın çubuğu on dosyalık
+        // bir gönderimde "ne kadar kaldı" sorusunu cevaplamıyor.
+        let sizes = urls.map { url in
+            (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? UInt64) ?? nil
+        }
+        batch = AndroidBatch(
+            index: 1, count: urls.count,
+            completedBytes: 0,
+            totalBytes: sizes.compactMap { $0 }.reduce(0, +)
+        )
 
         _Concurrency.Task { @MainActor in
             var installed: [String] = []
             var copied: [String] = []
             do {
-                for url in urls {
+                for (offset, url) in urls.enumerated() {
+                    batch?.index = offset + 1
+                    let size = sizes[offset] ?? nil
+
                     // APK'ler yüklenmek yerine kuruluyor: telefona kopyalanan
                     // bir APK kendiliğinden kurulmuyor, kullanıcı da bunu
                     // bekliyor. Kurulan paket klasörde görünmediği için
@@ -185,11 +198,7 @@ final class AndroidBrowserModel {
                         // kopyalanıyor (ölçülebiliyor), sonra cihaz onu
                         // kuruyor (süresi ölçülemiyor).
                         busyMessage = L10n.androidCopyingToPhone(url.lastPathComponent)
-                        transfer = AndroidTransfer(
-                            name: url.lastPathComponent, done: 0,
-                            total: (try? FileManager.default.attributesOfItem(
-                                atPath: url.path)[.size] as? UInt64) ?? nil
-                        )
+                        transfer = AndroidTransfer(name: url.lastPathComponent, done: 0, total: size)
                         try await service.install(
                             apk: url,
                             onProgress: { [weak self] progress in self?.transfer = progress },
@@ -201,11 +210,17 @@ final class AndroidBrowserModel {
                         installed.append(url.lastPathComponent)
                     } else {
                         busyMessage = L10n.androidUploading(url.lastPathComponent)
+                        transfer = AndroidTransfer(name: url.lastPathComponent, done: 0, total: size)
                         try await service.push(url, to: path) { [weak self] progress in
                             self?.transfer = progress
                         }
                         copied.append(url.lastPathComponent)
                     }
+
+                    // Biten dosya toplama ekleniyor; sıradakinin çubuğu
+                    // sıfırdan değil, kalınan yerden devam ediyor.
+                    batch?.completedBytes += size ?? 0
+                    transfer = nil
                 }
                 load()
                 statusMessage = Self.summary(installed: installed, copied: copied)
@@ -214,6 +229,7 @@ final class AndroidBrowserModel {
             }
             busyMessage = nil
             transfer = nil
+            batch = nil
         }
     }
 

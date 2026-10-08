@@ -50,6 +50,32 @@ struct AndroidTransfer: Equatable {
     }
 }
 
+/// Birden çok dosyanın hep birlikte ilerleyişi.
+///
+/// Tek dosyanın çubuğu, on dosya gönderirken "kaçı bitti, ne kadar kaldı"
+/// sorusunu cevaplamıyordu: her dosyada çubuk sıfırlanıyor ve toplam
+/// görünmüyordu.
+struct AndroidBatch: Equatable {
+    /// Şu an sırada kaçıncı dosya (1'den başlayarak).
+    var index: Int
+    var count: Int
+    /// Tamamlanmış dosyaların toplam baytı; süren dosya buna dahil değil.
+    var completedBytes: UInt64
+    var totalBytes: UInt64
+
+    var isMultiple: Bool { count > 1 }
+
+    /// Biten dosyalar + sürenin o anki durumu.
+    func fraction(adding current: UInt64?) -> Double? {
+        guard totalBytes > 0 else { return nil }
+        return min(Double(completedBytes + (current ?? 0)) / Double(totalBytes), 1)
+    }
+
+    func doneBytes(adding current: UInt64?) -> UInt64 {
+        completedBytes + (current ?? 0)
+    }
+}
+
 enum AndroidFileError: LocalizedError {
     case adbMissing
     case failed(String)

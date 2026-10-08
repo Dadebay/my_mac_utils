@@ -211,6 +211,12 @@ public enum L10n {
     public static func androidInstalling(_ name: String) -> String {
         s("\(name) kuruluyor…", "Installing \(name)…", "Установка \(name)…")
     }
+    public static func androidFileCounter(_ index: Int, _ count: Int) -> String {
+        s("\(index) / \(count) dosya", "File \(index) of \(count)", "Файл \(index) из \(count)")
+    }
+    public static func androidTotalProgress(_ done: String, _ total: String) -> String {
+        s("Toplam \(done) / \(total)", "Total \(done) / \(total)", "Всего \(done) / \(total)")
+    }
     public static func androidCopyingToPhone(_ name: String) -> String {
         s("\(name) telefona kopyalanıyor…", "Copying \(name) to the phone…",
           "Копирование \(name) на телефон…")
