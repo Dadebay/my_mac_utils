@@ -211,6 +211,10 @@ public enum L10n {
     public static func androidInstalling(_ name: String) -> String {
         s("\(name) kuruluyor…", "Installing \(name)…", "Установка \(name)…")
     }
+    public static func androidCopyingToPhone(_ name: String) -> String {
+        s("\(name) telefona kopyalanıyor…", "Copying \(name) to the phone…",
+          "Копирование \(name) на телефон…")
+    }
     public static func androidInstalled(_ name: String) -> String {
         s("\(name) telefona kuruldu", "\(name) installed on the phone",
           "\(name) установлен на телефон")

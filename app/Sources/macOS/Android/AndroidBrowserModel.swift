@@ -181,13 +181,23 @@ final class AndroidBrowserModel {
                     // bekliyor. Kurulan paket klasörde görünmediği için
                     // sonucu ayrıca söylemek gerekiyor.
                     if url.pathExtension.lowercased() == "apk" {
-                        busyMessage = L10n.androidInstalling(url.lastPathComponent)
+                        // Kurulum iki aşamalı: önce paket telefona
+                        // kopyalanıyor (ölçülebiliyor), sonra cihaz onu
+                        // kuruyor (süresi ölçülemiyor).
+                        busyMessage = L10n.androidCopyingToPhone(url.lastPathComponent)
                         transfer = AndroidTransfer(
-                            name: url.lastPathComponent, done: nil,
+                            name: url.lastPathComponent, done: 0,
                             total: (try? FileManager.default.attributesOfItem(
                                 atPath: url.path)[.size] as? UInt64) ?? nil
                         )
-                        try await service.install(apk: url)
+                        try await service.install(
+                            apk: url,
+                            onProgress: { [weak self] progress in self?.transfer = progress },
+                            onInstalling: { [weak self] in
+                                self?.busyMessage = L10n.androidInstalling(url.lastPathComponent)
+                                self?.transfer = nil
+                            }
+                        )
                         installed.append(url.lastPathComponent)
                     } else {
                         busyMessage = L10n.androidUploading(url.lastPathComponent)

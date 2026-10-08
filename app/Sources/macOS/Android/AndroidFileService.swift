@@ -186,13 +186,23 @@ struct AndroidFileService: Sendable {
         _ source: URL, to remoteDirectory: String,
         onProgress: (@MainActor @Sendable (AndroidTransfer) -> Void)? = nil
     ) async throws {
-        let total = (try? FileManager.default.attributesOfItem(
-            atPath: source.path
-        )[.size] as? UInt64) ?? nil
         let name = source.lastPathComponent
         let remote = remoteDirectory.hasSuffix("/")
             ? remoteDirectory + name
             : remoteDirectory + "/" + name
+        try await push(source, toPath: remote, onProgress: onProgress)
+    }
+
+    /// Hedefi klasör değil, tam dosya yolu olarak alan biçim. Kurulum
+    /// paketi cihazda geçici bir yola kopyalanırken buna ihtiyaç var.
+    func push(
+        _ source: URL, toPath remote: String,
+        onProgress: (@MainActor @Sendable (AndroidTransfer) -> Void)? = nil
+    ) async throws {
+        let total = (try? FileManager.default.attributesOfItem(
+            atPath: source.path
+        )[.size] as? UInt64) ?? nil
+        let name = source.lastPathComponent
 
         let watcher = onProgress.map { report in
             _Concurrency.Task {
@@ -208,18 +218,34 @@ struct AndroidFileService: Sendable {
             }
         }
         defer { watcher?.cancel() }
-        _ = try await run(["push", source.path, remoteDirectory])
+        _ = try await run(["push", source.path, remote])
     }
 
     /// APK kurulumu. `-r` var olan uygulamanın üstüne yazıyor: aynı
     /// uygulamanın yeni sürümünü kurmak en sık kullanım.
-    func install(apk: URL) async throws {
-        // Kurulum sırasında `adb` önce paketi cihaza kopyalıyor; o kopyanın
-        // yeri cihazdan cihaza değiştiği için ilerleme ölçülemiyor,
-        // yalnızca "sürüyor" bilgisi verilebiliyor.
-        let output = try await run(["install", "-r", apk.path])
-        // `adb install` hatayı sıfır çıkış koduyla da bildirebiliyor.
-        guard !output.contains("Failure"), !output.contains("Error:") else {
+    func install(
+        apk: URL,
+        onProgress: (@MainActor @Sendable (AndroidTransfer) -> Void)? = nil,
+        onInstalling: (@MainActor @Sendable () -> Void)? = nil
+    ) async throws {
+        // `adb install` tek adımda hallediyor ama paketi cihazda kendi
+        // seçtiği bir yere kopyaladığı için ilerleme ölçülemiyordu;
+        // kullanıcı 60 MB'lık bir pakette ne kadar kaldığını göremiyordu.
+        // Aynı iş iki adıma bölününce kopyalama ölçülebilir hâle geliyor.
+        let remote = "/data/local/tmp/glassdo-\(UUID().uuidString).apk"
+
+        try await push(apk, toPath: remote, onProgress: onProgress)
+        // Kopya bitti; buradan sonrası cihazın işi ve süresi ölçülemiyor.
+        if let onInstalling { await MainActor.run { onInstalling() } }
+
+        defer {
+            // Geçici kopya her durumda siliniyor: kurulum başarısız olsa
+            // bile cihazda 60 MB'lık bir artık bırakmanın anlamı yok.
+            _Concurrency.Task { _ = try? await run(["shell", "rm", "-f", shellQuoted(remote)]) }
+        }
+
+        let output = try await run(["shell", "pm", "install", "-r", shellQuoted(remote)])
+        guard output.contains("Success") else {
             throw AndroidFileError.failed(output.trimmingCharacters(in: .whitespacesAndNewlines))
         }
     }
