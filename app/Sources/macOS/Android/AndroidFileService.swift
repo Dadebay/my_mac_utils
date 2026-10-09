@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 import GlassDoKit
 
@@ -16,6 +17,13 @@ struct AndroidFile: Identifiable, Equatable {
     /// Bağlantılar da klasör gibi açılmayı deniyor: hedefin klasör olup
     /// olmadığını `ls` söylemiyor, denemek tek yol.
     var isOpenable: Bool { isDirectory || linkTarget != nil }
+
+    /// Önizlemesi kareden çıkarılabilecek bir video mu.
+    var isVideo: Bool {
+        guard !isOpenable else { return false }
+        return ["mp4", "mov", "m4v", "3gp", "mkv", "avi", "webm"]
+            .contains((name as NSString).pathExtension.lowercased())
+    }
 
     /// Önizlemesi gösterilebilecek bir resim mi.
     var isImage: Bool {
@@ -276,15 +284,16 @@ struct AndroidFileService: Sendable {
         }
     }
 
-    /// Bir resmin önizlemesi.
+    /// Bir dosyanın önizlemesi — resimde kendisi, videoda ilk kare.
     ///
-    /// Telefonda küçük resim üretmenin yolu yok; dosyanın kendisi geçici
-    /// bir klasöre çekilip burada küçültülüyor. Çekilen kopya hemen
-    /// siliniyor — bir klasör dolusu fotoğrafın tam boyunu diskte
-    /// tutmanın anlamı yok.
+    /// Telefonda küçük resim üretmenin yolu yok; dosya geçici bir klasöre
+    /// çekilip burada işleniyor ve kopya hemen siliniyor. Video için
+    /// sınır daha dar tutuluyor: bir ekran kaydı yüzlerce megabayt
+    /// olabiliyor ve sırf kapak için onu çekmek telefonu da kabloyu da
+    /// boşuna yorar.
     func thumbnail(for file: AndroidFile, maxPixel: CGFloat = 320) async throws -> NSImage? {
-        // Çok büyük dosyayı önizleme için çekmek dakikalar sürebilir.
-        guard file.isImage, file.size <= 25 * 1024 * 1024 else { return nil }
+        let limit: UInt64 = file.isVideo ? 400 * 1024 * 1024 : 25 * 1024 * 1024
+        guard file.isImage || file.isVideo, file.size <= limit else { return nil }
 
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "GlassDoAndroidPreview", directoryHint: .isDirectory)
@@ -293,7 +302,14 @@ struct AndroidFileService: Sendable {
         defer { try? FileManager.default.removeItem(at: local) }
 
         _ = try await run(["pull", "-a", file.path, local.path])
-        guard let image = NSImage(contentsOf: local) else { return nil }
+
+        let image: NSImage?
+        if file.isVideo {
+            image = Self.videoFrame(at: local, maxPixel: maxPixel)
+        } else {
+            image = NSImage(contentsOf: local)
+        }
+        guard let image else { return nil }
 
         let size = image.size
         guard size.width > 0, size.height > 0 else { return nil }
@@ -306,6 +322,31 @@ struct AndroidFileService: Sendable {
         image.draw(in: NSRect(origin: .zero, size: target))
         resized.unlockFocus()
         return resized
+    }
+
+    /// Videonun kapak karesi. Baştan tam sıfırıncı saniye çoğu kayıtta
+    /// siyah; biraz ileriden alınıyor.
+    private static func videoFrame(at url: URL, maxPixel: CGFloat) -> NSImage? {
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: maxPixel * 2, height: maxPixel * 2)
+        // Kareyi tam isteneni bulmak için aramak yavaş; yakını yeterli.
+        generator.requestedTimeToleranceBefore = CMTime(seconds: 1, preferredTimescale: 600)
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 1, preferredTimescale: 600)
+
+        let time = CMTime(seconds: 1, preferredTimescale: 600)
+        guard let cgImage = try? generator.copyCGImage(at: time, actualTime: nil) else {
+            // Bir saniyelik video olabilir: en baştan dene.
+            guard let first = try? generator.copyCGImage(at: .zero, actualTime: nil) else { return nil }
+            return NSImage(cgImage: first, size: .zero)
+        }
+        return NSImage(cgImage: cgImage, size: .zero)
+    }
+
+    /// Telefondaki dosyayı ya da klasörü siler.
+    func delete(_ file: AndroidFile) async throws {
+        _ = try await run(["shell", "rm", file.isOpenable ? "-rf" : "-f", shellQuoted(file.path)])
     }
 
     /// Telefonun depolama durumu.

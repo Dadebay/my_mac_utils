@@ -29,6 +29,24 @@ struct AndroidTransferView: View {
         }
         .onAppear { monitor.start() }
         .onDisappear { monitor.stop() }
+        .confirmationDialog(
+            browsers[monitor.devices.first?.serial ?? ""]?.pendingDelete
+                .map { L10n.androidDeleteConfirm($0.name) } ?? "",
+            isPresented: Binding(
+                get: { browsers[monitor.devices.first?.serial ?? ""]?.pendingDelete != nil },
+                set: { if !$0 { browsers[monitor.devices.first?.serial ?? ""]?.pendingDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L10n.androidDelete, role: .destructive) {
+                browsers[monitor.devices.first?.serial ?? ""]?.confirmDelete()
+            }
+            Button(L10n.cancel, role: .cancel) {
+                browsers[monitor.devices.first?.serial ?? ""]?.pendingDelete = nil
+            }
+        } message: {
+            Text(L10n.androidDeleteConfirmDetail)
+        }
         .pageSubtitle(monitor.devices.first?.displayName ?? L10n.androidNoDeviceTitle)
     }
 
@@ -345,6 +363,7 @@ private struct AndroidFileBrowser: View {
                                 onDownload: { model.download(file) }
                             )
                             .onDrag { dragProvider(for: file) }
+                            .contextMenu { fileMenu(for: file) }
                             // Önizleme yalnızca kart ekrana girince
                             // çekiliyor: klasördeki her fotoğrafı peşinen
                             // indirmek telefonu da ağı da boşuna yorardı.
@@ -360,6 +379,7 @@ private struct AndroidFileBrowser: View {
                                 onDownload: { model.download(file) }
                             )
                             .onDrag { dragProvider(for: file) }
+                            .contextMenu { fileMenu(for: file) }
                         }
                     }
                 }
@@ -509,6 +529,40 @@ private struct AndroidFileBrowser: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(Color.green.opacity(0.12))
+    }
+
+    /// Satır ve kartın ortak menüsü: sağ tıkla ya da karttaki düğmeyle
+    /// açılıyor. İndirme düğmesi yalnızca üzerine gelince çıktığı için
+    /// dokunmatik olmayan yolların da bir karşılığı olmalı.
+    @ViewBuilder
+    private func fileMenu(for file: AndroidFile) -> some View {
+        if !file.isOpenable {
+            Button {
+                model.download(file)
+            } label: {
+                Label(L10n.androidDownloadHelp, systemImage: "arrow.down.circle")
+            }
+        } else {
+            Button {
+                model.open(file)
+            } label: {
+                Label(L10n.androidOpenFolder, systemImage: "folder")
+            }
+        }
+
+        Button {
+            model.copyPath(file)
+        } label: {
+            Label(L10n.androidCopyPath, systemImage: "doc.on.doc")
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            model.requestDelete(file)
+        } label: {
+            Label(L10n.androidDelete, systemImage: "trash")
+        }
     }
 
     /// Dosyayı Finder'a (ya da başka bir uygulamaya) sürüklemek için.

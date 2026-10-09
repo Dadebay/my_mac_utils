@@ -253,6 +253,28 @@ public enum L10n {
         s("Dosyayı Finder'a sürükleyebilirsin", "Drag a file to Finder",
           "Файл можно перетащить в Finder")
     }
+    public static func androidDeleting(_ name: String) -> String {
+        s("\(name) siliniyor…", "Deleting \(name)…", "Удаление \(name)…")
+    }
+    public static func androidDeleted(_ name: String) -> String {
+        s("\(name) telefondan silindi", "\(name) deleted from the phone",
+          "\(name) удалён с телефона")
+    }
+    public static func androidDeleteConfirm(_ name: String) -> String {
+        s("\(name) telefondan silinsin mi?", "Delete \(name) from the phone?",
+          "Удалить \(name) с телефона?")
+    }
+    public static var androidDeleteConfirmDetail: String {
+        s("Bu işlem geri alınamaz.", "This can't be undone.", "Это действие необратимо.")
+    }
+    public static var androidDelete: String { s("Sil", "Delete", "Удалить") }
+    public static var androidOpenFolder: String { s("Aç", "Open", "Открыть") }
+    public static var androidCopyPath: String {
+        s("Yolu kopyala", "Copy path", "Скопировать путь")
+    }
+    public static var androidPathCopied: String {
+        s("Yol panoya kopyalandı", "Path copied to the clipboard", "Путь скопирован")
+    }
     public static var androidDownloadHelp: String {
         s("Mac'e indir", "Download to Mac", "Скачать на Mac")
     }

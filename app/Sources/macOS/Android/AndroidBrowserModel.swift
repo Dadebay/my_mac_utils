@@ -58,7 +58,9 @@ final class AndroidBrowserModel {
     /// Izgara görünümünde resimlerin önizlemesi isteniyor. Aynı dosya için
     /// ikinci kez çekim başlatılmıyor.
     func requestThumbnail(for file: AndroidFile) {
-        guard file.isImage, thumbnails[file.path] == nil, !pendingThumbnails.contains(file.path)
+        guard file.isImage || file.isVideo,
+              thumbnails[file.path] == nil,
+              !pendingThumbnails.contains(file.path)
         else { return }
         pendingThumbnails.insert(file.path)
 
@@ -259,4 +261,35 @@ final class AndroidBrowserModel {
     }
 
     func dismissError() { errorMessage = nil }
+
+    /// Silinmek üzere onay bekleyen dosya. Telefondan silmek geri
+    /// alınamıyor; tek tıklamayla olmamalı.
+    var pendingDelete: AndroidFile?
+
+    func requestDelete(_ file: AndroidFile) { pendingDelete = file }
+
+    func confirmDelete() {
+        guard let file = pendingDelete else { return }
+        pendingDelete = nil
+        busyMessage = L10n.androidDeleting(file.name)
+
+        _Concurrency.Task { @MainActor in
+            do {
+                try await service.delete(file)
+                thumbnails[file.path] = nil
+                statusMessage = L10n.androidDeleted(file.name)
+                load()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+            busyMessage = nil
+        }
+    }
+
+    /// Dosyanın telefondaki tam yolu — panoya kopyalanıyor.
+    func copyPath(_ file: AndroidFile) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(file.path, forType: .string)
+        statusMessage = L10n.androidPathCopied
+    }
 }

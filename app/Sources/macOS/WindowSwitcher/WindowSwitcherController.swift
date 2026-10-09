@@ -742,6 +742,43 @@ final class WindowSwitcherController {
     }
 
     /// Bir uygulamanın GERÇEKTEN simge durumuna küçültülmüş pencereleri.
+    /// Bir uygulamanın GERÇEK pencereleri — çerçeveleriyle.
+    ///
+    /// Bazı uygulamalar ekranda görünmeyen yardımcı pencereler açıyor ve
+    /// bunlar pencere listesine normal pencere gibi düşüyor: CleanMyMac
+    /// tek süreçten üç pencere veriyor, ikisi 256×256 ve başlıksız
+    /// (kullanıcı bildirdi: değiştiricide aynı uygulamadan üç kart).
+    /// Erişilebilirlik bu ikisini `AXUnknown`, asıl pencereyi
+    /// `AXStandardWindow` olarak ayırıyor.
+    private func standardWindowFrames(ofPID pid: pid_t) -> [CGRect] {
+        let appElement = AXUIElementCreateApplication(pid)
+        var windowsRef: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(
+            appElement, kAXWindowsAttribute as CFString, &windowsRef
+        ) == .success, let axWindows = windowsRef as? [AXUIElement] else { return [] }
+
+        return axWindows.compactMap { element in
+            var subroleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleRef)
+            let subrole = (subroleRef as? String) ?? ""
+            // Yalnızca standart pencere. Diyaloglar da elenmeli: ChatGPT
+            // iki küçük "Computer Use" panelini `AXSystemDialog` olarak
+            // açıyor ve bunlar başlıklı oldukları için başlığa bakan bir
+            // süzgeçten geçiyorlardı (kullanıcı bildirdi: Codex/ChatGPT
+            // ekranından da üç kart). Zaten bir panele ⌥Tab ile geçmenin
+            // karşılığı yok.
+            guard subrole == kAXStandardWindowSubrole as String else { return nil }
+            return axFrame(element)
+        }
+    }
+
+    private func standardFrames(for pid: pid_t, cache: inout [pid_t: [CGRect]]) -> [CGRect] {
+        if let cached = cache[pid] { return cached }
+        let frames = standardWindowFrames(ofPID: pid)
+        cache[pid] = frames
+        return frames
+    }
+
     private func minimizedWindows(of app: NSRunningApplication) -> [(title: String, frame: CGRect)] {
         let appElement = AXUIElementCreateApplication(app.processIdentifier)
         var windowsRef: CFTypeRef?
@@ -752,6 +789,11 @@ final class WindowSwitcherController {
             var minimizedRef: CFTypeRef?
             AXUIElementCopyAttributeValue(element, kAXMinimizedAttribute as CFString, &minimizedRef)
             guard (minimizedRef as? Bool) == true else { return nil }
+
+            // Küçültülmüş sahte pencereler de listeye düşmesin.
+            var subroleRef: CFTypeRef?
+            AXUIElementCopyAttributeValue(element, kAXSubroleAttribute as CFString, &subroleRef)
+            guard (subroleRef as? String) == kAXStandardWindowSubrole as String else { return nil }
 
             var titleRef: CFTypeRef?
             AXUIElementCopyAttributeValue(element, kAXTitleAttribute as CFString, &titleRef)
@@ -823,6 +865,9 @@ final class WindowSwitcherController {
 
         typealias Entry = (pid: pid_t, windowID: CGWindowID, appName: String, title: String, frame: CGRect)
 
+        // Süreç başına tek Erişilebilirlik sorgusu.
+        var standardFrameCache: [pid_t: [CGRect]] = [:]
+
         let entries: [Entry] = rawList.compactMap { info in
             guard let layer = info[kCGWindowLayer as String] as? Int, layer == 0 else { return nil }
             guard let pid = info[kCGWindowOwnerPID as String] as? pid_t, eligiblePIDs.contains(pid) else { return nil }
@@ -831,12 +876,25 @@ final class WindowSwitcherController {
             guard let bounds = info[kCGWindowBounds as String] as? [String: CGFloat],
                   (bounds["Width"] ?? 0) > 60, (bounds["Height"] ?? 0) > 60 else { return nil }
             let appName = info[kCGWindowOwnerName as String] as? String ?? ""
-            let title = info[kCGWindowName as String] as? String ?? appName
+            let rawTitle = info[kCGWindowName as String] as? String ?? ""
             let frame = CGRect(
                 x: bounds["X"] ?? 0, y: bounds["Y"] ?? 0,
                 width: bounds["Width"] ?? 0, height: bounds["Height"] ?? 0
             )
-            return (pid, windowID, appName, title, frame)
+
+            // Her pencere Erişilebilirlik'e doğrulatılıyor. Başlığa
+            // bakmak yetmiyordu: sahte pencerelerin bir kısmı başlıksız
+            // (CleanMyMac), bir kısmı başlıklı (ChatGPT'nin panelleri).
+            // Sorgu süreç başına bir kez yapılıp saklanıyor.
+            let frames = standardFrames(for: pid, cache: &standardFrameCache)
+            // Hiç standart pencere bildirmeyen uygulamalar (Erişilebilirlik
+            // izni yoksa hepsi) eskisi gibi listeleniyor: boş bir
+            // değiştirici, fazladan bir karttan kötü.
+            guard frames.isEmpty || frames.contains(where: { $0.matches(frame) }) else {
+                return nil
+            }
+
+            return (pid, windowID, appName, rawTitle.isEmpty ? appName : rawTitle, frame)
         }
 
         // Küçültülmüş pencere taraması kendi uygulamamızı atlıyor: panel
@@ -1111,4 +1169,18 @@ private func windowSwitcherEventTapCallback(
     guard let userInfo else { return Unmanaged.passRetained(event) }
     let controller = Unmanaged<WindowSwitcherController>.fromOpaque(userInfo).takeUnretainedValue()
     return controller.handleTapEvent(type: type, event: event)
+}
+
+private extension CGRect {
+    /// İki çerçeve aynı pencereyi mi gösteriyor.
+    ///
+    /// Erişilebilirlik ile pencere listesi aynı pencere için birkaç
+    /// noktalık farklı değerler verebiliyor (ölçek, gölge payı), bu yüzden
+    /// eşitlik yerine yakınlık aranıyor.
+    func matches(_ other: CGRect, tolerance: CGFloat = 4) -> Bool {
+        abs(width - other.width) <= tolerance
+            && abs(height - other.height) <= tolerance
+            && abs(minX - other.minX) <= tolerance
+            && abs(minY - other.minY) <= tolerance
+    }
 }
