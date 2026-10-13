@@ -30,7 +30,11 @@ struct BugReportView: View {
     @State private var diagnostics: BugDiagnostics?
     @State private var phase: Phase = .editing
 
-    @FocusState private var detailsFocused: Bool
+    /// Hangi alanda yazıldığı. Odaktaki alanın çerçevesi vurgulanıyor:
+    /// üç alan aynı gri zeminde dururken imlecin nerede olduğu
+    /// yalnızca yanıp sönen çizgiden anlaşılıyordu.
+    private enum Field: Hashable { case details, steps, contact }
+    @FocusState private var focus: Field?
 
     private enum Phase: Equatable {
         case editing
@@ -59,23 +63,55 @@ struct BugReportView: View {
         // durumu değil, sonrasını kaydetmiş olurduk.
         .task {
             diagnostics = await BugDiagnostics.collect(panel: panelController)
-            detailsFocused = true
+            focus = .details
         }
     }
 
     // MARK: - Düzenleme
 
     private var editor: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
             header
+
+            // Önce asıl iş: ne oldu. Sınıflandırma (nerede, ne kadar kötü)
+            // altta ve hazır bir varsayılanla duruyor — kullanıcı iki
+            // menüyü cevaplamadan yazmaya başlayabiliyor.
+            field(L10n.s("Ne oldu?", "What happened?", "Что произошло?")) {
+                textArea(
+                    placeholder: L10n.s(
+                        "Ne yaptınız, ne olmasını bekliyordunuz?",
+                        "What did you do, and what did you expect?",
+                        "Что вы сделали и чего ожидали?"
+                    ),
+                    text: $details,
+                    height: 92,
+                    field: .details
+                )
+            }
+
+            field(
+                L10n.s("Nasıl tekrarlanıyor?", "How can we reproduce it?", "Как воспроизвести?"),
+                optional: true
+            ) {
+                textArea(
+                    placeholder: L10n.s(
+                        "Adım adım yazın — en çok işe yarayan kısım.",
+                        "Step by step — this is the most useful part.",
+                        "По шагам — это самая полезная часть."
+                    ),
+                    text: $steps,
+                    height: 62,
+                    field: .steps
+                )
+            }
 
             // Nerede + ne kadar kötü: iki etiketli açılır menü, yan yana.
             // Önce dört renkli rozet denendi — sabit genişlikte etiketler
             // iki satıra kırılıyor ve seçili rozet dialogdaki tek doygun
-            // renk olarak gözü asıl alandan (ne oldu?) çekiyordu. Açılır
-            // menü sistemin kendi dili: kırpılmıyor, hizalanıyor, sessiz.
+            // renk olarak gözü asıl alandan çekiyordu. Açılır menü
+            // sistemin kendi dili: kırpılmıyor, hizalanıyor, sessiz.
             HStack(alignment: .top, spacing: 12) {
-                labeledField(L10n.s("Nerede", "Where", "Где")) {
+                field(L10n.s("Nerede", "Where", "Где")) {
                     Picker(selection: $area) {
                         ForEach(BugArea.allCases) { area in
                             Text(area.title).tag(area)
@@ -86,7 +122,7 @@ struct BugReportView: View {
                     .labelsHidden()
                 }
 
-                labeledField(L10n.s("Ne kadar kötü", "How bad", "Насколько плохо")) {
+                field(L10n.s("Ne kadar kötü", "How bad", "Насколько плохо")) {
                     Picker(selection: $severity) {
                         ForEach(BugSeverity.allCases) { option in
                             // Renk yalnızca küçük bir nokta: sıralamayı
@@ -108,34 +144,24 @@ struct BugReportView: View {
             }
             .disabled(phase == .sending)
 
-            textArea(
-                placeholder: L10n.s(
-                    "Ne oldu? Ne olmasını bekliyordunuz?",
-                    "What happened? What did you expect?",
-                    "Что произошло? Чего вы ожидали?"
-                ),
-                text: $details,
-                height: 76
-            )
-            .focused($detailsFocused)
-
-            textArea(
-                placeholder: L10n.s(
-                    "Nasıl tekrarlanıyor? (isteğe bağlı, en çok işe yarayan kısım)",
-                    "How do we reproduce it? (optional, the most useful part)",
-                    "Как это воспроизвести? (необязательно, самая полезная часть)"
-                ),
-                text: $steps,
-                height: 46
-            )
-
-            TextField(
-                L10n.s("E-posta (isteğe bağlı)", "Email (optional)", "E-mail (необязательно)"),
-                text: $contact
-            )
-            .font(.app(.bodyLarge))
-            .textFieldStyle(.roundedBorder)
-            .disabled(phase == .sending)
+            field(L10n.s("E-posta", "Email", "E-mail"), optional: true) {
+                TextField(
+                    "",
+                    text: $contact,
+                    prompt: Text(L10n.s(
+                        "Yanıt almak isterseniz",
+                        "If you'd like a reply",
+                        "Если хотите получить ответ"
+                    ))
+                )
+                .font(.app(.bodyLarge))
+                .textFieldStyle(.plain)
+                .focused($focus, equals: .contact)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 7)
+                .background { inputSurface(isFocused: focus == .contact) }
+                .disabled(phase == .sending)
+            }
 
             diagnosticsRow
 
@@ -145,18 +171,35 @@ struct BugReportView: View {
 
             footer
         }
-        .padding(18)
+        .padding(20)
     }
 
+    /// Başlık: kenar çubuğundaki sayfa karolarıyla aynı dil — renkli
+    /// yuvarlatılmış kare içinde simge. Dialog uygulamanın parçası gibi
+    /// durmalı, sistemden gelen bir uyarı gibi değil.
     private var header: some View {
-        HStack(spacing: 9) {
-            Image(systemName: "ladybug.fill")
-                .font(.system(size: 15))
-                .foregroundStyle(.red)
+        HStack(spacing: 11) {
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
+                .fill(LinearGradient(
+                    colors: [Color(red: 0.95, green: 0.42, blue: 0.34), Color(red: 0.82, green: 0.22, blue: 0.18)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
+                .frame(width: 34, height: 34)
+                .overlay {
+                    Image(systemName: "ladybug.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
+                        .strokeBorder(.white.opacity(0.22), lineWidth: 0.5)
+                }
+                .shadow(color: Color(red: 0.82, green: 0.22, blue: 0.18).opacity(0.35), radius: 4, y: 1)
 
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(L10n.s("Hata Bildir", "Report a Bug", "Сообщить об ошибке"))
-                    .font(.app(.title, weight: .semibold))
+                    .font(.app(.titleLarge, weight: .semibold))
 
                 Text(L10n.s(
                     "Sürüm ve sistem bilgisi rapora kendiliğinden eklenir.",
@@ -171,26 +214,56 @@ struct BugReportView: View {
         }
     }
 
-    /// Bir denetimin üstündeki küçük başlık. Dialogda dört alan var ve
-    /// ikisi açılır menü — başlıksız bırakıldığında "Kenar Paneli / Ray"
-    /// yazan bir menünün neyi sorduğu ancak tıklayınca anlaşılıyordu.
-    private func labeledField<Content: View>(
+    /// Bir denetimin üstündeki kalıcı başlık. Yer tutucu yazmaya başlayınca
+    /// siliniyor; alanın neyi sorduğu da onunla birlikte kayboluyordu.
+    /// İsteğe bağlı alanlar sağda soluk bir etiket taşıyor — hangilerinin
+    /// boş bırakılabileceği zorunlu olanın yanında okunuyor.
+    private func field<Content: View>(
         _ title: String,
+        optional: Bool = false,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-                .font(.app(.caption, weight: .medium))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(title)
+                    .font(.app(.caption, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                if optional {
+                    Text(L10n.s("isteğe bağlı", "optional", "необязательно"))
+                        .font(.app(.caption))
+                        .foregroundStyle(.tertiary)
+                }
+            }
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// Giriş alanlarının ortak zemini. Odaktaki alan vurgu rengiyle
+    /// çerçeveleniyor.
+    private func inputSurface(isFocused: Bool) -> some View {
+        RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
+            .fill(Color.primary.opacity(isFocused ? 0.06 : 0.045))
+            .overlay {
+                RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
+                    .strokeBorder(
+                        isFocused ? Color.accentColor.opacity(0.75) : Color.primary.opacity(0.10),
+                        lineWidth: isFocused ? 1.25 : 0.75
+                    )
+            }
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isFocused)
+    }
+
     /// `TextEditor`ın kendi zemini bu düzende yamalı duruyor; saydam
-    /// bırakılıp kendi çerçevesine oturtuluyor. Yer tutucu da elle
-    /// çiziliyor — `TextEditor`ın yerleşik bir `prompt`'u yok.
-    private func textArea(placeholder: String, text: Binding<String>, height: CGFloat) -> some View {
+    /// bırakılıp ortak zemine oturtuluyor. Yer tutucu da elle çiziliyor —
+    /// `TextEditor`ın yerleşik bir `prompt`'u yok.
+    private func textArea(
+        placeholder: String,
+        text: Binding<String>,
+        height: CGFloat,
+        field: Field
+    ) -> some View {
         ZStack(alignment: .topLeading) {
             if text.wrappedValue.isEmpty {
                 Text(placeholder)
@@ -204,20 +277,22 @@ struct BugReportView: View {
             TextEditor(text: text)
                 .font(.app(.bodyLarge))
                 .scrollContentBackground(.hidden)
+                // Boş alanda bile sağda gri bir kaydırma çubuğu çiziliyordu;
+                // yazı sığmadığında tekerlek ve izleme dörtgeni zaten
+                // kaydırıyor.
+                .scrollIndicators(.never)
+                .focused($focus, equals: field)
                 .frame(height: height)
                 .padding(.horizontal, 2)
                 .padding(.vertical, 1)
                 .disabled(phase == .sending)
         }
         .padding(3)
-        .background {
-            RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
-                .fill(Color.primary.opacity(0.045))
-                .overlay {
-                    RoundedRectangle(cornerRadius: Layout.Radius.small, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.75)
-                }
-        }
+        .background { inputSurface(isFocused: focus == field) }
+        // Alanın her yerine tıklamak imleci oraya koymalı, yalnızca metin
+        // satırlarına değil.
+        .contentShape(Rectangle())
+        .onTapGesture { focus = field }
     }
 
     // MARK: - Tanılama
@@ -283,9 +358,14 @@ struct BugReportView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            if phase == .sending {
-                ProgressView()
-                    .controlSize(.small)
+            // Çok satırlı alanda Return satır ekliyor; göndermek için
+            // ⌘↩. Kısayol yalnızca gönderilebilir olduğunda ipucu olarak
+            // görünüyor.
+            if canSend {
+                Text(L10n.s("⌘↩ ile gönder", "⌘↩ to send", "⌘↩ — отправить"))
+                    .font(.app(.caption))
+                    .foregroundStyle(.tertiary)
+                    .transition(.opacity)
             }
 
             Spacer(minLength: 8)
@@ -297,13 +377,24 @@ struct BugReportView: View {
             Button {
                 _Concurrency.Task { await send() }
             } label: {
-                Text(L10n.s("Gönder", "Send", "Отправить"))
-                    .frame(minWidth: 52)
+                HStack(spacing: 6) {
+                    if phase == .sending {
+                        ProgressView()
+                            .controlSize(.small)
+                            .scaleEffect(0.7)
+                            .frame(width: 12, height: 12)
+                    }
+                    Text(phase == .sending
+                         ? L10n.s("Gönderiliyor…", "Sending…", "Отправка…")
+                         : L10n.s("Gönder", "Send", "Отправить"))
+                }
+                .frame(minWidth: 70)
             }
             .buttonStyle(.borderedProminent)
-            .keyboardShortcut(.defaultAction)
+            .keyboardShortcut(.return, modifiers: .command)
             .disabled(!canSend)
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.14), value: canSend)
     }
 
     private var canSend: Bool {
