@@ -1,6 +1,6 @@
 # 16 — Hata Bildirimi: Toplama, Belge Biçimi ve Çözüm Akışı
 
-> Güncellik: 2026-09-21
+> Güncellik: 2026-10-17
 >
 > Menü çubuğundaki **Hata Bildir…** maddesinin ne topladığı, Firestore'da
 > nasıl durduğu ve gelen bir raporu çözmek için izlenen yol.
@@ -24,6 +24,13 @@ bağlı e-posta. Tek satırlık özet ayrıca sorulmuyor — açıklamanın ilk 
 geri alındı: sabit genişlikte etiketler iki satıra kırılıyor, seçili rozet
 de dialogdaki tek doygun renk olarak gözü asıl alandan çekiyordu; sistemin
 kendi açılır menüsü kırpılmıyor ve sessiz kalıyor.
+
+"Nerede" boş başlar ve gönderimden önce seçilmelidir; Android aktarımı
+ile izin/kurulum da ayrı alanlardır. Form alanları yerel taslak olarak
+saklanır ve sunucu onayı gelince silinir. Firestore yazıyı çevrimdışıyken
+kalıcı kuyruğa alır; 8 saniyede onay gelmezse pencere sıraya alındığını
+gösterir ve kapatılabilir. Sonuç ekranıyla form aynı asgari yüksekliği
+paylaşır; geçiş kısa bir solmayla yapılır.
 
 ## Belge biçimi — `user_bugs/{reportID}`
 

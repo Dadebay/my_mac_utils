@@ -51,18 +51,19 @@ enum BugReportService {
         }
     }
 
-    /// Raporu yazar ve belge kimliğini döner. Kimlik kullanıcıya
-    /// gösteriliyor: destek yazışmasında "hangi rapor" sorusunun tek
-    /// cümlelik cevabı oluyor.
-    static func submit(
+    /// Yerel Firestore kuyruğuna yazar ve belge kimliğini hemen döner.
+    /// Tamamlama yalnızca sunucu yanıtından sonra çağrılır; çevrimdışıyken
+    /// bu süre belirsiz olduğundan arayüz kendi bekleme durumunu yönetir.
+    static func enqueue(
         area: BugArea,
         severity: BugSeverity,
         summary: String,
         details: String,
         steps: String,
         contact: String,
-        diagnostics: BugDiagnostics?
-    ) async throws -> String {
+        diagnostics: BugDiagnostics?,
+        completion: @escaping @MainActor @Sendable (String, String?) -> Void
+    ) throws -> String {
         let trimmedDetails = details.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedDetails.isEmpty else { throw SubmissionError.emptyDescription }
         guard FirebaseApp.app() != nil else { throw SubmissionError.firebaseUnavailable }
@@ -72,9 +73,10 @@ enum BugReportService {
         // böylece dışa aktarılan bir JSON'da "bu hangi rapor" bilgisi
         // kaybolmuyor.
         let ref = db.collection("user_bugs").document()
+        let reportID = ref.documentID
 
         var fields: [String: Any] = [
-            "reportID": ref.documentID,
+            "reportID": reportID,
             "schemaVersion": schemaVersion,
             "deviceID": DeviceAnalyticsService.deviceID,
 
@@ -122,22 +124,26 @@ enum BugReportService {
             ]
         }
 
-        try await write(fields, to: ref)
-        return ref.documentID
+        ref.setData(fields, completion: { error in
+            let message = error.map { SubmissionError.writeFailed($0.localizedDescription).localizedDescription }
+            _Concurrency.Task { @MainActor in completion(reportID, message) }
+        })
+        return reportID
     }
 
-    /// Firestore'un geri çağırmalı API'sini `async`'e köprüler.
-    /// `setData(_:completion:)` eşzamanlı çağrılıyor — sözlük aktör
-    /// sınırını geçmiyor, Swift 6'nın `Sendable` denetimi sorun çıkarmıyor.
-    private static func write(_ fields: [String: Any], to ref: DocumentReference) async throws {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            ref.setData(fields) { error in
-                if let error {
-                    continuation.resume(throwing: SubmissionError.writeFailed(error.localizedDescription))
-                } else {
-                    continuation.resume()
-                }
-            }
+    /// Uygulama kapatılıp açıldıysa eski tamamlama geri çağrısı yoktur.
+    /// Bekleyen yazılar sunucuda işlenince yerel belgeyi okuyarak sonucu
+    /// bulur; okuma izni istemez ve bağlantı yokken beklemeye devam eder.
+    static func reconcilePending(_ reportID: String) async -> Bool? {
+        guard FirebaseApp.app() != nil else { return nil }
+        let db = Firestore.firestore()
+        do {
+            try await db.waitForPendingWrites()
+            let snapshot = try await db.collection("user_bugs")
+                .document(reportID).getDocument(source: .cache)
+            return snapshot.exists
+        } catch {
+            return nil
         }
     }
 }

@@ -11,6 +11,7 @@ import GlassDoKit
 /// (bkz. `docs/16-BUG-REPORTS.md`).
 enum BugArea: String, CaseIterable, Identifiable, Sendable {
     case panel
+    case android
     case tasks
     case notes
     case windowSwitcher
@@ -20,6 +21,7 @@ enum BugArea: String, CaseIterable, Identifiable, Sendable {
     case storage
     case purchases
     case settings
+    case permissions
     case other
 
     var id: String { rawValue }
@@ -27,6 +29,7 @@ enum BugArea: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .panel: L10n.s("Kenar Paneli / Ray", "Edge Panel / Rail", "Боковая панель")
+        case .android: L10n.s("Telefon (Android)", "Phone (Android)", "Телефон (Android)")
         case .tasks: L10n.s("Görevler", "Tasks", "Задачи")
         case .notes: L10n.s("Notlar", "Notes", "Заметки")
         case .windowSwitcher: L10n.s("Pencere Değiştirici", "Window Switcher", "Переключатель окон")
@@ -36,6 +39,7 @@ enum BugArea: String, CaseIterable, Identifiable, Sendable {
         case .storage: L10n.s("Dosyalar / Klasörler", "Files / Folders", "Файлы и папки")
         case .purchases: L10n.s("Satın Alma / Pro", "Purchases / Pro", "Покупки / Pro")
         case .settings: L10n.s("Ayarlar", "Settings", "Настройки")
+        case .permissions: L10n.s("İzinler / Kurulum", "Permissions / Setup", "Разрешения / Настройка")
         case .other: L10n.s("Diğer", "Other", "Другое")
         }
     }
@@ -46,6 +50,7 @@ enum BugArea: String, CaseIterable, Identifiable, Sendable {
     var sourceHint: String {
         switch self {
         case .panel: "Sources/macOS/Panel"
+        case .android: "Sources/macOS/Android"
         case .tasks: "Sources/macOS/MainWindow, Sources/GlassDoKit/Store"
         case .notes: "Sources/macOS/Notes"
         case .windowSwitcher: "Sources/macOS/WindowSwitcher"
@@ -55,6 +60,7 @@ enum BugArea: String, CaseIterable, Identifiable, Sendable {
         case .storage: "Sources/macOS/Storage"
         case .purchases: "Sources/macOS/Purchases"
         case .settings: "Sources/macOS/Settings"
+        case .permissions: "Sources/macOS/Settings, Sources/macOS/Onboarding"
         case .other: "-"
         }
     }

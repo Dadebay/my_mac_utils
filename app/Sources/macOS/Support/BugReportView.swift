@@ -19,13 +19,15 @@ struct BugReportView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var area: BugArea = .panel
-    @State private var severity: BugSeverity = .annoying
-    @State private var details = ""
-    @State private var steps = ""
-    @State private var contact = ""
-    @State private var includeDiagnostics = true
+    @AppStorage("bugReport.draft.area") private var areaRaw = ""
+    @AppStorage("bugReport.draft.severity") private var severityRaw = BugSeverity.annoying.rawValue
+    @AppStorage("bugReport.draft.details") private var details = ""
+    @AppStorage("bugReport.draft.steps") private var steps = ""
+    @AppStorage("bugReport.draft.contact") private var contact = ""
+    @AppStorage("bugReport.draft.includeDiagnostics") private var includeDiagnostics = true
+    @AppStorage("bugReport.draft.pendingReportID") private var pendingReportID = ""
     @State private var showDiagnostics = false
+    @State private var successAppeared = false
 
     @State private var diagnostics: BugDiagnostics?
     @State private var phase: Phase = .editing
@@ -38,32 +40,74 @@ struct BugReportView: View {
 
     private enum Phase: Equatable {
         case editing
-        case sending
+        case sending(String)
+        case queued(String)
         case sent(String)
         case failed(String)
     }
 
+    private var area: BugArea? {
+        get { BugArea(rawValue: areaRaw) }
+        nonmutating set { areaRaw = newValue?.rawValue ?? "" }
+    }
+
+    private var severity: BugSeverity {
+        get { BugSeverity(rawValue: severityRaw) ?? .annoying }
+        nonmutating set { severityRaw = newValue.rawValue }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        ZStack {
             switch phase {
             case .sent(let reportID):
-                success(reportID: reportID)
+                result(reportID: reportID, queued: false)
+                    .transition(.opacity)
+            case .queued(let reportID):
+                result(reportID: reportID, queued: true)
+                    .transition(.opacity)
             default:
                 editor
+                    .transition(.opacity)
             }
         }
         .frame(width: 460)
+        .frame(minHeight: 640)
         .background(.windowBackground)
-        .animation(
-            reduceMotion ? .easeInOut(duration: 0.16) : .spring(response: 0.3, dampingFraction: 1.0),
-            value: phase
-        )
+        .animation(.easeOut(duration: reduceMotion ? 0.12 : 0.22), value: resultStage)
+        .onAppear {
+            phase = pendingReportID.isEmpty ? .editing : .queued(pendingReportID)
+            successAppeared = false
+        }
         // Tanılama dialog açılırken bir kez toplanıyor, gönderme anında
         // değil: kullanıcı yazarken paneli kapatmışsa hatanın görüldüğü
         // durumu değil, sonrasını kaydetmiş olurduk.
         .task {
             diagnostics = await BugDiagnostics.collect(panel: panelController)
-            focus = .details
+            if case .editing = phase { focus = .details }
+            let reportID = pendingReportID
+            guard !reportID.isEmpty else { return }
+            if let wasSent = await BugReportService.reconcilePending(reportID),
+               pendingReportID == reportID {
+                if wasSent {
+                    clearDraft()
+                    phase = .sent(reportID)
+                } else {
+                    pendingReportID = ""
+                    phase = .failed(L10n.s(
+                        "Rapor sunucuya ulaşmadı. Taslak korundu; lütfen yeniden deneyin.",
+                        "The report did not reach the server. Your draft is saved; please try again.",
+                        "Отчёт не дошёл до сервера. Черновик сохранён; попробуйте снова."
+                    ))
+                }
+            }
+        }
+    }
+
+    private var resultStage: Int {
+        switch phase {
+        case .queued: 1
+        case .sent: 2
+        default: 0
         }
     }
 
@@ -73,9 +117,8 @@ struct BugReportView: View {
         VStack(alignment: .leading, spacing: 16) {
             header
 
-            // Önce asıl iş: ne oldu. Sınıflandırma (nerede, ne kadar kötü)
-            // altta ve hazır bir varsayılanla duruyor — kullanıcı iki
-            // menüyü cevaplamadan yazmaya başlayabiliyor.
+            // Önce asıl iş: ne oldu. Sınıflandırma altta kalıyor;
+            // konum seçilmeden yanlış bir varsayılan kaydedilmiyor.
             field(L10n.s("Ne oldu?", "What happened?", "Что произошло?")) {
                 textArea(
                     placeholder: L10n.s(
@@ -112,9 +155,11 @@ struct BugReportView: View {
             // sistemin kendi dili: kırpılmıyor, hizalanıyor, sessiz.
             HStack(alignment: .top, spacing: 12) {
                 field(L10n.s("Nerede", "Where", "Где")) {
-                    Picker(selection: $area) {
+                    Picker(selection: Binding(get: { area }, set: { area = $0 })) {
+                        Text(L10n.s("Seçin…", "Choose…", "Выберите…"))
+                            .tag(nil as BugArea?)
                         ForEach(BugArea.allCases) { area in
-                            Text(area.title).tag(area)
+                            Text(area.title).tag(area as BugArea?)
                         }
                     } label: {
                         EmptyView()
@@ -123,7 +168,7 @@ struct BugReportView: View {
                 }
 
                 field(L10n.s("Ne kadar kötü", "How bad", "Насколько плохо")) {
-                    Picker(selection: $severity) {
+                    Picker(selection: Binding(get: { severity }, set: { severity = $0 })) {
                         ForEach(BugSeverity.allCases) { option in
                             // Renk yalnızca küçük bir nokta: sıralamayı
                             // okunur kılıyor, dialogun rengini bozmuyor.
@@ -142,7 +187,7 @@ struct BugReportView: View {
                     .labelsHidden()
                 }
             }
-            .disabled(phase == .sending)
+            .disabled(isSending)
 
             field(L10n.s("E-posta", "Email", "E-mail"), optional: true) {
                 TextField(
@@ -157,11 +202,22 @@ struct BugReportView: View {
                 .font(.app(.bodyLarge))
                 .textFieldStyle(.plain)
                 .focused($focus, equals: .contact)
+                .onSubmit { if canSend { send() } }
                 .padding(.horizontal, 9)
                 .padding(.vertical, 7)
                 .background { inputSurface(isFocused: focus == .contact) }
-                .disabled(phase == .sending)
+                .disabled(isSending)
             }
+
+            Label(
+                L10n.s("E-posta adresinde @ eksik.", "Email address is missing @.", "В адресе электронной почты нет @."),
+                systemImage: "exclamationmark.circle"
+            )
+            .font(.app(.caption))
+            .foregroundStyle(.orange)
+            .opacity(emailLooksInvalid ? 1 : 0)
+            .accessibilityHidden(!emailLooksInvalid)
+            .animation(.easeOut(duration: 0.16), value: emailLooksInvalid)
 
             diagnosticsRow
 
@@ -285,7 +341,7 @@ struct BugReportView: View {
                 .frame(height: height)
                 .padding(.horizontal, 2)
                 .padding(.vertical, 1)
-                .disabled(phase == .sending)
+                .disabled(isSending)
         }
         .padding(3)
         .background { inputSurface(isFocused: focus == field) }
@@ -308,7 +364,7 @@ struct BugReportView: View {
                     .font(.app(.body))
             }
             .toggleStyle(.checkbox)
-            .disabled(phase == .sending)
+            .disabled(isSending)
 
             if includeDiagnostics, diagnostics != nil {
                 Button {
@@ -372,19 +428,18 @@ struct BugReportView: View {
 
             Button(L10n.s("Vazgeç", "Cancel", "Отмена")) { dismiss() }
                 .keyboardShortcut(.cancelAction)
-                .disabled(phase == .sending)
 
             Button {
-                _Concurrency.Task { await send() }
+                send()
             } label: {
                 HStack(spacing: 6) {
-                    if phase == .sending {
+                    if isSending {
                         ProgressView()
                             .controlSize(.small)
                             .scaleEffect(0.7)
                             .frame(width: 12, height: 12)
                     }
-                    Text(phase == .sending
+                    Text(isSending
                          ? L10n.s("Gönderiliyor…", "Sending…", "Отправка…")
                          : L10n.s("Gönder", "Send", "Отправить"))
                 }
@@ -398,13 +453,24 @@ struct BugReportView: View {
     }
 
     private var canSend: Bool {
-        phase != .sending && !details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !isSending && area != nil && !emailLooksInvalid
+            && !details.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private func send() async {
-        phase = .sending
+    private var isSending: Bool {
+        if case .sending = phase { return true }
+        return false
+    }
+
+    private var emailLooksInvalid: Bool {
+        let email = contact.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !email.isEmpty && !email.contains("@")
+    }
+
+    private func send() {
+        guard canSend, let area else { return }
         do {
-            let reportID = try await BugReportService.submit(
+            let reportID = try BugReportService.enqueue(
                 area: area,
                 severity: severity,
                 // Özet ayrı sorulmuyor: açıklamanın ilk satırı liste
@@ -417,29 +483,72 @@ struct BugReportView: View {
                 steps: steps,
                 contact: contact,
                 diagnostics: includeDiagnostics ? diagnostics : nil
-            )
-            phase = .sent(reportID)
+            ) { completedID, errorMessage in
+                guard pendingReportID == completedID else { return }
+                if let errorMessage {
+                    pendingReportID = ""
+                    phase = .failed(errorMessage)
+                } else {
+                    clearDraft()
+                    phase = .sent(completedID)
+                }
+            }
+            pendingReportID = reportID
+            phase = .sending(reportID)
+            _Concurrency.Task { @MainActor in
+                try? await _Concurrency.Task.sleep(for: .seconds(8))
+                if phase == .sending(reportID) {
+                    phase = .queued(reportID)
+                }
+            }
         } catch {
             phase = .failed(error.localizedDescription)
         }
     }
 
+    private func clearDraft() {
+        pendingReportID = ""
+        areaRaw = ""
+        severityRaw = BugSeverity.annoying.rawValue
+        details = ""
+        steps = ""
+        contact = ""
+        includeDiagnostics = true
+    }
+
     // MARK: - Sonuç
 
-    private func success(reportID: String) -> some View {
+    private func result(reportID: String, queued: Bool) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
+            Image(systemName: queued ? "clock.arrow.circlepath" : "checkmark.circle.fill")
                 .font(.system(size: 30))
-                .foregroundStyle(.green)
+                .foregroundStyle(queued ? Color.accentColor : .green)
+                .scaleEffect(queued || reduceMotion || successAppeared ? 1 : 0.94)
+                .opacity(queued || successAppeared ? 1 : 0)
+                .onAppear {
+                    if !queued {
+                        withAnimation(reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.3, dampingFraction: 0.82)) {
+                            successAppeared = true
+                        }
+                    }
+                }
 
-            Text(L10n.s("Rapor gönderildi", "Report sent", "Отчёт отправлен"))
+            Text(queued
+                 ? L10n.s("Rapor sıraya alındı", "Report queued", "Отчёт в очереди")
+                 : L10n.s("Rapor gönderildi", "Report sent", "Отчёт отправлен"))
                 .font(.app(.title, weight: .semibold))
 
-            Text(L10n.s(
-                "Teşekkürler. Aynı hatayı bildiren cihaz sayısı öncelik sırasını belirliyor.",
-                "Thank you. The number of devices reporting the same bug sets the priority.",
-                "Спасибо. Число устройств с той же ошибкой определяет приоритет."
-            ))
+            Text(queued
+                 ? L10n.s(
+                    "Sunucu henüz onaylamadı. Rapor cihazda kaydedildi; bağlantı kurulduğunda gönderilecek. Taslağı yeniden gönderirseniz ikinci bir rapor oluşur.",
+                    "The server has not confirmed it yet. Your report is saved on this Mac and will send when connected. Resending the draft creates a second report.",
+                    "Сервер пока не подтвердил получение. Отчёт сохранён на Mac и отправится при подключении. Повторная отправка черновика создаст второй отчёт."
+                 )
+                 : L10n.s(
+                    "Teşekkürler. Aynı hatayı bildiren cihaz sayısı öncelik sırasını belirliyor.",
+                    "Thank you. The number of devices reporting the same bug sets the priority.",
+                    "Спасибо. Число устройств с той же ошибкой определяет приоритет."
+                 ))
             .font(.app(.body))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -465,14 +574,24 @@ struct BugReportView: View {
             .buttonStyle(.plain)
             .help(L10n.s("Rapor kimliğini kopyala", "Copy report ID", "Копировать идентификатор"))
 
-            Button(L10n.s("Kapat", "Close", "Закрыть")) { dismiss() }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.defaultAction)
-                .padding(.top, 2)
+            HStack(spacing: 10) {
+                if queued {
+                    Button(L10n.s("Taslağa dön", "Return to draft", "Вернуться к черновику")) {
+                        pendingReportID = ""
+                        phase = .editing
+                        focus = .details
+                    }
+                }
+
+                Button(L10n.s("Kapat", "Close", "Закрыть")) { dismiss() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(.top, 2)
         }
         .padding(.horizontal, 26)
         .padding(.vertical, 28)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func errorBanner(_ message: String) -> some View {
