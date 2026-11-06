@@ -21,6 +21,12 @@ packages:
     url: https://github.com/RevenueCat/purchases-ios
     from: 5.0.0
 
+  # Resim dönüştürücünün WebP çıktısı için: macOS WebP'yi okuyor ama
+  # yazamıyor, kodlayıcı libwebp'den geliyor.
+  libwebp:
+    url: https://github.com/the-swift-collective/libwebp
+    from: 1.4.0
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -78,6 +84,8 @@ targets:
         product: FirebaseAuth
       - package: RevenueCat
         product: RevenueCat
+      - package: libwebp
+        product: libwebp
     # `GlassDoNetworkAgent` bir `tool` ürünü: xcodegen'in `embed: true`
     # bağımlılık mekanizması yalnızca uygulama uzantısı/framework gibi
     # gömülebilir ürün türlerini otomatik algılıyor, çıplak bir komut satırı

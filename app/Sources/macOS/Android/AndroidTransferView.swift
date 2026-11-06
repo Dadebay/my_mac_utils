@@ -63,7 +63,9 @@ struct AndroidTransferView: View {
 
             Divider().opacity(0.4)
 
-            if !AndroidFileService.isAvailable {
+            if device.isApple {
+                IPhoneTransferView(deviceName: device.displayName)
+            } else if !AndroidFileService.isAvailable {
                 message(
                     symbol: "wrench.and.screwdriver",
                     title: L10n.androidAdbMissingTitle,
@@ -118,8 +120,10 @@ struct AndroidTransferView: View {
                     .minimumScaleFactor(0.7)
 
                 HStack(spacing: 8) {
+                  if !device.isApple {
                     badge(on: device.hasFileTransfer, text: L10n.androidBadgeFileTransfer)
                     badge(on: device.hasDebugging, text: L10n.androidBadgeDebugging)
+                  }
                 }
             }
 
@@ -275,6 +279,20 @@ private struct AndroidFileBrowser: View {
                 }
             }
         }
+        .confirmationDialog(
+            L10n.s(
+                "\(model.selectedPaths.count) dosya telefondan silinsin mi?",
+                "Delete \(model.selectedPaths.count) files from the phone?",
+                "Удалить файлов с телефона: \(model.selectedPaths.count)?"
+            ),
+            isPresented: $model.pendingBulkDelete,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.androidDelete, role: .destructive) { model.confirmBulkDelete() }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: {
+            Text(L10n.androidDeleteConfirmDetail)
+        }
         // Finder'dan sürüklenen dosyalar bulunulan klasöre yükleniyor.
         .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { providers in
             loadURLs(from: providers)
@@ -337,10 +355,35 @@ private struct AndroidFileBrowser: View {
             .fixedSize()
             .help(L10n.androidLayoutHelp)
 
-            Button(action: model.chooseFilesToUpload) {
-                Label(L10n.androidSend, systemImage: "arrow.up.doc")
+            if model.isSelecting {
+                Text(L10n.s("\(model.selectedPaths.count) seçili", "\(model.selectedPaths.count) selected", "Выбрано: \(model.selectedPaths.count)"))
+                    .font(.app(.micro)).monospacedDigit().foregroundStyle(.secondary)
+
+                let allCount = model.files.filter { !$0.isOpenable }.count
+                Button(model.selectedPaths.count == allCount && allCount > 0
+                    ? L10n.s("Seçimi kaldır", "Deselect all", "Снять выбор")
+                    : L10n.s("Tümünü seç", "Select all", "Выбрать все")) {
+                    if model.selectedPaths.count == allCount { model.deselectAll() } else { model.selectAll() }
+                }
+
+                Button(role: .destructive) {
+                    model.pendingBulkDelete = true
+                } label: {
+                    Label(L10n.androidDelete, systemImage: "trash")
+                }
+                .disabled(model.selectedPaths.isEmpty)
+
+                Button(L10n.cancel) { model.isSelecting = false }
+            } else {
+                Button { model.isSelecting = true } label: {
+                    Label(L10n.s("Seç", "Select", "Выбрать"), systemImage: "checkmark.circle")
+                }
+
+                Button(action: model.chooseFilesToUpload) {
+                    Label(L10n.androidSend, systemImage: "arrow.up.doc")
+                }
+                .help(L10n.androidSendHelp)
             }
-            .help(L10n.androidSendHelp)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
@@ -359,6 +402,9 @@ private struct AndroidFileBrowser: View {
                             AndroidFileTile(
                                 file: file,
                                 thumbnail: model.thumbnails[file.path],
+                                isSelecting: model.isSelecting,
+                                isSelected: model.selectedPaths.contains(file.path),
+                                onToggle: { model.toggleSelection(file) },
                                 onOpen: { model.open(file) },
                                 onDownload: { model.download(file) }
                             )
@@ -375,6 +421,9 @@ private struct AndroidFileBrowser: View {
                         ForEach(model.files) { file in
                             AndroidFileRow(
                                 file: file,
+                                isSelecting: model.isSelecting,
+                                isSelected: model.selectedPaths.contains(file.path),
+                                onToggle: { model.toggleSelection(file) },
                                 onOpen: { model.open(file) },
                                 onDownload: { model.download(file) }
                             )
@@ -404,7 +453,13 @@ private struct AndroidFileBrowser: View {
             Text(text)
                 .font(.app(.micro))
                 .foregroundStyle(.secondary)
+                // Satır sınırı olmadan `fixedSize` en küçük yüksekliği
+                // sıfır genişlikle ölçüyor: uzun bir adb hatası kelime
+                // kelime sarılıp yüzlerce piksellik alt sınır bildiriyor
+                // ve pencere içeriği iki ucundan kırpılıyordu.
+                .lineLimit(4)
                 .fixedSize(horizontal: false, vertical: true)
+                .help(text)
                 .textSelection(.enabled)
             Spacer(minLength: 0)
             Button { model.dismissError() } label: {
@@ -512,6 +567,8 @@ private struct AndroidFileBrowser: View {
                 Text(text)
                     .font(.app(.micro))
                     .foregroundStyle(.primary)
+                    .lineLimit(3)
+                    .help(text)
                 if text.contains(".apk") || text.lowercased().contains("install")
                     || text.contains("kuruldu") || text.contains("установ") {
                     Text(L10n.androidApkHint)
@@ -616,6 +673,9 @@ private struct AndroidFileBrowser: View {
 
 private struct AndroidFileRow: View {
     let file: AndroidFile
+    let isSelecting: Bool
+    let isSelected: Bool
+    let onToggle: () -> Void
     let onOpen: () -> Void
     let onDownload: () -> Void
 
@@ -623,6 +683,11 @@ private struct AndroidFileRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
+            if isSelecting, !file.isOpenable {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+            }
             // İkon bir rozetin içinde: klasörle dosya arasındaki fark
             // satır listesinde tek bir küçük simgeden okunmuyordu.
             ZStack {
@@ -676,11 +741,11 @@ private struct AndroidFileRow: View {
         .padding(.vertical, 7)
         .background {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.primary.opacity(isHovering ? 0.07 : 0))
+                .fill(Color.primary.opacity(isSelected ? 0.14 : isHovering ? 0.07 : 0))
         }
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
-        .onTapGesture(count: 2) { onOpen() }
+        .onTapGesture(count: isSelecting ? 1 : 2) { isSelecting ? onToggle() : onOpen() }
     }
 
     /// Klasörler vurgu renginde, dosyalar türüne göre: resim, video, ses
@@ -716,6 +781,9 @@ private struct AndroidFileRow: View {
 private struct AndroidFileTile: View {
     let file: AndroidFile
     let thumbnail: NSImage?
+    let isSelecting: Bool
+    let isSelected: Bool
+    let onToggle: () -> Void
     let onOpen: () -> Void
     let onDownload: () -> Void
 
@@ -746,7 +814,19 @@ private struct AndroidFileTile: View {
                         .foregroundStyle(file.isOpenable ? Color.accentColor : Color.secondary)
                 }
 
-                if isHovering, !file.isOpenable {
+                if isSelecting, !file.isOpenable {
+                    VStack {
+                        HStack {
+                            Spacer(minLength: 0)
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 18))
+                                .foregroundStyle(isSelected ? Color.accentColor : .white.opacity(0.85))
+                                .shadow(radius: 2)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(6)
+                } else if isHovering, !file.isOpenable {
                     VStack {
                         HStack {
                             Spacer(minLength: 0)
@@ -785,11 +865,15 @@ private struct AndroidFileTile: View {
         .padding(6)
         .background {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(Color.primary.opacity(isHovering ? 0.07 : 0))
+                .fill(Color.primary.opacity(isSelected ? 0.14 : isHovering ? 0.07 : 0))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .strokeBorder(Color.accentColor, lineWidth: isSelected ? 2 : 0)
         }
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
-        .onTapGesture(count: 2) { onOpen() }
+        .onTapGesture(count: isSelecting ? 1 : 2) { isSelecting ? onToggle() : onOpen() }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(file.name)
     }

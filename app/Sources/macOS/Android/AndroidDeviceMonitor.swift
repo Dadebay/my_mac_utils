@@ -20,6 +20,10 @@ struct AndroidDevice: Identifiable, Equatable {
     /// buna bağlı.
     let hasDebugging: Bool
 
+    /// Apple'ın üretici kimliği: iPhone/iPad. Bunlar adb ile değil
+    /// ImageCaptureCore ile açılıyor (bkz. `IPhoneTransferView`).
+    var isApple: Bool { vendorID == 0x05AC }
+
     var displayName: String {
         let name = productName.trimmingCharacters(in: .whitespaces)
         return name.isEmpty ? vendorName : name

@@ -75,6 +75,7 @@ final class AndroidBrowserModel {
 
     func load(path newPath: String? = nil) {
         if let newPath, newPath != path {
+            selectedPaths = []
             thumbnails = [:]
             pendingThumbnails = []
         }
@@ -261,6 +262,63 @@ final class AndroidBrowserModel {
     }
 
     func dismissError() { errorMessage = nil }
+
+    // MARK: - Çoklu seçim
+
+    /// Seçim kipi açıkken karta tek tıklamak seçer; kapalıyken çift tıklamak
+    /// açar. Seçilenler yol olarak tutuluyor: klasör değişince boşalıyor.
+    var isSelecting = false {
+        didSet { if !isSelecting { selectedPaths = [] } }
+    }
+    private(set) var selectedPaths: Set<String> = []
+    var pendingBulkDelete = false
+
+    func toggleSelection(_ file: AndroidFile) {
+        guard !file.isOpenable else { return }
+        if selectedPaths.contains(file.path) {
+            selectedPaths.remove(file.path)
+        } else {
+            selectedPaths.insert(file.path)
+        }
+    }
+
+    func selectAll() {
+        selectedPaths = Set(files.filter { !$0.isOpenable }.map(\.path))
+    }
+
+    func deselectAll() { selectedPaths = [] }
+
+    func confirmBulkDelete() {
+        let targets = files.filter { selectedPaths.contains($0.path) }
+        pendingBulkDelete = false
+        guard !targets.isEmpty else { return }
+        busyMessage = L10n.s(
+            "\(targets.count) dosya siliniyor…", "Deleting \(targets.count) files…",
+            "Удаление файлов: \(targets.count)…"
+        )
+
+        _Concurrency.Task { @MainActor in
+            var failed = 0
+            for file in targets {
+                do {
+                    try await service.delete(file)
+                    thumbnails[file.path] = nil
+                } catch {
+                    failed += 1
+                    errorMessage = error.localizedDescription
+                }
+            }
+            statusMessage = L10n.s(
+                "\(targets.count - failed) dosya telefondan silindi.",
+                "\(targets.count - failed) files deleted from the phone.",
+                "Файлов удалено с телефона: \(targets.count - failed)."
+            )
+            selectedPaths = []
+            isSelecting = false
+            busyMessage = nil
+            load()
+        }
+    }
 
     /// Silinmek üzere onay bekleyen dosya. Telefondan silmek geri
     /// alınamıyor; tek tıklamayla olmamalı.

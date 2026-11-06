@@ -1,5 +1,6 @@
 import AppKit
 import GlassDoKit
+import ServiceManagement
 import SwiftUI
 
 // MARK: - Kategoriler
@@ -11,9 +12,9 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
   var title: String {
     switch self {
     case .general: L10n.generalSection
-    case .panelSize: L10n.panelSizeSection
+    case .panelSize: L10n.s("Panel", "Panel", "Панель")
     case .railIcons: L10n.railIconsSection
-    case .menuBar: L10n.s("Menü Çubuğu", "Menu Bar", "Строка меню")
+    case .menuBar: L10n.s("Menü Çubuğu ve Ağ", "Menu Bar & Network", "Строка меню и сеть")
     case .widgets: L10n.s("Widget'lar", "Widgets", "Виджеты")
     case .network: L10n.s("Ağ", "Network", "Сеть")
     case .alerts: L10n.s("Uyarılar", "Alerts", "Оповещения")
@@ -25,10 +26,10 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
   var subtitle: String {
     switch self {
     case .general: L10n.s("Tema ve dil", "Theme and language", "Тема и язык")
-    case .panelSize: L10n.s("Ölçüler ve köşeler", "Dimensions and corners", "Размеры и углы")
+    case .panelSize: L10n.s("Ölçüler, köşeler ve ikonlar", "Size, corners and icons", "Размеры, углы и значки")
     case .railIcons:
       L10n.s("Hangi ikonlar görünsün", "Which icons appear", "Какие значки отображать")
-    case .menuBar: L10n.s("Sistem ölçerleri", "System readings", "Системные показатели")
+    case .menuBar: L10n.s("Ölçerler ve kullanım geçmişi", "Readings and usage history", "Показатели и история")
     case .widgets:
       L10n.s(
         "Masaüstü ve Bildirim Merkezi", "Desktop and Notification Center",
@@ -95,7 +96,10 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
   static var lastViewed: SettingsCategory {
     get {
       let raw = UserDefaults.standard.string(forKey: lastViewedKey) ?? ""
-      let stored = SettingsCategory(rawValue: raw) ?? .general
+      var stored = SettingsCategory(rawValue: raw) ?? .general
+      // Birleştirilen sayfalar: eski kayıt yeni sayfaya gitsin.
+      if stored == .railIcons { stored = .panelSize }
+      if stored == .network { stored = .menuBar }
       // Kenar çubuğunda satırı olmayan bir bölüm hatırlanmış olabilir
       // (bkz. `sidebarCases`): o sayfaya dönmek, hiçbir satırın seçili
       // görünmediği bir pencere açardı.
@@ -113,7 +117,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
   /// duruyor, yalnızca satırı listede değil; geri açmak için buraya
   /// eklemek yetiyor.
   static var sidebarCases: [SettingsCategory] {
-    allCases.filter { $0 != .widgets }
+    allCases.filter { ![.widgets, .railIcons, .network].contains($0) }
   }
 }
 
@@ -122,8 +126,32 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
 struct GeneralSettingsSection: View {
   @AppStorage(AppTheme.storageKey) private var themeRaw = AppTheme.system.rawValue
   @State private var language = LocalizationManager.shared.language
+  @State private var opensAtLogin = SMAppService.mainApp.status == .enabled
 
   var body: some View {
+    SettingsCard(title: L10n.s("Başlangıç", "Startup", "Запуск")) {
+      HStack {
+        Text(L10n.s("Oturum açılışında başlat", "Open at login", "Открывать при входе"))
+          .font(.app(.headline))
+        Spacer(minLength: 8)
+        Toggle("", isOn: $opensAtLogin)
+          .toggleStyle(.switch)
+          .controlSize(.small)
+          .labelsHidden()
+      }
+      .padding(.vertical, 7)
+      .onChange(of: opensAtLogin) { _, enable in
+        do {
+          if enable {
+            try SMAppService.mainApp.register()
+          } else {
+            try SMAppService.mainApp.unregister()
+          }
+        } catch {
+          opensAtLogin = SMAppService.mainApp.status == .enabled
+        }
+      }
+    }
     SettingsCard(title: L10n.appearanceGroup) {
       SettingsSegmentedRow(
         label: L10n.themeLabel,
@@ -232,6 +260,7 @@ struct RailIconsSettingsSection: View {
   @AppStorage(PanelSettings.showDiskIconKey) private var showDisk = false
   @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessor = false
   @AppStorage(PanelSettings.showVolumeIconKey) private var showVolume = false
+  @AppStorage(PanelSettings.showKeyboardCleanIconKey) private var showKeyboardClean = false
   @AppStorage(PanelSettings.showPinIconKey) private var showPin = true
   @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcher = true
   @AppStorage(PanelSettings.showSettingsIconKey) private var showSettings = true
@@ -244,7 +273,7 @@ struct RailIconsSettingsSection: View {
   private var visibleCount: Int {
     [
       showTasks, showAdd, showCompleted, showFolders,
-      showMemory, showClipboard, showNetwork, showBattery, showDisk, showProcessor, showVolume,
+      showMemory, showClipboard, showNetwork, showBattery, showDisk, showProcessor, showVolume, showKeyboardClean,
       showPin, showWindowSwitcher, showSettings,
     ]
     .filter { $0 }.count
@@ -307,6 +336,9 @@ struct RailIconsSettingsSection: View {
         SettingsRowDivider()
         IconToggleRow(
           systemName: "speaker.wave.2", label: L10n.showVolumeIconLabel, isOn: $showVolume)
+        SettingsRowDivider()
+        IconToggleRow(
+          systemName: "keyboard", label: L10n.showKeyboardCleanIconLabel, isOn: $showKeyboardClean)
 
         groupLabel(L10n.s("Eylemler", "Actions", "Действия"))
         IconToggleRow(systemName: "pin", label: L10n.showPinIconLabel, isOn: $showPin)

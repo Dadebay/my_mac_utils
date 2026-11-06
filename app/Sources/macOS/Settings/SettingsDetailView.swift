@@ -20,9 +20,13 @@ struct SettingsDetailView: View {
             VStack(alignment: .leading, spacing: SettingsMetrics.sectionSpacing) {
                 switch category {
                 case .general: GeneralSettingsSection()
-                case .panelSize: PanelSizeSettingsSection()
+                case .panelSize:
+                    PanelSizeSettingsSection()
+                    RailIconsSettingsSection()
                 case .railIcons: RailIconsSettingsSection()
-                case .menuBar: MenuBarSettingsSection()
+                case .menuBar:
+                    MenuBarSettingsSection()
+                    NetworkSettingsSection()
                 case .widgets: WidgetsSettingsSection()
                 case .network: NetworkSettingsSection()
                 case .alerts: AlertsSettingsSection()

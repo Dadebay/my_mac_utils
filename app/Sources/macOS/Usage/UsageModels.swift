@@ -8,7 +8,7 @@ import GlassDoKit
 /// eylemler var. Görev başlığı, dosya adı veya benzeri hiçbir içerik burada
 /// tutulmuyor — yalnızca "hangi özellik" ve "ne zaman".
 enum UsageFeature: String, Codable, CaseIterable, Sendable {
-    case tasks, quickAdd, completed, folders, memory, clipboard, network, battery, disk, processor, volume
+    case tasks, quickAdd, completed, folders, memory, clipboard, network, battery, disk, processor, volume, keyboardClean
     case windowSwitcher, panelVisibility, pinMode
 
     /// Usage panelindeki "widget listesi" yalnızca bunları gösterir —
@@ -16,7 +16,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
     /// olarak listelenmez (spec'in "öncelikli widget kullanım listesi").
     var isWidget: Bool {
         switch self {
-        case .tasks, .completed, .folders, .memory, .clipboard, .network, .battery, .disk, .processor, .volume: true
+        case .tasks, .completed, .folders, .memory, .clipboard, .network, .battery, .disk, .processor, .volume, .keyboardClean: true
         case .quickAdd, .windowSwitcher, .panelVisibility, .pinMode: false
         }
     }
@@ -34,6 +34,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .disk: L10n.s("Disk", "Disk", "Диск")
         case .processor: L10n.s("İşlemci", "Processor", "Процессор")
         case .volume: L10n.volumeMixerLabel
+        case .keyboardClean: L10n.showKeyboardCleanIconLabel
         case .windowSwitcher: L10n.s("Pencere Değiştirici", "Window Switcher", "Переключатель окон")
         case .panelVisibility: L10n.s("Panel Görünürlüğü", "Panel Visibility", "Видимость панели")
         case .pinMode: L10n.s("Sabitleme", "Pin Mode", "Закрепление")
@@ -53,6 +54,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .disk: "internaldrive"
         case .processor: "cpu"
         case .volume: "speaker.wave.2"
+        case .keyboardClean: "keyboard"
         case .windowSwitcher: "rectangle.on.rectangle"
         case .panelVisibility: "eye"
         case .pinMode: "pin"
@@ -74,6 +76,7 @@ enum UsageFeature: String, Codable, CaseIterable, Sendable {
         case .disk: Color(red: 1.0, green: 0.68, blue: 0.28)
         case .processor: Color(red: 0.64, green: 0.44, blue: 0.98)
         case .volume: Color(red: 0.98, green: 0.55, blue: 0.30)
+        case .keyboardClean: Color(red: 0.50, green: 0.70, blue: 0.95)
         case .windowSwitcher: Color(red: 1.0, green: 0.62, blue: 0.24)
         case .panelVisibility: Color(white: 0.62)
         case .pinMode: Color(white: 0.62)

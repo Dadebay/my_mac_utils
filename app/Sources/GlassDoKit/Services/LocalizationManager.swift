@@ -562,6 +562,16 @@ public enum L10n {
     public static var showDiskIconLabel: String { s("Disk", "Disk", "Диск") }
     public static var showProcessorIconLabel: String { s("İşlemci Yükü", "Processor Load", "Загрузка процессора") }
     public static var showVolumeIconLabel: String { s("Ses Karıştırıcı", "Volume Mixer", "Микшер громкости") }
+    public static var showKeyboardCleanIconLabel: String { s("Klavye Temizle", "Keyboard Clean", "Очистка клавиатуры") }
+    public static var keyboardCleanTitle: String { s("Klavye Temizle", "Keyboard Clean", "Очистка клавиатуры") }
+    public static var keyboardCleanHint: String { s("Başlatınca klavyedeki bütün tuşlar (fonksiyon ve medya tuşları dahil) kapanır; fare çalışmaya devam eder.", "While active, every key (including function and media keys) is disabled; the mouse keeps working.", "Пока режим включён, все клавиши (включая функциональные и медиа) отключены; мышь работает.") }
+    public static var keyboardCleanActiveHint: String { s("Klavye kilitli. Temizleyebilirsin.", "Keyboard is locked. Go ahead and clean it.", "Клавиатура заблокирована. Можно протирать.") }
+    public static var keyboardCleanBlockTrackpad: String { s("Trackpad'i de kapat", "Also disable trackpad", "Также отключить трекпад") }
+    public static var keyboardBacklight: String { s("Klavye ışığı", "Keyboard backlight", "Подсветка клавиатуры") }
+    public static var keyboardCleanStart: String { s("Temizliği başlat", "Start cleaning", "Начать очистку") }
+    public static var keyboardCleanStop: String { s("Bitir", "Finish", "Завершить") }
+    public static var keyboardCleanPermission: String { s("Erişilebilirlik izni gerekli: Sistem Ayarları › Gizlilik ve Güvenlik › Erişilebilirlik. İzin verdikten sonra tekrar dene.", "Accessibility permission required: System Settings › Privacy & Security › Accessibility. Try again after granting it.", "Нужен доступ к универсальному доступу: Системные настройки › Конфиденциальность › Универсальный доступ.") }
+    public static var keyboardCleanEscapeNote: String { s("Çıkış: Bitir düğmesi, seçtiğin süre sonu ya da Esc'ye 3 kez hızlıca basmak. Trackpad kapalıyken fare/trackpad tıklaması da durur, bu yüzden Esc×3 ya da süre kullan.", "Exit: Finish button, the selected timeout, or pressing Esc 3 times quickly. With trackpad disabled, all pointer input (including an external mouse) stops too, so use Esc×3 or wait for the timeout.", "Выход: кнопка «Завершить», выбранный таймер или три быстрых нажатия Esc. При отключённом трекпаде вся мышь тоже блокируется — используйте Esc×3 или дождитесь таймера.") }
     public static var showPinIconLabel: String { s("Pinle", "Pin", "Закрепить") }
     public static var showSettingsIconLabel: String { s("Ayarlar", "Settings", "Настройки") }
     public static var showWindowSwitcherIconLabel: String { s("Pencere Değiştirici", "Window Switcher", "Переключатель окон") }

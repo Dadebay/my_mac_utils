@@ -20,6 +20,7 @@ private extension SidebarSelection {
         case .focusHistory: nil
         // Telefon sayfasının henüz bir kullanım sayacı yok.
         case .androidDevice: nil
+        case .imageConverter: nil
         // Ayar sayfaları da bir özellik kullanımı sayılmıyor: kullanıcı
         // ayarı değiştirdiğinde ilgili özelliğin sayacı zaten artıyor.
         case .settings: nil

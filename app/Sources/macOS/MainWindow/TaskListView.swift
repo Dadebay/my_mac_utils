@@ -7,6 +7,7 @@ struct TaskListView: View {
 
     @Environment(\.modelContext) private var context
     @Environment(StickyNotesController.self) private var notes
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var tasks: [Task]
     @State private var searchText = ""
@@ -60,14 +61,12 @@ struct TaskListView: View {
     /// yapışkan not penceresine çıkarır.
     private var popOutButton: some View {
         Button {
-            notes.toggle()
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "notepad")
         } label: {
-            Image(systemName: notes.isOpen ? "pip.exit" : "pip.enter")
-                .foregroundStyle(notes.isOpen ? Color.appAccent : .primary)
+            Image(systemName: "note.text")
         }
-        .help(notes.isOpen
-              ? L10n.s("Notu kapat", "Close note", "Закрыть заметку")
-              : L10n.s("Listeyi ekrana çıkar", "Pop out list", "Открыть список в окне"))
+        .help(L10n.s("Notlar penceresini aç", "Open Notepad", "Открыть заметки"))
     }
 
     private var taskList: some View {

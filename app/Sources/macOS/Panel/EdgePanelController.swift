@@ -20,6 +20,7 @@ private extension PanelContent {
         case .disk: .disk
         case .processor: .processor
         case .volume: .volume
+        case .keyboardClean: .keyboardClean
         }
     }
 }

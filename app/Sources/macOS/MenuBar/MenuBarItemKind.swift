@@ -72,6 +72,8 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
     case networkArrows
     case networkVPN
     case networkDataToday
+    /// Etkinlik ile bugünkü veriyi yan yana tek ölçerde birleştirir.
+    case networkCombined
 
     // Batarya
     case batteryLevelBar
@@ -94,7 +96,7 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
             .memory
         case .diskUsedBar, .diskUsedRing, .diskUsedBytes, .diskUsedPercent, .diskFreeBytes:
             .disk
-        case .networkActivity, .networkDownload, .networkUpload, .networkArrows, .networkVPN, .networkDataToday:
+        case .networkActivity, .networkDownload, .networkUpload, .networkArrows, .networkVPN, .networkDataToday, .networkCombined:
             .network
         case .batteryLevelBar, .batteryPercent, .batteryPower, .batteryCycles, .batteryHealthPercent, .batteryTimeRemaining:
             .battery
@@ -124,6 +126,8 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
             L10n.s("Kullanılan", "Used", "Использовано")
         case .diskFreeBytes:
             L10n.s("Boş", "Free", "Свободно")
+        case .networkCombined:
+            L10n.s("Etkinlik + veri", "Activity + Data", "Активность + трафик")
         case .networkActivity, .networkArrows:
             L10n.s("Etkinlik", "Activity", "Активность")
         case .networkDownload:
@@ -178,6 +182,8 @@ enum MenuBarItemKind: String, CaseIterable, Identifiable, Sendable {
             L10n.s("Hız", "Speed", "Скорость")
         case .networkArrows:
             L10n.s("Oklar", "Arrows", "Стрелки")
+        case .networkCombined:
+            L10n.s("Birleşik", "Combined", "Вместе")
         case .networkVPN:
             L10n.s("Rozet", "Badge", "Значок")
         case .batteryPower:

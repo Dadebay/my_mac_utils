@@ -16,6 +16,8 @@ public enum PanelContent: Hashable, Sendable {
     case network, battery, disk, processor
     /// Ses çıkışı/girişi ve o an ses çalan uygulamalar.
     case volume
+    /// Klavyeyi temizlerken tuşları geçici olarak kapatan araç.
+    case keyboardClean
 }
 
 public enum PanelPresentation {

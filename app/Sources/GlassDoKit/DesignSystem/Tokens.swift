@@ -50,6 +50,22 @@ public enum Motion {
     public static let toggle = Animation.snappy(duration: 0.2)
     public static let iconVisibility = Animation.timingCurve(0.23, 1, 0.32, 1, duration: 0.18)
     public static let railSelection = Animation.spring(response: 0.32, dampingFraction: 1.0)
+    /// Ray simgesinin üstüne gelince hafifçe büyümesi. İmleç rayda
+    /// aşağı süzülürken her simge birkaç kez tetikleniyor — bu yüzden
+    /// kısa (150ms) ve güçlü bir ease-out; daha uzun ya da yaylı bir
+    /// hareket imleci geride kalan simgelerle yarıştırırdı.
+    /// Seçilen ray simgesinin soldan sağa belirmesi. İki ölçüm yapıldı:
+    /// güçlü ease-out belirmeyi ~60 ms'ye, sonraki ease-in-out ise
+    /// ~100 ms'ye sıkıştırdı. Asıl neden eğriden çok maskenin kendisi
+    /// (bkz. `RailIconButton.revealMask`): süpürme artık tüm simge
+    /// boyunca doğrusal ilerliyor, yani görünen süre animasyon süresine
+    /// eşit. Eğri o yüzden yumuşak (sine ease-in-out). 160 ms gecikme,
+    /// beyaz vurgu zemini (spring, yanıt 0,32) yerine otururken
+    /// belirmeyi başlatıyor.
+    public static let railIconReveal = Animation
+        .timingCurve(0.37, 0, 0.63, 1, duration: 0.40)
+        .delay(0.16)
+    public static let railIconHover = Animation.timingCurve(0.23, 1, 0.32, 1, duration: 0.18)
     public static let panelContentAppearance = Animation
         .timingCurve(0.23, 1, 0.32, 1, duration: 0.18)
         .delay(0.03)

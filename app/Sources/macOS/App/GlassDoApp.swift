@@ -63,6 +63,12 @@ struct GlassDoApp: App {
         // Hata bildirimi de tekil bir pencere: kullanıcı menüden iki kez
         // seçerse yarım dolu formu ikinci bir boş pencereyle değiştirmek
         // yazdıklarını kaybettirirdi.
+        Window(L10n.s("Notlar", "Notepad", "Заметки"), id: "notepad") {
+            NotepadView()
+                .tint(Color.appAccent)
+        }
+        .defaultSize(width: 760, height: 520)
+
         Window(L10n.s("Hata Bildir", "Report a Bug", "Сообщить об ошибке"), id: "bug-report") {
             BugReportView(panelController: panelController)
                 .tint(Color.appAccent)
@@ -289,6 +295,12 @@ private struct MenuBarContentView: View {
     @State private var cpuLine = ""
     @State private var memoryLine = ""
 
+    private func refreshLines() {
+        cpuLine = L10n.menuBarCPULine(stats.cpu.usage)
+        let memory = SystemSampler.memoryStats()
+        memoryLine = L10n.menuBarMemoryLine(memory.used, memory.total)
+    }
+
     private var versionText: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         return version.map { "GlassDo \($0)" } ?? "GlassDo"
@@ -346,6 +358,13 @@ private struct MenuBarContentView: View {
         }
 
         Button {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "notepad")
+        } label: {
+            Label(L10n.s("Notlar", "Notepad", "Заметки"), systemImage: "note.text")
+        }
+
+        Button {
             switcherController.toggleSummon()
         } label: {
             Label(L10n.s("Pencere Değiştirici", "Window Switcher", "Переключатель окон"), systemImage: "rectangle.on.rectangle")
@@ -389,9 +408,13 @@ private struct MenuBarContentView: View {
         // ise yalnızca burada, bir kez kuruluyor.
         .task {
             stats.start()
-            cpuLine = L10n.menuBarCPULine(stats.cpu.usage)
-            let memory = SystemSampler.memoryStats()
-            memoryLine = L10n.menuBarMemoryLine(memory.used, memory.total)
+            refreshLines()
+        }
+        // `.task` yalnızca içerik ilk kurulduğunda çalışıyor, menü her
+        // açıldığında değil: satırlar ilk açılıştaki değerde donup kalıyor,
+        // menü çubuğundaki canlı değerle (20,2 GB'a karşı 14,53 GB) ayrışıyordu.
+        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { _ in
+            refreshLines()
         }
         .onDisappear {
             stats.stop()

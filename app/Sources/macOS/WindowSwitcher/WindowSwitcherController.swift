@@ -323,7 +323,14 @@ final class WindowSwitcherController {
     private static let escapeKeyCode: Int64 = 53
 
     /// Pencere değiştiricide hiç görünmeyecek uygulamalar.
-    private static let excludedBundleIdentifiers: Set<String> = ["com.apple.finder"]
+    private static let excludedBundleIdentifiers: Set<String> = []
+
+    /// Finder yalnızca gerçek klasör pencereleriyle listelenir. Penceresiz
+    /// "uygulama kartı" gösterilmez ve kart üzerindeki kapat düğmesi
+    /// uygulamayı değil yalnızca o pencereyi kapatır: masaüstünü çizen
+    /// süreç Finder'ın kendisi, sonlandırılırsa masaüstündeki dosyalar
+    /// ekrandan kaybolur.
+    private static let finderBundleIdentifier = "com.apple.finder"
 
     // MARK: - Gösterme / gezinme / etkinleştirme
 
@@ -585,6 +592,12 @@ final class WindowSwitcherController {
         let pid = window.pid
         let app = NSRunningApplication(processIdentifier: pid)
 
+        if app?.bundleIdentifier == Self.finderBundleIdentifier {
+            performWindowButtonAction(window, attribute: kAXCloseButtonAttribute as String)
+            removeFromSwitcher(window)
+            return
+        }
+
         // `terminate()`in dönüş değerine güvenilmiyor: sandbox'ta istek
         // sessizce düşse de `true` dönebiliyor ve yedek yol hiç
         // denenmiyordu — kart kalkıyor, uygulama açık kalıyordu (export
@@ -840,17 +853,9 @@ final class WindowSwitcherController {
             [.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID
         ) as? [[String: Any]] else { return }
 
-        // Yalnızca Dock'ta görünen normal uygulamalar — Finder hariç.
-        //
-        // Finder bir ara listeye alınmıştı: etkinleştirme yolu düzeltilince
-        // açık klasör pencerelerine de geçilebilir olmuştu. Ama karttaki
-        // kırmızı düğme pencereyi değil **uygulamayı** sonlandırıyor (bkz.
-        // `closeWindow`, bilinçli bir karar) ve masaüstünü çizen süreç
-        // Finder'ın kendisi: sonlandırıldığı anda masaüstündeki bütün
-        // dosyalar ekrandan siliniyor. Üstelik Finder'ın çoğu zaman açık
-        // klasör penceresi olmadığı için listede genellikle yalnızca
-        // "penceresiz uygulama" kartı olarak beliriyordu — yani kullanıcıya
-        // sunduğu tek eylem, masaüstünü yok etme riski taşıyan o düğmeydi.
+        // Yalnızca Dock'ta görünen normal uygulamalar. Finder açık klasör
+        // pencereleriyle girer; penceresiz kartı ve uygulamayı sonlandıran
+        // kapat düğmesi ona uygulanmaz (bkz. `finderBundleIdentifier`).
         // GlassDo'nun kendi pencereleri de listeye giriyor: ekrana
         // çıkarılmış görev listesi ve ana pencere de kullanıcının geçmek
         // isteyeceği pencereler. Eskiden uygulamanın tamamı PID ile
@@ -912,6 +917,7 @@ final class WindowSwitcherController {
         // da yaptığı gibi en azından logolarıyla listede yer alır.
         let windowlessApps = eligibleApps.filter {
             !pidsWithWindows.contains($0.processIdentifier) && $0.processIdentifier != ownPID
+                && $0.bundleIdentifier != Self.finderBundleIdentifier
         }
 
         guard !entries.isEmpty || !minimized.isEmpty || !windowlessApps.isEmpty else { return }

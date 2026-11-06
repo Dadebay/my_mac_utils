@@ -166,6 +166,19 @@ struct MenuBarItemView: View {
                 )
             }
 
+        case .networkCombined:
+            HStack(spacing: 10) {
+                MenuBarStackedValue(
+                    top: MenuBarFormat.rate(snapshot.network.downloadRate),
+                    bottom: MenuBarFormat.rate(snapshot.network.uploadRate),
+                    reserving: MenuBarSample.rate
+                )
+                MenuBarValue(
+                    text: SystemFormat.bytes(snapshot.network.today),
+                    reserving: MenuBarSample.bytes
+                )
+            }
+
         // MARK: Batarya
         case .batteryLevelBar:
             MenuBarBatteryGlyph(

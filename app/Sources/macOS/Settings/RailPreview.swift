@@ -24,6 +24,7 @@ struct RailPreview: View {
     @AppStorage(PanelSettings.showDiskIconKey) private var showDisk = false
     @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessor = false
     @AppStorage(PanelSettings.showVolumeIconKey) private var showVolume = false
+    @AppStorage(PanelSettings.showKeyboardCleanIconKey) private var showKeyboardClean = false
     @AppStorage(PanelSettings.showPinIconKey) private var showPin = true
     @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcher = true
     @AppStorage(PanelSettings.showSettingsIconKey) private var showSettings = true
@@ -47,6 +48,7 @@ struct RailPreview: View {
         if showDisk { result.append("internaldrive") }
         if showProcessor { result.append("cpu") }
         if showVolume { result.append("speaker.wave.2") }
+        if showKeyboardClean { result.append("keyboard") }
         if showPin { result.append("pin") }
         if showWindowSwitcher { result.append("rectangle.on.rectangle") }
         if showSettings { result.append("gear") }

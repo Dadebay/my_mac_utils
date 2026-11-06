@@ -24,6 +24,7 @@ public enum PanelSettings {
     public static let showDiskIconKey = "panel.icon.disk"
     public static let showProcessorIconKey = "panel.icon.processor"
     public static let showVolumeIconKey = "panel.icon.volume"
+    public static let showKeyboardCleanIconKey = "panel.icon.keyboardClean"
     public static let showPinIconKey = "panel.icon.pin"
     public static let showSettingsIconKey = "panel.icon.settings"
     public static let showWindowSwitcherIconKey = "panel.icon.windowSwitcher"
@@ -39,7 +40,7 @@ public enum PanelSettings {
 
     /// Ayarlardaki "görünür ikon" sayacının paydası — yeni bir ikon
     /// eklendiğinde tek yerden güncellensin.
-    public static let totalIconCount = 14
+    public static let totalIconCount = 15
 
     public static let iconScaleRange: ClosedRange<Double> = 0.8...1.3
     public static let panelWidthRange: ClosedRange<Double> = 260...420
@@ -82,7 +83,8 @@ public enum PanelSettings {
         // Sistem ölçerleri isteğe bağlı: ray zaten sekiz ikonla dolu, dördünü
         // birden eklemek mevcut yerleşimi habersizce bozardı.
         for key in [showNetworkIconKey, showBatteryIconKey,
-                    showDiskIconKey, showProcessorIconKey, showVolumeIconKey] {
+                    showDiskIconKey, showProcessorIconKey, showVolumeIconKey,
+                    showKeyboardCleanIconKey] {
             d.set(false, forKey: key)
         }
         d.set(defaultSelectedIconCornerRadius, forKey: selectedIconCornerRadiusKey)
@@ -148,6 +150,7 @@ public enum PanelSettings {
     public static var showDiskIcon: Bool { flag(showDiskIconKey, default: false) }
     public static var showProcessorIcon: Bool { flag(showProcessorIconKey, default: false) }
     public static var showVolumeIcon: Bool { flag(showVolumeIconKey, default: false) }
+    public static var showKeyboardCleanIcon: Bool { flag(showKeyboardCleanIconKey, default: false) }
 
     /// Masaüstünden dosya taşımak sessizce başlamamalı — kullanıcı
     /// Ayarlar'dan açana kadar kapalı.
@@ -162,7 +165,7 @@ public enum PanelSettings {
     public static var visibleIconCount: Int {
         [showTasksIcon, showAddIcon, showCompletedIcon, showFoldersIcon,
          showMemoryIcon, showClipboardIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
-         showProcessorIcon, showVolumeIcon,
+         showProcessorIcon, showVolumeIcon, showKeyboardCleanIcon,
          showPinIcon, showSettingsIcon, showWindowSwitcherIcon]
             .filter { $0 }.count
     }

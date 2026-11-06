@@ -1020,14 +1020,18 @@ struct PanelNetworkView: View {
             }
             liveRates
 
-            StatDualBarChart(
-                up: network.uploadHistory,
-                down: network.downloadHistory,
-                upColor: Self.uploadColor,
-                downColor: Self.downloadColor,
-                height: isWide ? 76 : 52,
-                capacity: isWide ? 60 : 34
-            )
+            // Kenar panelinde kartlardaki kıvrımlar zaten aynı seyri
+            // gösteriyor; çift çubuk grafik yalnızca ana pencerede.
+            if isWide {
+                StatDualBarChart(
+                    up: network.uploadHistory,
+                    down: network.downloadHistory,
+                    upColor: Self.uploadColor,
+                    downColor: Self.downloadColor,
+                    height: 76,
+                    capacity: 60
+                )
+            }
         }
     }
 
@@ -1036,12 +1040,16 @@ struct PanelNetworkView: View {
         VStack(alignment: .leading, spacing: 12) {
             usageSummary
             historyColumns
-            StatBarChart(
-                samples: network.dailyTotals.map(Double.init),
-                normalizesToPeak: true,
-                height: isWide ? 76 : 52,
-                capacity: 30
-            )
+            if isWide {
+                StatBarChart(
+                    samples: network.dailyTotals.map(Double.init),
+                    normalizesToPeak: true,
+                    height: 76,
+                    capacity: 30
+                )
+            } else {
+                dailyUsageList
+            }
 
             // Panel ile Ayarlar aynı gerçeği söylemeli: ajan kayıtlıysa
             // geçmiş kapalıyken de birikiyor, değilse birikmiyor. Kayıtlı
@@ -1211,6 +1219,45 @@ struct PanelNetworkView: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    /// Kenar panelinde sütunlar okunmuyor: son yedi günün her biri kendi
+    /// adı ve miktarıyla, en yenisi üstte.
+    private var dailyUsageList: some View {
+        let totals = Array(network.dailyTotals.suffix(7).reversed())
+        let peak = max(totals.max() ?? 0, 1)
+        let calendar = Calendar.current
+        return VStack(spacing: 6) {
+            ForEach(Array(totals.enumerated()), id: \.offset) { offset, bytes in
+                let day = calendar.date(byAdding: .day, value: -offset, to: Date()) ?? Date()
+                HStack(spacing: 8) {
+                    Text(offset == 0 ? L10n.s("Bugün", "Today", "Сегодня")
+                         : day.formatted(.dateTime.weekday(.abbreviated).day()))
+                        .font(.app(.micro, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 62, alignment: .leading)
+                        .lineLimit(1)
+
+                    GeometryReader { geo in
+                        Capsule()
+                            .fill(SystemPalette.secondary.opacity(0.85))
+                            .frame(width: max(2, geo.size.width * CGFloat(bytes) / CGFloat(peak)))
+                    }
+                    .frame(height: 5)
+
+                    Text(SystemFormat.bytes(bytes))
+                        .font(.app(.micro, weight: .semibold))
+                        .monospacedDigit()
+                        .frame(width: 60, alignment: .trailing)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
+                .fill(Color.primary.opacity(0.05))
+        )
     }
 
     private var historyColumns: some View {

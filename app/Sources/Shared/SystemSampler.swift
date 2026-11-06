@@ -239,8 +239,15 @@ enum SystemSampler {
                 .takeRetainedValue()
         }
 
+        // Yeni macOS sürümleri kapasite alanlarını üst düzeyden kaldırıp
+        // `BatteryData` sözlüğünün içine taşıdı; önce üst düzeye, yoksa
+        // sözlüğe bakılıyor. Yalnızca üst düzeye bakmak bu Mac'lerde
+        // bataryayı "yok" gösteriyordu.
+        let batteryData = property("BatteryData") as? [String: Any]
+
         func number(_ key: String) -> Int? {
-            (property(key) as? NSNumber)?.intValue
+            if let value = (property(key) as? NSNumber)?.intValue { return value }
+            return (batteryData?[key] as? NSNumber)?.intValue
         }
 
         func flag(_ key: String) -> Bool {
@@ -249,7 +256,7 @@ enum SystemSampler {
 
         // Yeni makinelerde ham kapasite `AppleRawMaxCapacity`, bir kısmında
         // yalnızca `NominalChargeCapacity` bulunuyor.
-        let maxCapacity = number("AppleRawMaxCapacity") ?? number("NominalChargeCapacity")
+        let maxCapacity = number("AppleRawMaxCapacity") ?? number("FullChargeCapacity") ?? number("NominalChargeCapacity")
         guard let maxCapacity, let design = number("DesignCapacity"), design > 0 else {
             return stats
         }
@@ -260,7 +267,7 @@ enum SystemSampler {
         stats.cycleCount = number("CycleCount") ?? 0
         stats.hasPermanentFailure = (number("PermanentFailureStatus") ?? 0) != 0
 
-        stats.charge = UInt64(max(number("AppleRawCurrentCapacity") ?? 0, 0))
+        stats.charge = UInt64(max(number("AppleRawCurrentCapacity") ?? number("RemainingCapacity") ?? 0, 0))
         stats.chargePercent = number("CurrentCapacity") ?? 0
 
         // Sıcaklık santigradın yüzde biri cinsinden geliyor (3023 → 30,23 °C).

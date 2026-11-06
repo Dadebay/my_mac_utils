@@ -56,6 +56,8 @@ struct ContentView: View {
                     PanelShelfView(isCompact: false)
                 case .androidDevice:
                     AndroidTransferView()
+                case .imageConverter:
+                    ImageConverterView()
                 case .focusHistory:
                     ScrollView {
                         FocusHistoryView()
@@ -73,6 +75,9 @@ struct ContentView: View {
             // güncellenen grafiklerin kendi hareketiyle çakışırdı. Süre
             // Reduce Motion'da da aynı — burada zaten hareket yok.
             .id(selection)
+            // Kaydırılan içerik üst şeritteki rozetin altından geçerken
+            // yazının üstüne biniyordu; kenar efekti onu kapatıyor.
+            .scrollEdgeEffectStyle(.hard, for: .top)
             .transition(.opacity)
             .animation(.easeOut(duration: 0.18), value: selection)
             .onPageSubtitleChange { pageSubtitle = $0 }

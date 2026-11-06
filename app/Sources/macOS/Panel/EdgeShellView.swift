@@ -12,6 +12,8 @@ struct EdgeShellView: View {
   @AppStorage(PanelSettings.cornerRadiusKey)
   private var cornerRadius = PanelSettings.defaultCornerRadius
   @AppStorage(PanelSettings.railWidthKey) private var railWidth = Double(EdgeTokens.railWidth)
+  /// İkon görünürlüğü ayarları değişince ray yüksekliği yeniden okunsun.
+  @State private var settingsTick = 0
 
   /// Kabuk yatay olarak açılırken içerik yalnızca kısa bir fade ile gelir.
   /// Ek scale, pencere boyut animasyonuyla birleşince çift hareket gibi
@@ -107,7 +109,16 @@ struct EdgeShellView: View {
   private var railSurface: some View {
     Color.clear
       .frame(width: CGFloat(railWidth))
-      .frame(maxHeight: .infinity)
+      // Pencere ray kapalıyken de açık panel boyunda duruyor; cam yüzey
+      // pencereyi değil rayı izlemeli, yoksa ikonların altında boş siyah
+      // bir alan kalıyordu. Açıkken ray gövdeyle birlikte boyu dolduruyor.
+      .frame(
+        height: controller.visualState == .expanded ? nil : PanelSettings.railHeight + CGFloat(settingsTick * 0)
+      )
+      .frame(maxHeight: controller.visualState == .expanded ? .infinity : nil)
+      .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+        settingsTick += 1
+      }
       .adaptiveGlassShell(
         edge: controller.edge,
         cornerRadius: controller.visualState == .expanded ? 0 : CGFloat(cornerRadius)
@@ -186,6 +197,17 @@ struct EdgeShellView: View {
       PanelSystemStatView(metric: .disk)
     case .processor:
       PanelSystemStatView(metric: .processor)
+    case .keyboardClean:
+      ScrollView {
+        PanelKeyboardCleanView()
+          .padding(.horizontal, 16)
+          .padding(.vertical, 14)
+      }
+      .frame(
+        width: PanelSettings.panelWidth,
+        height: PanelSettings.effectivePanelHeight,
+        alignment: .top
+      )
     case .volume:
       ScrollView {
         PanelVolumeMixerView()

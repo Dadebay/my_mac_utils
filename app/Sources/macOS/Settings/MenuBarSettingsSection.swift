@@ -120,6 +120,11 @@ struct MenuBarSettingsSection: View {
     /// içine ad ve üç karo yan yana sığacak kadar dar.
     private static let tileWidth: CGFloat = 104
 
+    /// Birleşik ağ ölçeri iki ölçer genişliğinde; standart karoya sığmıyor.
+    private static func tileWidth(for kind: MenuBarItemKind) -> CGFloat {
+        kind == .networkCombined ? 210 : tileWidth
+    }
+
     /// Bir kategori: panodaki kartlarla aynı kart, içinde ölçüm satırları.
     /// Her ölçüm tek satır — ad solda, sunumları sağında yan yana.
     private func categorySection(_ category: MenuBarCategory) -> some View {
@@ -208,7 +213,7 @@ struct MenuBarSettingsSection: View {
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 6)
-            .frame(width: Self.tileWidth)
+            .frame(width: Self.tileWidth(for: kind))
             .background {
                 RoundedRectangle(cornerRadius: Layout.Radius.medium, style: .continuous)
                     .fill(isOn ? Color.appAccent.opacity(0.12) : Color.primary.opacity(0.045))

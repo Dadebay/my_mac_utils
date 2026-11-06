@@ -23,6 +23,8 @@ enum SidebarSelection: Hashable {
     case folders
     /// USB'ye bağlı Android telefon.
     case androidDevice
+    /// Resim biçimi dönüştürücü (PNG, JPEG, HEIC…).
+    case imageConverter
     /// Odak oturumları geçmişi.
     case focusHistory
     /// Ayar sayfaları. Eskiden ayrı bir pencereydiler ve kendi kenar
@@ -142,6 +144,12 @@ extension SidebarEntry {
                 title: L10n.androidTransferTitle,
                 symbolName: "iphone.gen3",
                 colors: [Color(red: 0.42, green: 0.80, blue: 0.52), Color(red: 0.22, green: 0.62, blue: 0.36)]
+            ),
+            SidebarEntry(
+                selection: .imageConverter,
+                title: L10n.s("Resim Dönüştürücü", "Image Converter", "Конвертер"),
+                symbolName: "photo.on.rectangle.angled",
+                colors: [Color(red: 0.98, green: 0.45, blue: 0.62), Color(red: 0.86, green: 0.24, blue: 0.46)]
             ),
             SidebarEntry(
                 selection: .focusHistory,

@@ -26,6 +26,7 @@ struct EdgeRailView: View {
   @AppStorage(PanelSettings.showDiskIconKey) private var showDiskIcon = false
   @AppStorage(PanelSettings.showProcessorIconKey) private var showProcessorIcon = false
   @AppStorage(PanelSettings.showVolumeIconKey) private var showVolumeIcon = false
+  @AppStorage(PanelSettings.showKeyboardCleanIconKey) private var showKeyboardCleanIcon = false
   @AppStorage(PanelSettings.showPinIconKey) private var showPinIcon = true
   @AppStorage(PanelSettings.showSettingsIconKey) private var showSettingsIcon = true
   @AppStorage(PanelSettings.showWindowSwitcherIconKey) private var showWindowSwitcherIcon = true
@@ -34,7 +35,7 @@ struct EdgeRailView: View {
     [
       showTasksIcon, showAddIcon, showCompletedIcon, showFoldersIcon,
       showMemoryIcon, showClipboardIcon, showNetworkIcon, showBatteryIcon, showDiskIcon,
-      showProcessorIcon, showVolumeIcon,
+      showProcessorIcon, showVolumeIcon, showKeyboardCleanIcon,
       showPinIcon, showWindowSwitcherIcon, showSettingsIcon,
     ]
   }
@@ -163,6 +164,14 @@ struct EdgeRailView: View {
           systemName: "speaker.wave.2", isActive: controller.content == .volume,
           selectionNamespace: selectionNamespace,
           action: { controller.selectContent(.volume) }
+        )
+        .transition(iconTransition)
+      }
+      if showKeyboardCleanIcon {
+        RailIconButton(
+          systemName: "keyboard", isActive: controller.content == .keyboardClean,
+          selectionNamespace: selectionNamespace,
+          action: { controller.selectContent(.keyboardClean) }
         )
         .transition(iconTransition)
       }
