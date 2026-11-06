@@ -106,16 +106,29 @@ jobs:
       - name: Release notu yaz
         run: |
           cat > "$GITHUB_WORKSPACE/notes.md" <<EOF
-          Otomatik derleme — commit \`${GITHUB_SHA::7}\`.
+          ## GlassDo for macOS (v${{ steps.version.outputs.version }})
 
-          Bu build imzasız ve notarize edilmemiş: ilk açılışta Gatekeeper
-          uyarı verir.
+          Automatic build from commit \`${GITHUB_SHA::7}\`. Requires macOS 26 or later.
 
-          - \`GlassDo-macOS.pkg\` (v${{ steps.version.outputs.version }}): çift
-            tıkla, kurulum sihirbazını takip et.
-          - \`GlassDo-macOS.zip\`: aç, Finder'da uygulamaya sağ tık → Aç ile geç.
+          > **Heads-up:** this build is not signed or notarized by Apple, so macOS
+          > shows a security warning the first time you open it. It is safe to
+          > continue — see the steps below.
 
-          Terminalde de şunu çalıştırabilirsin:
+          ### Install with the installer (recommended)
+
+          1. Download **GlassDo-macOS.pkg** from the Assets list below.
+          2. Double-click it and follow the installer.
+          3. If macOS says it can't be opened, right-click the file, choose **Open**, then **Open** again.
+
+          ### Or install from the zip
+
+          1. Download and unzip **GlassDo-macOS.zip**.
+          2. Drag **GlassDo-macOS** into your **Applications** folder.
+          3. The first time, right-click the app and choose **Open**.
+
+          ### Still blocked?
+
+          Remove the quarantine flag in Terminal, then open the app again:
 
           \`\`\`
           xattr -cr GlassDo-macOS.app
